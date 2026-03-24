@@ -430,17 +430,17 @@ export function LifeOSApp({ view = "dashboard" }) {
                 </div>
                 <div className="project-list project-list-split">
                   {state.workProjects.map((project) => (
-                    <div key={project.id} className="project-card">
-                      <div className="project-top">
+                    <div key={project.id} className="project-column">
+                      <div className="project-heading">
                         <input value={project.name} onChange={(event) => renameProject(project.id, event.target.value)} />
                         <button className="ghost-button" onClick={() => addTodo(project.id)}>
                           <Plus size={16} />
                           Todo
                         </button>
                       </div>
-                      <div className="todo-list">
-                        {project.todos.length ? (
-                          project.todos.map((todo) => {
+                      <div className="project-card">
+                        <div className="todo-list">
+                          {project.todos.map((todo) => {
                             const done = Boolean(getLogValue(state.logs, todayKey, `${project.id}:${todo.id}`));
                             return (
                               <button
@@ -452,10 +452,8 @@ export function LifeOSApp({ view = "dashboard" }) {
                                 <small>+10 XP</small>
                               </button>
                             );
-                          })
-                        ) : (
-                          <div className="empty-state">No todos yet. Add your first focus item.</div>
-                        )}
+                          })}
+                        </div>
                       </div>
                     </div>
                   ))}
