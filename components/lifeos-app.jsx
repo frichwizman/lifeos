@@ -203,29 +203,27 @@ export function LifeOSApp() {
   return (
     <main className="page-shell">
       <section className="hero-panel">
-        <div>
-          <p className="eyebrow">LifeOS</p>
-          <h1>Design your retirement. Engineer your days.</h1>
-          <p className="hero-copy">
-            A personal operating system that turns long-range freedom into measurable daily execution.
-          </p>
-        </div>
-        <div className="hero-side">
-          <div className="hero-stat-strip">
-            <div className="hero-stat">
-              <span className="card-label">Level</span>
-              <strong>LV {level.level}</strong>
-            </div>
-            <div className="hero-stat">
-              <span className="card-label">Today</span>
-              <strong>{formatNumber(todayXP)} XP</strong>
-            </div>
-            <div className="hero-stat">
-              <span className="card-label">Total</span>
-              <strong>{formatNumber(state.profile.totalXP)}</strong>
-            </div>
+        <div className="hero-brand">
+          <div>
+            <p className="eyebrow">LifeOS</p>
+            <h1>Design your retirement. Engineer your days.</h1>
           </div>
-          <div className="hero-progress">
+          <p className="hero-copy">A daily execution system for long-range freedom.</p>
+        </div>
+        <div className="hero-inline-stats">
+          <div className="hero-stat">
+            <span className="card-label">Level</span>
+            <strong>LV {level.level}</strong>
+          </div>
+          <div className="hero-stat">
+            <span className="card-label">Today</span>
+            <strong>{formatNumber(todayXP)} XP</strong>
+          </div>
+          <div className="hero-stat">
+            <span className="card-label">Total</span>
+            <strong>{formatNumber(state.profile.totalXP)}</strong>
+          </div>
+          <div className="hero-progress hero-progress-inline">
             <div className="metric-row">
               <span className="card-label">Next Level</span>
               <small>
