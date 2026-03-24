@@ -60,6 +60,34 @@ button {
   padding: 32px 0 72px;
 }
 
+.top-nav {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 12px;
+  margin-bottom: 18px;
+  overflow-x: auto;
+}
+
+.nav-link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 40px;
+  padding: 0 14px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--text-sub);
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.nav-link.is-active {
+  color: var(--text);
+  background: rgba(255, 255, 255, 0.09);
+  border-color: var(--border-2);
+}
+
 .hero-panel,
 .panel-card,
 .module-card,
@@ -401,6 +429,17 @@ select {
   margin-top: 18px;
 }
 
+.modules-grid-single {
+  grid-template-columns: 1fr;
+}
+
+.module-page-intro {
+  display: grid;
+  gap: 6px;
+  margin-top: 8px;
+  margin-bottom: 10px;
+}
+
 .module-card {
   position: relative;
   border-radius: 26px;
@@ -601,6 +640,10 @@ select {
   .hero-inline-stats {
     width: 100%;
     justify-content: stretch;
+  }
+
+  .top-nav {
+    padding-bottom: 2px;
   }
 
   .hero-stat,

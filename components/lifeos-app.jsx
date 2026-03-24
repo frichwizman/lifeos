@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
 import {
   Activity,
   BriefcaseBusiness,
@@ -39,10 +41,19 @@ const allDefaultTrackedTaskIds = [
   ...lifeGroups.flatMap((group) => group.items.map((item) => item.id))
 ];
 
-export function LifeOSApp() {
+const navItems = [
+  { href: "/dashboard", label: "Dashboard" },
+  { href: "/work", label: "Work" },
+  { href: "/study", label: "Study" },
+  { href: "/life", label: "Life" },
+  { href: "/money", label: "Money" }
+];
+
+export function LifeOSApp({ view = "dashboard" }) {
   const [state, setState] = useState(DEFAULT_STATE);
   const [ready, setReady] = useState(false);
   const todayKey = getTodayKey();
+  const pathname = usePathname();
 
   useEffect(() => {
     try {
@@ -200,6 +211,31 @@ export function LifeOSApp() {
     [lifeDoneCount, state.logs, state.workProjects.length, studyDoneCount, todayKey]
   );
 
+  const pageMeta = {
+    dashboard: {
+      title: "Dashboard",
+      description: "A compact operating view for your timeline, targets, streaks, and momentum."
+    },
+    work: {
+      title: "Work",
+      description: "Project-based execution. Keep today clear, but retain the long game."
+    },
+    study: {
+      title: "Study",
+      description: "Log focused learning with presets, notes, and streak visibility."
+    },
+    life: {
+      title: "Life",
+      description: "Seven daily pillars that keep energy, clarity, and resilience on track."
+    },
+    money: {
+      title: "Money",
+      description: "Record income, expenses, and savings without leaving the operating system."
+    }
+  }[view];
+
+  const activePath = pathname === "/" ? "/dashboard" : pathname;
+
   return (
     <main className="page-shell">
       <section className="hero-panel">
@@ -237,252 +273,246 @@ export function LifeOSApp() {
         </div>
       </section>
 
-      <section className="dashboard-grid">
-        <Card title="Life Timeline" icon={Activity} className="card-timeline">
-          <div className="timeline-metrics">
-            <TimelineMetric label="Life Used" value={`${Math.round((state.profile.age / state.profile.lifeExpectancy) * 100)}%`} />
-            <TimelineMetric
-              label="Days Left"
-              value={formatNumber((state.profile.lifeExpectancy - state.profile.age) * 365)}
-            />
-            <TimelineMetric
-              label="To Retirement"
-              value={formatNumber(Math.max(0, (state.profile.retirementAge - state.profile.age) * 365))}
-            />
-          </div>
-          <div className="timeline-track">
-            <span style={{ width: `${(state.profile.age / state.profile.lifeExpectancy) * 100}%` }} />
-          </div>
-          <div className="timeline-steps">
-            {[0, 18, 25, 35, 65, 85].map((age) => (
-              <span key={age}>{age}</span>
-            ))}
-          </div>
-        </Card>
+      <nav className="top-nav" aria-label="Primary">
+        {navItems.map((item) => (
+          <Link key={item.href} href={item.href} className={`nav-link ${activePath === item.href ? "is-active" : ""}`}>
+            {item.label}
+          </Link>
+        ))}
+      </nav>
 
-        <Card title="Year Goal" icon={Gem} className="card-year-goal">
-          <div className="metric-row">
-            <strong>
-              {state.profile.currency}
-              {formatNumber(state.profile.yearGoal)}
-            </strong>
-            <span>{Math.round(income.progress * 100)}% through the year</span>
-          </div>
-          <div className="progress-track">
-            <span style={{ width: `${income.progress * 100}%` }} />
-          </div>
-          <div className="timeline-metrics compact">
-            <TimelineMetric
-              label="Daily"
-              value={`${state.profile.currency}${formatNumber(income.dailyTarget)}`}
-            />
-            <TimelineMetric
-              label="Monthly"
-              value={`${state.profile.currency}${formatNumber(income.monthlyTarget)}`}
-            />
-            <TimelineMetric
-              label="Should Have"
-              value={`${state.profile.currency}${formatNumber(income.shouldHaveMade)}`}
-            />
-          </div>
-        </Card>
-
-        <Card title="Personal Best" icon={Sparkles} className="card-pb">
-          <div className="metric-row">
-            <strong>{formatNumber(todayXP)} XP</strong>
-            <span>PB {formatNumber(state.profile.pbXP || 0)}</span>
-          </div>
-          <div className={`progress-track ${pbReady && todayXP >= state.profile.pbXP ? "is-gold" : ""}`}>
-            <span style={{ width: `${pbReady ? Math.min(pbRatio, 1) * 100 : 0}%` }} />
-          </div>
-          <p className="muted">
-            {pbReady ? "Push past your best session and the bar turns gold." : "PB tracking starts after your first full day."}
-          </p>
-        </Card>
-
-        <Card title="Core Streaks" icon={Flame} className="card-streaks">
-          <div className="streak-widget">
-            {["exercise", "meditation", "reading"].map((taskId) => (
-              <StreakMini
-                key={taskId}
-                label={taskId.replace("-", " ")}
-                streak={getStreak(state.logs, taskId)}
-                history={getTaskHistory(state.logs, taskId, 7)}
-              />
-            ))}
-          </div>
-        </Card>
-
-        <Card title="Life Pillars" icon={HeartPulse} className="card-pillars">
-          <div className="pillars-grid">
-            {LIFE_PILLARS.map((pillar) => {
-              const done = Boolean(getLogValue(state.logs, todayKey, pillar.id));
-              return (
-                <div
-                  key={pillar.id}
-                  className={`pillar-hex ${done ? "is-done" : ""}`}
-                  style={{ "--pillar-color": pillar.color }}
-                >
-                  <span>{pillar.pillar}</span>
-                </div>
-              );
-            })}
-          </div>
-          <p className="muted">{lifeDoneCount === 7 ? "All done. Every pillar got attention today." : `${lifeDoneCount}/7 pillars completed today.`}</p>
-        </Card>
-
-        <Card title="System Controls" icon={Timer} className="card-controls">
-          <div className="controls-grid">
-            <label>
-              Age
-              <input
-                type="number"
-                value={state.profile.age}
-                onChange={(event) => updateProfile("age", Number(event.target.value || 0))}
-              />
-            </label>
-            <label>
-              Retirement
-              <input
-                type="number"
-                value={state.profile.retirementAge}
-                onChange={(event) => updateProfile("retirementAge", Number(event.target.value || 0))}
-              />
-            </label>
-            <label>
-              Year Goal
-              <input
-                type="number"
-                value={state.profile.yearGoal}
-                onChange={(event) => updateProfile("yearGoal", Number(event.target.value || 0))}
-              />
-            </label>
-            <label>
-              Currency
-              <select value={state.profile.currency} onChange={(event) => updateProfile("currency", event.target.value)}>
-                {CURRENCIES.map((currency) => (
-                  <option key={currency} value={currency}>
-                    {currency}
-                  </option>
-                ))}
-              </select>
-            </label>
-          </div>
-        </Card>
-      </section>
-
-      <section className="summary-strip">
-        <div className="summary-copy">
-          <p className="eyebrow">XP Hero Card</p>
-          <h2>Today is a compounding system, not a checklist.</h2>
-          <p className="muted">
-            Complete all default Life and Study tasks to trigger the daily completion moment.
-          </p>
-        </div>
-        <div className="overview-cards">
-          {heroCards.map((card) => (
-            <div key={card.label} className="overview-card" style={{ "--accent": card.color }}>
-              <card.icon size={18} />
-              <span>{card.label}</span>
-              <strong>{card.value}</strong>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {allHabitsDone ? (
-        <section className="completion-sheet">
-          <div>
-            <p className="eyebrow">Daily Completion</p>
-            <h3>Life + Study default stack completed.</h3>
-          </div>
-          <div className="completion-stats">
-            <span>{formatNumber(todayXP)} XP today</span>
-            <span>LV {level.level}</span>
-            <span>{allDefaultTrackedTaskIds.length} defaults cleared</span>
-          </div>
-        </section>
-      ) : null}
-
-      <section className="modules-grid">
-        <ModuleCard title="Work" color={MODULE_COLORS.work} icon={BriefcaseBusiness}>
-          <div className="module-head">
-            <p className="muted">Project-based execution board. Todos reset each day, but stay in the system.</p>
-            <button className="ghost-button" onClick={addProject}>
-              <Plus size={16} />
-              Add project
-            </button>
-          </div>
-          <div className="project-list">
-            {state.workProjects.map((project) => (
-              <div key={project.id} className="project-card">
-                <div className="project-top">
-                  <input value={project.name} onChange={(event) => renameProject(project.id, event.target.value)} />
-                  <button className="ghost-button" onClick={() => addTodo(project.id)}>
-                    <Plus size={16} />
-                    Todo
-                  </button>
-                </div>
-                <div className="todo-list">
-                  {project.todos.map((todo) => {
-                    const done = Boolean(getLogValue(state.logs, todayKey, `${project.id}:${todo.id}`));
-                    return (
-                      <button
-                        key={todo.id}
-                        className={`todo-row ${done ? "is-done" : ""}`}
-                        onClick={() => toggleTodo(project.id, todo.id)}
-                      >
-                        <span>{todo.label}</span>
-                        <small>+10 XP</small>
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-            ))}
-          </div>
-        </ModuleCard>
-
-        <ModuleCard title="Study" color={MODULE_COLORS.study} icon={GraduationCap}>
-          <TaskList
-            tasks={studyTasks}
-            logs={state.logs}
-            todayKey={todayKey}
-            notes={state.notes}
-            onLog={logTask}
-            showStreaks
-          />
-        </ModuleCard>
-
-        <ModuleCard title="Life" color={MODULE_COLORS.life} icon={HeartPulse}>
-          <div className="group-stack">
-            {lifeGroups.map((group) => (
-              <div key={group.title} className="task-group">
-                <div className="group-title">{group.title}</div>
-                <TaskList
-                  tasks={group.items}
-                  logs={state.logs}
-                  todayKey={todayKey}
-                  notes={state.notes}
-                  onLog={logTask}
-                  showStreaks
+      {view === "dashboard" ? (
+        <>
+          <section className="dashboard-grid">
+            <Card title="Life Timeline" icon={Activity} className="card-timeline">
+              <div className="timeline-metrics">
+                <TimelineMetric label="Life Used" value={`${Math.round((state.profile.age / state.profile.lifeExpectancy) * 100)}%`} />
+                <TimelineMetric
+                  label="Days Left"
+                  value={formatNumber((state.profile.lifeExpectancy - state.profile.age) * 365)}
+                />
+                <TimelineMetric
+                  label="To Retirement"
+                  value={formatNumber(Math.max(0, (state.profile.retirementAge - state.profile.age) * 365))}
                 />
               </div>
-            ))}
-          </div>
-        </ModuleCard>
+              <div className="timeline-track">
+                <span style={{ width: `${(state.profile.age / state.profile.lifeExpectancy) * 100}%` }} />
+              </div>
+              <div className="timeline-steps">
+                {[0, 18, 25, 35, 65, 85].map((age) => (
+                  <span key={age}>{age}</span>
+                ))}
+              </div>
+            </Card>
 
-        <ModuleCard title="Money" color={MODULE_COLORS.money} icon={CircleDollarSign}>
-          <TaskList
-            tasks={moneyTasks}
-            logs={state.logs}
-            todayKey={todayKey}
-            notes={{}}
-            onLog={logTask}
-            currency={state.profile.currency}
-          />
-        </ModuleCard>
-      </section>
+            <Card title="Year Goal" icon={Gem} className="card-year-goal">
+              <div className="metric-row">
+                <strong>
+                  {state.profile.currency}
+                  {formatNumber(state.profile.yearGoal)}
+                </strong>
+                <span>{Math.round(income.progress * 100)}% through the year</span>
+              </div>
+              <div className="progress-track">
+                <span style={{ width: `${income.progress * 100}%` }} />
+              </div>
+              <div className="timeline-metrics compact">
+                <TimelineMetric label="Daily" value={`${state.profile.currency}${formatNumber(income.dailyTarget)}`} />
+                <TimelineMetric label="Monthly" value={`${state.profile.currency}${formatNumber(income.monthlyTarget)}`} />
+                <TimelineMetric label="Should Have" value={`${state.profile.currency}${formatNumber(income.shouldHaveMade)}`} />
+              </div>
+            </Card>
+
+            <Card title="Personal Best" icon={Sparkles} className="card-pb">
+              <div className="metric-row">
+                <strong>{formatNumber(todayXP)} XP</strong>
+                <span>PB {formatNumber(state.profile.pbXP || 0)}</span>
+              </div>
+              <div className={`progress-track ${pbReady && todayXP >= state.profile.pbXP ? "is-gold" : ""}`}>
+                <span style={{ width: `${pbReady ? Math.min(pbRatio, 1) * 100 : 0}%` }} />
+              </div>
+              <p className="muted">
+                {pbReady ? "Push past your best session and the bar turns gold." : "PB tracking starts after your first full day."}
+              </p>
+            </Card>
+
+            <Card title="Core Streaks" icon={Flame} className="card-streaks">
+              <div className="streak-widget">
+                {["exercise", "meditation", "reading"].map((taskId) => (
+                  <StreakMini
+                    key={taskId}
+                    label={taskId.replace("-", " ")}
+                    streak={getStreak(state.logs, taskId)}
+                    history={getTaskHistory(state.logs, taskId, 7)}
+                  />
+                ))}
+              </div>
+            </Card>
+
+            <Card title="Life Pillars" icon={HeartPulse} className="card-pillars">
+              <div className="pillars-grid">
+                {LIFE_PILLARS.map((pillar) => {
+                  const done = Boolean(getLogValue(state.logs, todayKey, pillar.id));
+                  return (
+                    <div
+                      key={pillar.id}
+                      className={`pillar-hex ${done ? "is-done" : ""}`}
+                      style={{ "--pillar-color": pillar.color }}
+                    >
+                      <span>{pillar.pillar}</span>
+                    </div>
+                  );
+                })}
+              </div>
+              <p className="muted">
+                {lifeDoneCount === 7 ? "All done. Every pillar got attention today." : `${lifeDoneCount}/7 pillars completed today.`}
+              </p>
+            </Card>
+
+            <Card title="System Controls" icon={Timer} className="card-controls">
+              <div className="controls-grid">
+                <label>
+                  Age
+                  <input type="number" value={state.profile.age} onChange={(event) => updateProfile("age", Number(event.target.value || 0))} />
+                </label>
+                <label>
+                  Retirement
+                  <input
+                    type="number"
+                    value={state.profile.retirementAge}
+                    onChange={(event) => updateProfile("retirementAge", Number(event.target.value || 0))}
+                  />
+                </label>
+                <label>
+                  Year Goal
+                  <input
+                    type="number"
+                    value={state.profile.yearGoal}
+                    onChange={(event) => updateProfile("yearGoal", Number(event.target.value || 0))}
+                  />
+                </label>
+                <label>
+                  Currency
+                  <select value={state.profile.currency} onChange={(event) => updateProfile("currency", event.target.value)}>
+                    {CURRENCIES.map((currency) => (
+                      <option key={currency} value={currency}>
+                        {currency}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              </div>
+            </Card>
+          </section>
+
+          <section className="summary-strip">
+            <div className="summary-copy">
+              <p className="eyebrow">XP Hero Card</p>
+              <h2>Today is a compounding system, not a checklist.</h2>
+              <p className="muted">Complete all default Life and Study tasks to trigger the daily completion moment.</p>
+            </div>
+            <div className="overview-cards">
+              {heroCards.map((card) => (
+                <div key={card.label} className="overview-card" style={{ "--accent": card.color }}>
+                  <card.icon size={18} />
+                  <span>{card.label}</span>
+                  <strong>{card.value}</strong>
+                </div>
+              ))}
+            </div>
+          </section>
+
+          {allHabitsDone ? (
+            <section className="completion-sheet">
+              <div>
+                <p className="eyebrow">Daily Completion</p>
+                <h3>Life + Study default stack completed.</h3>
+              </div>
+              <div className="completion-stats">
+                <span>{formatNumber(todayXP)} XP today</span>
+                <span>LV {level.level}</span>
+                <span>{allDefaultTrackedTaskIds.length} defaults cleared</span>
+              </div>
+            </section>
+          ) : null}
+        </>
+      ) : (
+        <>
+          <section className="module-page-intro">
+            <p className="eyebrow">{pageMeta.title}</p>
+            <h2>{pageMeta.title}</h2>
+            <p className="muted">{pageMeta.description}</p>
+          </section>
+
+          <section className="modules-grid modules-grid-single">
+            {view === "work" ? (
+              <ModuleCard title="Work" color={MODULE_COLORS.work} icon={BriefcaseBusiness}>
+                <div className="module-head">
+                  <p className="muted">Project-based execution board. Todos reset each day, but stay in the system.</p>
+                  <button className="ghost-button" onClick={addProject}>
+                    <Plus size={16} />
+                    Add project
+                  </button>
+                </div>
+                <div className="project-list">
+                  {state.workProjects.map((project) => (
+                    <div key={project.id} className="project-card">
+                      <div className="project-top">
+                        <input value={project.name} onChange={(event) => renameProject(project.id, event.target.value)} />
+                        <button className="ghost-button" onClick={() => addTodo(project.id)}>
+                          <Plus size={16} />
+                          Todo
+                        </button>
+                      </div>
+                      <div className="todo-list">
+                        {project.todos.map((todo) => {
+                          const done = Boolean(getLogValue(state.logs, todayKey, `${project.id}:${todo.id}`));
+                          return (
+                            <button
+                              key={todo.id}
+                              className={`todo-row ${done ? "is-done" : ""}`}
+                              onClick={() => toggleTodo(project.id, todo.id)}
+                            >
+                              <span>{todo.label}</span>
+                              <small>+10 XP</small>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </ModuleCard>
+            ) : null}
+
+            {view === "study" ? (
+              <ModuleCard title="Study" color={MODULE_COLORS.study} icon={GraduationCap}>
+                <TaskList tasks={studyTasks} logs={state.logs} todayKey={todayKey} notes={state.notes} onLog={logTask} showStreaks />
+              </ModuleCard>
+            ) : null}
+
+            {view === "life" ? (
+              <ModuleCard title="Life" color={MODULE_COLORS.life} icon={HeartPulse}>
+                <div className="group-stack">
+                  {lifeGroups.map((group) => (
+                    <div key={group.title} className="task-group">
+                      <div className="group-title">{group.title}</div>
+                      <TaskList tasks={group.items} logs={state.logs} todayKey={todayKey} notes={state.notes} onLog={logTask} showStreaks />
+                    </div>
+                  ))}
+                </div>
+              </ModuleCard>
+            ) : null}
+
+            {view === "money" ? (
+              <ModuleCard title="Money" color={MODULE_COLORS.money} icon={CircleDollarSign}>
+                <TaskList tasks={moneyTasks} logs={state.logs} todayKey={todayKey} notes={{}} onLog={logTask} currency={state.profile.currency} />
+              </ModuleCard>
+            ) : null}
+          </section>
+        </>
+      )}
     </main>
   );
 }
