@@ -365,8 +365,7 @@ export function LifeOSApp({ view = "dashboard" }) {
                       style={{ "--pillar-color": pillar.color }}
                     >
                       <PillarIcon size={18} className="pillar-icon" />
-                      <span className="pillar-label pillar-label-desktop">{pillar.pillar}</span>
-                      <span className="pillar-label pillar-label-mobile">{pillar.short}</span>
+                      <span className="pillar-label">{pillar.short}</span>
                     </div>
                   );
                 })}
@@ -624,11 +623,8 @@ function TimelineMetric({ label, value }) {
 
 function StreakMini({ label, history, streak }) {
   return (
-    <div className="streak-mini">
-      <div className="metric-row">
-        <span className="capitalize">{label}</span>
-        <strong>{streak}d</strong>
-      </div>
+    <div className="streak-mini streak-inline">
+      <span className="capitalize streak-name">{label}</span>
       <div className="streak-row compact">
         {history.map((entry) => (
           <span key={entry.key} className={entry.done ? "is-on" : ""} />

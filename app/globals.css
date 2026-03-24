@@ -401,17 +401,14 @@ select {
 }
 
 .pillar-icon {
-  display: none;
+  display: block;
+  color: var(--text);
 }
 
 .pillar-hex span {
   font-size: 0.8rem;
   line-height: 1.35;
   color: var(--text-sub);
-}
-
-.pillar-label-mobile {
-  display: none;
 }
 
 .pillar-hex.is-done {
@@ -559,6 +556,17 @@ select {
   color: #ffbf5e;
   font-style: normal;
   font-size: 0.85rem;
+}
+
+.streak-inline {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.streak-name {
+  min-width: 88px;
 }
 
 .project-card {
@@ -736,21 +744,6 @@ select {
     min-height: 72px;
     padding: 10px 6px;
     gap: 6px;
-  }
-
-  .pillar-icon {
-    display: block;
-    color: var(--text);
-  }
-
-  .pillar-label-desktop {
-    display: none;
-  }
-
-  .pillar-label-mobile {
-    display: block;
-    font-size: 0.65rem;
-    line-height: 1.15;
   }
 
   .timeline-steps {
