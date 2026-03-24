@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -13,7 +13,9 @@ import {
   Gem,
   GraduationCap,
   HeartPulse,
+  Link2,
   MoonStar,
+  RefreshCw,
   ShieldCheck,
   Sparkle,
   Plus,
@@ -38,10 +40,14 @@ import {
   getTodayKey,
   getTodayXP,
   lifeGroups,
+  generateSyncCode,
   migrateState,
   moneyTasks,
-  studyTasks
+  studyTasks,
+  touchState,
+  createSyncPayload
 } from "@/lib/lifeos-data";
+import { fetchSyncState, pushSyncState } from "@/lib/sync-client";
 
 const pillarIcons = {
   exercise: Activity,
@@ -70,14 +76,19 @@ const navItems = [
 export function LifeOSApp({ view = "dashboard" }) {
   const [state, setState] = useState(DEFAULT_STATE);
   const [ready, setReady] = useState(false);
+  const [syncCodeInput, setSyncCodeInput] = useState("");
   const todayKey = getTodayKey();
   const pathname = usePathname();
+  const pollingRef = useRef(null);
+  const pushTimeoutRef = useRef(null);
 
   useEffect(() => {
     try {
       const raw = window.localStorage.getItem(STORAGE_KEY);
       if (raw) {
-        setState(migrateState(JSON.parse(raw)));
+        const migrated = migrateState(JSON.parse(raw));
+        setState(migrated);
+        setSyncCodeInput(migrated.sync.syncCode || "");
       }
     } catch {}
     setReady(true);
@@ -87,6 +98,77 @@ export function LifeOSApp({ view = "dashboard" }) {
     if (!ready) return;
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
   }, [ready, state]);
+
+  useEffect(() => {
+    if (!ready || state.sync.mode !== "anonymous" || !state.sync.syncCode) return;
+
+    window.clearTimeout(pushTimeoutRef.current);
+    pushTimeoutRef.current = window.setTimeout(async () => {
+      try {
+        await pushSyncState(state.sync.syncCode, createSyncPayload(state));
+        setState((current) => ({
+          ...current,
+          sync: {
+            ...current.sync,
+            status: "synced",
+            lastSyncedAt: new Date().toISOString(),
+            error: ""
+          }
+        }));
+      } catch {
+        setState((current) => ({
+          ...current,
+          sync: {
+            ...current.sync,
+            status: "error",
+            error: "Sync push failed."
+          }
+        }));
+      }
+    }, 600);
+
+    return () => window.clearTimeout(pushTimeoutRef.current);
+  }, [ready, state.sync.mode, state.sync.syncCode, state.sync.updatedAt]);
+
+  useEffect(() => {
+    if (!ready || state.sync.mode !== "anonymous" || !state.sync.syncCode) return;
+
+    const poll = async () => {
+      try {
+        const remoteState = await fetchSyncState(state.sync.syncCode);
+        if (!remoteState) return;
+        if ((remoteState.sync?.updatedAt ?? "") > (state.sync.updatedAt ?? "")) {
+          setState(
+            migrateState({
+              ...remoteState,
+              sync: {
+                ...remoteState.sync,
+                status: "synced",
+                error: ""
+              }
+            })
+          );
+        }
+      } catch {
+        setState((current) => ({
+          ...current,
+          sync: {
+            ...current.sync,
+            status: "error",
+            error: "Sync pull failed."
+          }
+        }));
+      }
+    };
+
+    poll();
+    pollingRef.current = window.setInterval(poll, 5000);
+    return () => window.clearInterval(pollingRef.current);
+  }, [ready, state.sync.mode, state.sync.syncCode, state.sync.updatedAt]);
+
+  const commitState = (updater) => {
+    setState((current) => touchState(updater(current)));
+  };
 
   const todayXP = getTodayXP(state.logs, todayKey);
   const level = getLevel(state.profile.totalXP);
@@ -108,7 +190,7 @@ export function LifeOSApp({ view = "dashboard" }) {
   const logTask = (task, value) => {
     const normalized =
       task.type === "boolean" ? Boolean(value) : typeof value === "number" ? value : Number(value || 0);
-    setState((current) => {
+    commitState((current) => {
       const previousXP = current.logs?.[todayKey]?.[task.id]?.xp ?? 0;
       const xpBase =
         task.type === "ratingReverse"
@@ -149,7 +231,7 @@ export function LifeOSApp({ view = "dashboard" }) {
   };
 
   const addTodo = (projectId) => {
-    setState((current) => ({
+    commitState((current) => ({
       ...current,
       workProjects: current.workProjects.map((project) =>
         project.id === projectId
@@ -166,7 +248,7 @@ export function LifeOSApp({ view = "dashboard" }) {
   };
 
   const renameProject = (projectId, name) => {
-    setState((current) => ({
+    commitState((current) => ({
       ...current,
       workProjects: current.workProjects.map((project) =>
         project.id === projectId ? { ...project, name } : project
@@ -175,7 +257,7 @@ export function LifeOSApp({ view = "dashboard" }) {
   };
 
   const renameTodo = (projectId, todoId, label) => {
-    setState((current) => ({
+    commitState((current) => ({
       ...current,
       workProjects: current.workProjects.map((project) =>
         project.id === projectId
@@ -191,13 +273,60 @@ export function LifeOSApp({ view = "dashboard" }) {
   };
 
   const updateProfile = (key, value) => {
-    setState((current) => ({
+    commitState((current) => ({
       ...current,
       profile: {
         ...current.profile,
         [key]: value
       }
     }));
+  };
+
+  const enableAnonymousSync = async (requestedCode) => {
+    const code = (requestedCode || generateSyncCode()).trim().toUpperCase();
+    const nextState = touchState({
+      ...state,
+      sync: {
+        ...state.sync,
+        syncCode: code,
+        userId: null,
+        mode: "anonymous",
+        status: "connecting",
+        error: ""
+      }
+    });
+
+    setState(nextState);
+    setSyncCodeInput(code);
+
+    try {
+      const remoteState = await fetchSyncState(code);
+      if (remoteState) {
+        const localUpdatedAt = nextState.sync.updatedAt ?? "";
+        const remoteUpdatedAt = remoteState.sync?.updatedAt ?? "";
+        setState(migrateState(remoteUpdatedAt > localUpdatedAt ? remoteState : nextState));
+      } else {
+        await pushSyncState(code, createSyncPayload(nextState));
+        setState((current) => ({
+          ...current,
+          sync: {
+            ...current.sync,
+            status: "synced",
+            lastSyncedAt: new Date().toISOString(),
+            error: ""
+          }
+        }));
+      }
+    } catch {
+      setState((current) => ({
+        ...current,
+        sync: {
+          ...current.sync,
+          status: "error",
+          error: "Unable to connect sync code."
+        }
+      }));
+    }
   };
 
   const heroCards = useMemo(
@@ -488,6 +617,40 @@ export function LifeOSApp({ view = "dashboard" }) {
             {view === "settings" ? (
               <ModuleCard title="Settings" color="#8892a0" icon={Timer}>
                 <div className="settings-stack">
+                  <div className="settings-group">
+                    <div className="group-title">Sync</div>
+                    <div className="controls-grid">
+                      <label>
+                        Sync Code
+                        <input value={syncCodeInput} onChange={(event) => setSyncCodeInput(event.target.value.toUpperCase())} />
+                      </label>
+                      <label>
+                        Status
+                        <input value={state.sync.mode === "anonymous" ? state.sync.status : "local only"} readOnly />
+                      </label>
+                    </div>
+                    <div className="preset-row">
+                      <button className="ghost-button" onClick={() => enableAnonymousSync()}>
+                        <Link2 size={16} />
+                        Create Sync Code
+                      </button>
+                      <button className="ghost-button" onClick={() => enableAnonymousSync(syncCodeInput)}>
+                        <RefreshCw size={16} />
+                        Connect Code
+                      </button>
+                    </div>
+                    <p className="muted">
+                      Prototype mode: sync code data is account-free now, and can later be attached to a real user ID.
+                    </p>
+                    {state.sync.syncCode ? (
+                      <p className="muted">
+                        Active code: <strong>{state.sync.syncCode}</strong>
+                        {state.sync.lastSyncedAt ? ` · Last sync ${new Date(state.sync.lastSyncedAt).toLocaleTimeString()}` : ""}
+                      </p>
+                    ) : null}
+                    {state.sync.error ? <p className="muted">{state.sync.error}</p> : null}
+                  </div>
+
                   <div className="settings-group">
                     <div className="group-title">Profile</div>
                     <div className="controls-grid">
