@@ -9,12 +9,14 @@ import {
   CircleDollarSign,
   Command,
   Droplets,
+  Download,
   Flame,
   Gem,
   GraduationCap,
   HeartPulse,
   Link2,
   MoonStar,
+  Save,
   RefreshCw,
   ShieldCheck,
   Sparkle,
@@ -45,7 +47,9 @@ import {
   moneyTasks,
   studyTasks,
   touchState,
-  createSyncPayload
+  createSyncPayload,
+  writeBackupSnapshot,
+  readBackups
 } from "@/lib/lifeos-data";
 import { fetchSyncState, pushSyncState } from "@/lib/sync-client";
 import { choosePreferredSyncState } from "@/lib/lifeos-data";
@@ -78,6 +82,7 @@ export function LifeOSApp({ view = "dashboard" }) {
   const [state, setState] = useState(DEFAULT_STATE);
   const [ready, setReady] = useState(false);
   const [syncCodeInput, setSyncCodeInput] = useState("");
+  const [backupCount, setBackupCount] = useState(0);
   const todayKey = getTodayKey();
   const pathname = usePathname();
   const pollingRef = useRef(null);
@@ -92,6 +97,7 @@ export function LifeOSApp({ view = "dashboard" }) {
         setSyncCodeInput(migrated.sync.syncCode || "");
       }
     } catch {}
+    setBackupCount(readBackups().length);
     setReady(true);
   }, []);
 
@@ -349,6 +355,87 @@ export function LifeOSApp({ view = "dashboard" }) {
           ...current.sync,
           status: "error",
           error: "Unable to connect sync code."
+        }
+      }));
+    }
+  };
+
+  const saveBackup = () => {
+    const backups = writeBackupSnapshot(state);
+    setBackupCount(backups.length);
+    setState((current) => ({
+      ...current,
+      sync: {
+        ...current.sync,
+        lastBackupAt: new Date().toISOString(),
+        error: ""
+      }
+    }));
+  };
+
+  const exportBackup = () => {
+    const blob = new Blob([JSON.stringify(createSyncPayload(state), null, 2)], {
+      type: "application/json"
+    });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `lifeos-backup-${new Date().toISOString().slice(0, 10)}.json`;
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const pullNow = async () => {
+    if (!state.sync.syncCode) return;
+    try {
+      const remoteState = await fetchSyncState(state.sync.syncCode);
+      if (!remoteState) return;
+      const preferred = choosePreferredSyncState(state, remoteState);
+      setState(
+        migrateState({
+          ...preferred,
+          sync: {
+            ...preferred.sync,
+            syncCode: state.sync.syncCode,
+            mode: "anonymous",
+            status: "synced",
+            lastSyncedAt: new Date().toISOString(),
+            error: ""
+          }
+        })
+      );
+    } catch {
+      setState((current) => ({
+        ...current,
+        sync: {
+          ...current.sync,
+          status: "error",
+          error: "Manual pull failed."
+        }
+      }));
+    }
+  };
+
+  const pushNow = async () => {
+    if (!state.sync.syncCode) return;
+    try {
+      await pushSyncState(state.sync.syncCode, createSyncPayload(state));
+      setState((current) => ({
+        ...current,
+        sync: {
+          ...current.sync,
+          status: "synced",
+          lastSyncedAt: new Date().toISOString(),
+          error: ""
+        }
+      }));
+    } catch {
+      setState((current) => ({
+        ...current,
+        sync: {
+          ...current.sync,
+          status: "error",
+          error: "Manual push failed."
         }
       }));
     }
@@ -663,9 +750,25 @@ export function LifeOSApp({ view = "dashboard" }) {
                         <RefreshCw size={16} />
                         Connect Code
                       </button>
+                      <button className="ghost-button" onClick={pushNow} disabled={!state.sync.syncCode}>
+                        <RefreshCw size={16} />
+                        Push Now
+                      </button>
+                      <button className="ghost-button" onClick={pullNow} disabled={!state.sync.syncCode}>
+                        <Download size={16} />
+                        Pull Now
+                      </button>
+                      <button className="ghost-button" onClick={saveBackup}>
+                        <Save size={16} />
+                        Save Backup
+                      </button>
+                      <button className="ghost-button" onClick={exportBackup}>
+                        <Download size={16} />
+                        Export JSON
+                      </button>
                     </div>
                     <p className="muted">
-                      Prototype mode: sync code data is account-free now, and can later be attached to a real user ID.
+                      Current mode is still prototype sync. It now has local backups and manual recovery controls, but long-term reliability still needs persistent storage.
                     </p>
                     {state.sync.syncCode ? (
                       <p className="muted">
@@ -673,6 +776,10 @@ export function LifeOSApp({ view = "dashboard" }) {
                         {state.sync.lastSyncedAt ? ` · Last sync ${new Date(state.sync.lastSyncedAt).toLocaleTimeString()}` : ""}
                       </p>
                     ) : null}
+                    <p className="muted">
+                      Local backups: {backupCount}
+                      {state.sync.lastBackupAt ? ` · Last backup ${new Date(state.sync.lastBackupAt).toLocaleTimeString()}` : ""}
+                    </p>
                     {state.sync.error ? <p className="muted">{state.sync.error}</p> : null}
                   </div>
 
