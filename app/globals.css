@@ -540,6 +540,7 @@ select {
 .boolean-log {
   min-height: 34px;
   padding: 0 12px;
+  white-space: nowrap;
 }
 
 .chip.is-active,

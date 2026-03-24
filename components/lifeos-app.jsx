@@ -38,6 +38,7 @@ import {
   getTodayKey,
   getTodayXP,
   lifeGroups,
+  migrateState,
   moneyTasks,
   studyTasks
 } from "@/lib/lifeos-data";
@@ -76,7 +77,7 @@ export function LifeOSApp({ view = "dashboard" }) {
     try {
       const raw = window.localStorage.getItem(STORAGE_KEY);
       if (raw) {
-        setState({ ...DEFAULT_STATE, ...JSON.parse(raw) });
+        setState(migrateState(JSON.parse(raw)));
       }
     } catch {}
     setReady(true);
