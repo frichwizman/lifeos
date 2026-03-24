@@ -400,10 +400,18 @@ select {
   border: 1px solid var(--border);
 }
 
+.pillar-icon {
+  display: none;
+}
+
 .pillar-hex span {
   font-size: 0.8rem;
   line-height: 1.35;
   color: var(--text-sub);
+}
+
+.pillar-label-mobile {
+  display: none;
 }
 
 .pillar-hex.is-done {
@@ -720,7 +728,29 @@ select {
   }
 
   .pillars-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .pillar-hex {
+    min-height: 72px;
+    padding: 10px 6px;
+    gap: 6px;
+  }
+
+  .pillar-icon {
+    display: block;
+    color: var(--text);
+  }
+
+  .pillar-label-desktop {
+    display: none;
+  }
+
+  .pillar-label-mobile {
+    display: block;
+    font-size: 0.65rem;
+    line-height: 1.15;
   }
 
   .timeline-steps {

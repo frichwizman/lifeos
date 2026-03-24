@@ -8,12 +8,17 @@ import {
   BriefcaseBusiness,
   CircleDollarSign,
   Command,
+  Droplets,
   Flame,
   Gem,
   GraduationCap,
   HeartPulse,
+  MoonStar,
+  ShieldCheck,
+  Sparkle,
   Plus,
   Sparkles,
+  Users,
   Timer
 } from "lucide-react";
 import {
@@ -36,6 +41,16 @@ import {
   moneyTasks,
   studyTasks
 } from "@/lib/lifeos-data";
+
+const pillarIcons = {
+  exercise: Activity,
+  "sleep-quality": MoonStar,
+  "water-intake": Droplets,
+  "stress-level": Sparkle,
+  "social-connection": Users,
+  "risky-substances": ShieldCheck,
+  meditation: HeartPulse
+};
 
 const allDefaultTrackedTaskIds = [
   ...studyTasks.map((task) => task.id),
@@ -342,13 +357,16 @@ export function LifeOSApp({ view = "dashboard" }) {
               <div className="pillars-grid">
                 {LIFE_PILLARS.map((pillar) => {
                   const done = Boolean(getLogValue(state.logs, todayKey, pillar.id));
+                  const PillarIcon = pillarIcons[pillar.id] ?? HeartPulse;
                   return (
                     <div
                       key={pillar.id}
                       className={`pillar-hex ${done ? "is-done" : ""}`}
                       style={{ "--pillar-color": pillar.color }}
                     >
-                      <span>{pillar.pillar}</span>
+                      <PillarIcon size={18} className="pillar-icon" />
+                      <span className="pillar-label pillar-label-desktop">{pillar.pillar}</span>
+                      <span className="pillar-label pillar-label-mobile">{pillar.short}</span>
                     </div>
                   );
                 })}
