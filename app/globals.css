@@ -488,9 +488,15 @@ select {
 .task-list,
 .todo-list,
 .project-list,
-.group-stack {
+.group-stack,
+.settings-stack {
   display: grid;
   gap: 12px;
+}
+
+.settings-group {
+  display: grid;
+  gap: 10px;
 }
 
 .task-row {

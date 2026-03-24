@@ -62,7 +62,8 @@ const navItems = [
   { href: "/work", label: "Work" },
   { href: "/study", label: "Study" },
   { href: "/life", label: "Life" },
-  { href: "/money", label: "Money" }
+  { href: "/money", label: "Money" },
+  { href: "/settings", label: "Settings" }
 ];
 
 export function LifeOSApp({ view = "dashboard" }) {
@@ -247,6 +248,10 @@ export function LifeOSApp({ view = "dashboard" }) {
     money: {
       title: "Money",
       description: "Record income, expenses, and savings without leaving the operating system."
+    },
+    settings: {
+      title: "Settings",
+      description: "Adjust your profile, timeline assumptions, and annual target without cluttering the dashboard."
     }
   }[view];
 
@@ -373,40 +378,6 @@ export function LifeOSApp({ view = "dashboard" }) {
               </p>
             </Card>
 
-            <Card title="System Controls" icon={Timer} className="card-controls">
-              <div className="controls-grid">
-                <label>
-                  Age
-                  <input type="number" value={state.profile.age} onChange={(event) => updateProfile("age", Number(event.target.value || 0))} />
-                </label>
-                <label>
-                  Retirement
-                  <input
-                    type="number"
-                    value={state.profile.retirementAge}
-                    onChange={(event) => updateProfile("retirementAge", Number(event.target.value || 0))}
-                  />
-                </label>
-                <label>
-                  Year Goal
-                  <input
-                    type="number"
-                    value={state.profile.yearGoal}
-                    onChange={(event) => updateProfile("yearGoal", Number(event.target.value || 0))}
-                  />
-                </label>
-                <label>
-                  Currency
-                  <select value={state.profile.currency} onChange={(event) => updateProfile("currency", event.target.value)}>
-                    {CURRENCIES.map((currency) => (
-                      <option key={currency} value={currency}>
-                        {currency}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-              </div>
-            </Card>
           </section>
 
           <section className="summary-strip">
@@ -511,6 +482,64 @@ export function LifeOSApp({ view = "dashboard" }) {
             {view === "money" ? (
               <ModuleCard title="Money" color={MODULE_COLORS.money} icon={CircleDollarSign}>
                 <TaskList tasks={moneyTasks} logs={state.logs} todayKey={todayKey} notes={{}} onLog={logTask} currency={state.profile.currency} />
+              </ModuleCard>
+            ) : null}
+
+            {view === "settings" ? (
+              <ModuleCard title="Settings" color="#8892a0" icon={Timer}>
+                <div className="settings-stack">
+                  <div className="settings-group">
+                    <div className="group-title">Profile</div>
+                    <div className="controls-grid">
+                      <label>
+                        Name
+                        <input value={state.profile.name || ""} onChange={(event) => updateProfile("name", event.target.value)} />
+                      </label>
+                      <label>
+                        Currency
+                        <select value={state.profile.currency} onChange={(event) => updateProfile("currency", event.target.value)}>
+                          {CURRENCIES.map((currency) => (
+                            <option key={currency} value={currency}>
+                              {currency}
+                            </option>
+                          ))}
+                        </select>
+                      </label>
+                    </div>
+                  </div>
+
+                  <div className="settings-group">
+                    <div className="group-title">Timeline</div>
+                    <div className="controls-grid">
+                      <label>
+                        Age
+                        <input type="number" value={state.profile.age} onChange={(event) => updateProfile("age", Number(event.target.value || 0))} />
+                      </label>
+                      <label>
+                        Retirement Age
+                        <input
+                          type="number"
+                          value={state.profile.retirementAge}
+                          onChange={(event) => updateProfile("retirementAge", Number(event.target.value || 0))}
+                        />
+                      </label>
+                    </div>
+                  </div>
+
+                  <div className="settings-group">
+                    <div className="group-title">Targets</div>
+                    <div className="controls-grid">
+                      <label>
+                        Year Goal
+                        <input
+                          type="number"
+                          value={state.profile.yearGoal}
+                          onChange={(event) => updateProfile("yearGoal", Number(event.target.value || 0))}
+                        />
+                      </label>
+                    </div>
+                  </div>
+                </div>
               </ModuleCard>
             ) : null}
           </section>
