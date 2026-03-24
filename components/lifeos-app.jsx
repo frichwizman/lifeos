@@ -48,6 +48,7 @@ import {
   createSyncPayload
 } from "@/lib/lifeos-data";
 import { fetchSyncState, pushSyncState } from "@/lib/sync-client";
+import { choosePreferredSyncState } from "@/lib/lifeos-data";
 
 const pillarIcons = {
   exercise: Activity,
@@ -137,12 +138,13 @@ export function LifeOSApp({ view = "dashboard" }) {
       try {
         const remoteState = await fetchSyncState(state.sync.syncCode);
         if (!remoteState) return;
-        if ((remoteState.sync?.updatedAt ?? "") > (state.sync.updatedAt ?? "")) {
+        const preferred = choosePreferredSyncState(state, remoteState);
+        if (preferred.sync.updatedAt === remoteState.sync?.updatedAt && preferred.sync.syncCode === remoteState.sync?.syncCode) {
           setState(
             migrateState({
-              ...remoteState,
+              ...preferred,
               sync: {
-                ...remoteState.sync,
+                ...preferred.sync,
                 status: "synced",
                 error: ""
               }
@@ -302,9 +304,32 @@ export function LifeOSApp({ view = "dashboard" }) {
     try {
       const remoteState = await fetchSyncState(code);
       if (remoteState) {
-        const localUpdatedAt = nextState.sync.updatedAt ?? "";
-        const remoteUpdatedAt = remoteState.sync?.updatedAt ?? "";
-        setState(migrateState(remoteUpdatedAt > localUpdatedAt ? remoteState : nextState));
+        const preferred = choosePreferredSyncState(nextState, remoteState);
+        if (preferred.sync.updatedAt === nextState.sync.updatedAt) {
+          await pushSyncState(code, createSyncPayload(nextState));
+          setState({
+            ...nextState,
+            sync: {
+              ...nextState.sync,
+              status: "synced",
+              lastSyncedAt: new Date().toISOString(),
+              error: ""
+            }
+          });
+        } else {
+          setState(
+            migrateState({
+              ...preferred,
+              sync: {
+                ...preferred.sync,
+                syncCode: code,
+                mode: "anonymous",
+                status: "synced",
+                error: ""
+              }
+            })
+          );
+        }
       } else {
         await pushSyncState(code, createSyncPayload(nextState));
         setState((current) => ({
