@@ -422,14 +422,13 @@ export function LifeOSApp({ view = "dashboard" }) {
           <section className="modules-grid modules-grid-single">
             {view === "work" ? (
               <ModuleCard title="Work" color={MODULE_COLORS.work} icon={BriefcaseBusiness}>
-                <div className="module-head">
-                  <p className="muted">Project-based execution board. Todos reset each day, but stay in the system.</p>
+                <div className="module-head module-head-end">
                   <button className="ghost-button" onClick={addProject}>
                     <Plus size={16} />
                     Add project
                   </button>
                 </div>
-                <div className="project-list">
+                <div className="project-list project-list-split">
                   {state.workProjects.map((project) => (
                     <div key={project.id} className="project-card">
                       <div className="project-top">
@@ -440,19 +439,23 @@ export function LifeOSApp({ view = "dashboard" }) {
                         </button>
                       </div>
                       <div className="todo-list">
-                        {project.todos.map((todo) => {
-                          const done = Boolean(getLogValue(state.logs, todayKey, `${project.id}:${todo.id}`));
-                          return (
-                            <button
-                              key={todo.id}
-                              className={`todo-row ${done ? "is-done" : ""}`}
-                              onClick={() => toggleTodo(project.id, todo.id)}
-                            >
-                              <span>{todo.label}</span>
-                              <small>+10 XP</small>
-                            </button>
-                          );
-                        })}
+                        {project.todos.length ? (
+                          project.todos.map((todo) => {
+                            const done = Boolean(getLogValue(state.logs, todayKey, `${project.id}:${todo.id}`));
+                            return (
+                              <button
+                                key={todo.id}
+                                className={`todo-row ${done ? "is-done" : ""}`}
+                                onClick={() => toggleTodo(project.id, todo.id)}
+                              >
+                                <span>{todo.label}</span>
+                                <small>+10 XP</small>
+                              </button>
+                            );
+                          })
+                        ) : (
+                          <div className="empty-state">No todos yet. Add your first focus item.</div>
+                        )}
                       </div>
                     </div>
                   ))}

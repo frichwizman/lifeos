@@ -485,6 +485,10 @@ select {
   margin-bottom: 18px;
 }
 
+.module-head-end {
+  justify-content: flex-end;
+}
+
 .task-list,
 .todo-list,
 .project-list,
@@ -586,6 +590,19 @@ select {
   gap: 14px;
 }
 
+.project-list-split {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.empty-state {
+  padding: 18px 14px;
+  border: 1px dashed var(--border-2);
+  border-radius: 16px;
+  color: var(--text-sub);
+  background: rgba(255, 255, 255, 0.02);
+  text-align: center;
+}
+
 .project-top input {
   min-height: 40px;
 }
@@ -631,6 +648,10 @@ select {
   }
   .overview-cards {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .project-list-split {
+    grid-template-columns: 1fr;
   }
 }
 
