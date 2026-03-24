@@ -768,7 +768,7 @@ export function LifeOSApp({ view = "dashboard" }) {
                       </button>
                     </div>
                     <p className="muted">
-                      Current mode is still prototype sync. It now has local backups and manual recovery controls, but long-term reliability still needs persistent storage.
+                      Persistent sync now expects a Supabase backend. Backups and manual recovery are kept as safety tools.
                     </p>
                     {state.sync.syncCode ? (
                       <p className="muted">
