@@ -61,6 +61,9 @@ button {
 }
 
 .top-nav {
+  position: relative;
+  z-index: 30;
+  isolation: isolate;
   display: flex;
   align-items: center;
   gap: 10px;
@@ -70,6 +73,9 @@ button {
 }
 
 .nav-link {
+  position: relative;
+  z-index: 31;
+  pointer-events: auto;
   display: inline-flex;
   align-items: center;
   min-height: 40px;
@@ -99,6 +105,8 @@ button {
 }
 
 .hero-panel {
+  position: relative;
+  z-index: 1;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -592,11 +600,15 @@ select {
 }
 
 .project-column {
+  position: relative;
+  z-index: 1;
   display: grid;
   gap: 10px;
 }
 
 .project-heading {
+  position: relative;
+  z-index: 5;
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
@@ -624,7 +636,7 @@ select {
   flex: 0 0 auto;
   justify-self: end;
   position: relative;
-  z-index: 1;
+  z-index: 6;
   pointer-events: auto;
 }
 
