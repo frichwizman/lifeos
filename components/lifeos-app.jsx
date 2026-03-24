@@ -265,12 +265,10 @@ export function LifeOSApp({ view = "dashboard" }) {
           </div>
         </div>
         <div className="hero-inline-stats">
-          <div className="hero-stat">
-            <span className="card-label">Level</span>
+          <div className="hero-stat hero-stat-compact">
             <strong>LV {level.level}</strong>
           </div>
-          <div className="hero-stat">
-            <span className="card-label">User</span>
+          <div className="hero-stat hero-stat-compact">
             <strong>{state.profile.name || "User"}</strong>
           </div>
         </div>
