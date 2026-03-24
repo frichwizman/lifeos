@@ -7,6 +7,7 @@ import {
   Activity,
   BriefcaseBusiness,
   CircleDollarSign,
+  Command,
   Flame,
   Gem,
   GraduationCap,
@@ -239,12 +240,14 @@ export function LifeOSApp({ view = "dashboard" }) {
   return (
     <main className="page-shell">
       <section className="hero-panel">
-        <div className="hero-brand">
-          <div>
-            <p className="eyebrow">LifeOS</p>
-            <h1>Design your retirement. Engineer your days.</h1>
+        <div className="hero-app">
+          <div className="app-icon">
+            <Command size={18} />
           </div>
-          <p className="hero-copy">A daily execution system for long-range freedom.</p>
+          <div className="hero-app-copy">
+            <p className="eyebrow">App</p>
+            <h1>LifeOS</h1>
+          </div>
         </div>
         <div className="hero-inline-stats">
           <div className="hero-stat">
@@ -252,23 +255,8 @@ export function LifeOSApp({ view = "dashboard" }) {
             <strong>LV {level.level}</strong>
           </div>
           <div className="hero-stat">
-            <span className="card-label">Today</span>
-            <strong>{formatNumber(todayXP)} XP</strong>
-          </div>
-          <div className="hero-stat">
-            <span className="card-label">Total</span>
-            <strong>{formatNumber(state.profile.totalXP)}</strong>
-          </div>
-          <div className="hero-progress hero-progress-inline">
-            <div className="metric-row">
-              <span className="card-label">Next Level</span>
-              <small>
-                {formatNumber(level.current)} / {formatNumber(level.needed)} XP
-              </small>
-            </div>
-            <div className="progress-track">
-              <span style={{ width: `${(level.current / level.needed) * 100}%` }} />
-            </div>
+            <span className="card-label">User</span>
+            <strong>{state.profile.name || "User"}</strong>
           </div>
         </div>
       </section>
