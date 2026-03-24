@@ -776,7 +776,20 @@ select {
   }
 
   .timeline-metrics {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .timeline-metric {
+    padding: 8px;
+  }
+
+  .timeline-metric strong {
+    font-size: 0.92rem;
+  }
+
+  .timeline-metric span {
+    font-size: 0.68rem;
   }
 
   .timeline-steps {
