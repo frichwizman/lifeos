@@ -174,6 +174,22 @@ export function LifeOSApp({ view = "dashboard" }) {
     }));
   };
 
+  const renameTodo = (projectId, todoId, label) => {
+    setState((current) => ({
+      ...current,
+      workProjects: current.workProjects.map((project) =>
+        project.id === projectId
+          ? {
+              ...project,
+              todos: project.todos.map((todo) =>
+                todo.id === todoId ? { ...todo, label } : todo
+              )
+            }
+          : project
+      )
+    }));
+  };
+
   const updateProfile = (key, value) => {
     setState((current) => ({
       ...current,
@@ -422,18 +438,21 @@ export function LifeOSApp({ view = "dashboard" }) {
                         <div className="todo-list">
                           {project.todos.map((todo) => {
                             const done = Boolean(getLogValue(state.logs, todayKey, `${project.id}:${todo.id}`));
-                            return (
-                              <button
-                                key={todo.id}
-                                className={`todo-row ${done ? "is-done" : ""}`}
-                                onClick={() => toggleTodo(project.id, todo.id)}
-                              >
-                                <span>{todo.label}</span>
-                                <small>+10 XP</small>
+                          return (
+                            <div key={todo.id} className={`todo-row ${done ? "is-done" : ""}`}>
+                              <button className={`todo-check ${done ? "is-done" : ""}`} onClick={() => toggleTodo(project.id, todo.id)}>
+                                {done ? "Done" : "Mark"}
                               </button>
-                            );
-                          })}
-                        </div>
+                              <input
+                                className="todo-input"
+                                value={todo.label}
+                                onChange={(event) => renameTodo(project.id, todo.id, event.target.value)}
+                              />
+                              <small>+10 XP</small>
+                            </div>
+                          );
+                        })}
+                      </div>
                       </div>
                     </div>
                   ))}

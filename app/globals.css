@@ -634,6 +634,32 @@ select {
   border-radius: 16px;
 }
 
+.todo-check {
+  min-width: 64px;
+  min-height: 34px;
+  border: 1px solid var(--border-2);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.025);
+  color: var(--text);
+}
+
+.todo-check.is-done {
+  border-color: rgba(232, 184, 75, 0.3);
+  background: rgba(232, 184, 75, 0.16);
+}
+
+.todo-input {
+  flex: 1;
+  min-height: 34px;
+  border: 0;
+  padding: 0;
+  background: transparent;
+}
+
+.todo-input:focus {
+  outline: none;
+}
+
 .todo-row.is-done {
   background: rgba(232, 184, 75, 0.12);
   border-color: rgba(232, 184, 75, 0.3);
@@ -790,8 +816,8 @@ select {
   }
 
   .todo-row {
-    align-items: flex-start;
-    flex-direction: column;
+    align-items: center;
+    flex-direction: row;
   }
 }
 
