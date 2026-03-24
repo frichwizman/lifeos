@@ -597,15 +597,16 @@ select {
 }
 
 .project-heading {
-  display: flex;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
-  justify-content: space-between;
   gap: 12px;
 }
 
 .project-heading input {
-  flex: 1;
+  width: auto;
   min-width: 0;
+  max-width: 100%;
   border: 0;
   padding: 0;
   min-height: 0;
@@ -621,8 +622,10 @@ select {
 
 .project-heading .ghost-button {
   flex: 0 0 auto;
+  justify-self: end;
   position: relative;
   z-index: 1;
+  pointer-events: auto;
 }
 
 .project-list-split {
