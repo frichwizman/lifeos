@@ -604,6 +604,8 @@ select {
 }
 
 .project-heading input {
+  flex: 1;
+  min-width: 0;
   border: 0;
   padding: 0;
   min-height: 0;
@@ -615,6 +617,12 @@ select {
 
 .project-heading input:focus {
   outline: none;
+}
+
+.project-heading .ghost-button {
+  flex: 0 0 auto;
+  position: relative;
+  z-index: 1;
 }
 
 .project-list-split {
