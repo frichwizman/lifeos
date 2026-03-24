@@ -148,21 +148,6 @@ export function LifeOSApp({ view = "dashboard" }) {
     logTask(task, !currentValue);
   };
 
-  const addProject = () => {
-    setState((current) => ({
-      ...current,
-      workProjects: [
-        ...current.workProjects,
-        {
-          id: `project-${Date.now()}`,
-          name: `New Project ${current.workProjects.length + 1}`,
-          color: MODULE_COLORS.work,
-          todos: []
-        }
-      ]
-    }));
-  };
-
   const addTodo = (projectId) => {
     setState((current) => ({
       ...current,
@@ -423,12 +408,6 @@ export function LifeOSApp({ view = "dashboard" }) {
           <section className="modules-grid modules-grid-single">
             {view === "work" ? (
               <ModuleCard title="Work" color={MODULE_COLORS.work} icon={BriefcaseBusiness}>
-                <div className="module-head module-head-end">
-                  <button className="ghost-button" onClick={addProject}>
-                    <Plus size={16} />
-                    Add project
-                  </button>
-                </div>
                 <div className="project-list project-list-split">
                   {state.workProjects.map((project) => (
                     <div key={project.id} className="project-column">
