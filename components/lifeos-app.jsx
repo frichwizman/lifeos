@@ -1120,18 +1120,22 @@ function OfficeZoneDecor({ zone }) {
         <div className="office-furniture desk-wide" style={{ left: 188, top: 54, width: 132 }} />
         <div className="office-furniture desk-wide" style={{ left: 38, top: 136, width: 132 }} />
         <div className="office-furniture desk-wide" style={{ left: 188, top: 136, width: 132 }} />
+        <div className="office-furniture mug" style={{ left: 108, top: 72 }} />
+        <div className="office-furniture notebook" style={{ left: 258, top: 72 }} />
+        <div className="office-furniture mug" style={{ left: 108, top: 154 }} />
+        <div className="office-furniture notebook" style={{ left: 258, top: 154 }} />
         <div className="office-furniture keyboard" style={{ left: 76, top: 70, width: 24 }} />
         <div className="office-furniture keyboard" style={{ left: 226, top: 70, width: 24 }} />
         <div className="office-furniture keyboard" style={{ left: 76, top: 152, width: 24 }} />
         <div className="office-furniture keyboard" style={{ left: 226, top: 152, width: 24 }} />
-        <div className="office-furniture monitor" style={{ left: 62, top: 36 }} />
-        <div className="office-furniture monitor" style={{ left: 126, top: 36 }} />
-        <div className="office-furniture monitor" style={{ left: 212, top: 36 }} />
-        <div className="office-furniture monitor" style={{ left: 276, top: 36 }} />
-        <div className="office-furniture monitor" style={{ left: 62, top: 118 }} />
-        <div className="office-furniture monitor" style={{ left: 126, top: 118 }} />
-        <div className="office-furniture monitor" style={{ left: 212, top: 118 }} />
-        <div className="office-furniture monitor" style={{ left: 276, top: 118 }} />
+        <div className="office-furniture monitor is-dual" style={{ left: 62, top: 36 }} />
+        <div className="office-furniture monitor is-code" style={{ left: 126, top: 36 }} />
+        <div className="office-furniture monitor is-dual" style={{ left: 212, top: 36 }} />
+        <div className="office-furniture monitor is-chat" style={{ left: 276, top: 36 }} />
+        <div className="office-furniture monitor is-code" style={{ left: 62, top: 118 }} />
+        <div className="office-furniture monitor is-chat" style={{ left: 126, top: 118 }} />
+        <div className="office-furniture monitor is-dual" style={{ left: 212, top: 118 }} />
+        <div className="office-furniture monitor is-code" style={{ left: 276, top: 118 }} />
         <div className="office-furniture pixel-chair" style={{ left: 78, top: 96 }} />
         <div className="office-furniture pixel-chair" style={{ left: 160, top: 96 }} />
         <div className="office-furniture pixel-chair" style={{ left: 228, top: 96 }} />
@@ -1150,7 +1154,9 @@ function OfficeZoneDecor({ zone }) {
         <div className="office-furniture desk-exec" style={{ left: 46, top: 66, width: 118 }} />
         <div className="office-furniture plant" style={{ left: 166, top: 44 }} />
         <div className="office-furniture shelf" style={{ left: 28, top: 26, width: 54 }} />
+        <div className="office-furniture framed-art" style={{ left: 118, top: 20 }} />
         <div className="office-furniture keyboard" style={{ left: 88, top: 84, width: 28 }} />
+        <div className="office-furniture monitor is-wide" style={{ left: 94, top: 50 }} />
         <div className="office-furniture pixel-chair" style={{ left: 92, top: 106 }} />
       </>
     );
@@ -1161,6 +1167,8 @@ function OfficeZoneDecor({ zone }) {
       <>
         <div className="office-furniture meeting-table" style={{ left: 26, top: zone.id === "room-5" ? 54 : 34, width: zone.width - 52 }} />
         <div className="office-furniture wall-screen" style={{ left: zone.width / 2 - 28, top: 14 }} />
+        <div className="office-furniture speaker" style={{ left: zone.width / 2 - 70, top: 18 }} />
+        <div className="office-furniture speaker" style={{ left: zone.width / 2 + 50, top: 18 }} />
         {zone.seats.map((seat) => (
           <div
             key={`${seat.id}-chair`}
@@ -1178,6 +1186,8 @@ function OfficeZoneDecor({ zone }) {
         <div className="office-furniture sofa" style={{ left: 34, top: 64, width: 86 }} />
         <div className="office-furniture sofa" style={{ left: 240, top: 64, width: 86 }} />
         <div className="office-furniture coffee-table" style={{ left: 142, top: 82, width: 74 }} />
+        <div className="office-furniture mug" style={{ left: 168, top: 88 }} />
+        <div className="office-furniture magazine" style={{ left: 188, top: 88 }} />
         <div className="office-furniture plant" style={{ left: 304, top: 26 }} />
       </>
     );
