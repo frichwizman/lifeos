@@ -10,6 +10,8 @@ import {
   Command,
   Droplets,
   Download,
+  LampDesk,
+  LayoutPanelTop,
   Flame,
   Gem,
   GraduationCap,
@@ -75,7 +77,8 @@ const navItems = [
   { href: "/study", label: "Study" },
   { href: "/life", label: "Life" },
   { href: "/money", label: "Money" },
-  { href: "/settings", label: "Settings" }
+  { href: "/settings", label: "Settings" },
+  { href: "/rooms/office", label: "Office" }
 ];
 
 export function LifeOSApp({ view = "dashboard" }) {
@@ -495,6 +498,10 @@ export function LifeOSApp({ view = "dashboard" }) {
     settings: {
       title: "Settings",
       description: "Adjust your profile, timeline assumptions, and annual target without cluttering the dashboard."
+    },
+    "office-room": {
+      title: "Office",
+      description: "A focused room mockup for deep work, project momentum, and daily execution."
     }
   }[view];
 
@@ -836,6 +843,90 @@ export function LifeOSApp({ view = "dashboard" }) {
                   </div>
                 </div>
               </ModuleCard>
+            ) : null}
+
+            {view === "office-room" ? (
+              <section className="room-shell">
+                <div className="room-stage">
+                  <div className="room-glow room-glow-left" />
+                  <div className="room-glow room-glow-right" />
+
+                  <div className="office-wall">
+                    <div className="wall-panel wall-panel-wide">
+                      <span>Project Board</span>
+                      <div className="wall-lines">
+                        <i />
+                        <i />
+                        <i />
+                      </div>
+                    </div>
+                    <div className="wall-panel">
+                      <LayoutPanelTop size={16} />
+                      <span>Focus Queue</span>
+                    </div>
+                  </div>
+
+                  <div className="office-desk">
+                    <div className="desk-surface">
+                      <div className="monitor-stack">
+                        <div className="monitor monitor-large">
+                          <div className="monitor-ui">
+                            <span>Main Job</span>
+                            <b>{state.workProjects[0]?.todos?.length ?? 0} tasks active</b>
+                          </div>
+                        </div>
+                        <div className="monitor monitor-small">
+                          <div className="monitor-ui">
+                            <span>Today XP</span>
+                            <b>{formatNumber(todayXP)}</b>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="desk-items">
+                        <div className="desk-note">
+                          <span>Deep Work</span>
+                          <b>90 min block</b>
+                        </div>
+                        <div className="desk-lamp">
+                          <LampDesk size={18} />
+                        </div>
+                        <div className="desk-mug" />
+                      </div>
+                    </div>
+                    <div className="desk-leg desk-leg-left" />
+                    <div className="desk-leg desk-leg-right" />
+                  </div>
+
+                  <div className="office-avatar">
+                    <div className="avatar-head" />
+                    <div className="avatar-body" />
+                    <div className="avatar-arm avatar-arm-left" />
+                    <div className="avatar-arm avatar-arm-right" />
+                    <div className="avatar-chair" />
+                  </div>
+                </div>
+
+                <div className="room-meta-grid">
+                  <article className="room-meta-card">
+                    <span className="eyebrow">Scene Intent</span>
+                    <h3>Command center for serious work.</h3>
+                    <p className="muted">
+                      This room is meant to feel like an operating environment, not a cute mini-game. The space carries your focus.
+                    </p>
+                  </article>
+
+                  <article className="room-meta-card">
+                    <span className="eyebrow">What It Could Show</span>
+                    <ul className="room-list">
+                      <li>Current project stack</li>
+                      <li>Focused work block</li>
+                      <li>Work XP momentum</li>
+                      <li>Desk upgrades as you progress</li>
+                    </ul>
+                  </article>
+                </div>
+              </section>
             ) : null}
           </section>
         </>
