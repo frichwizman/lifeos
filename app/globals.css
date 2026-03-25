@@ -529,7 +529,7 @@ select {
   background: rgba(232, 184, 75, 0.16);
 }
 
-.office-wall {
+.office-header-bar {
   position: absolute;
   top: 32px;
   left: 32px;
@@ -565,175 +565,167 @@ select {
   background: rgba(255, 255, 255, 0.08);
 }
 
-.office-desk {
+.shared-office-map {
   position: absolute;
-  left: 50%;
-  bottom: 86px;
-  transform: translateX(-50%);
-  width: min(760px, calc(100% - 120px));
-}
-
-.desk-surface {
-  min-height: 170px;
+  inset: 144px 32px 32px;
   display: grid;
+  grid-template-columns: 1.2fr 0.9fr;
+  grid-template-areas:
+    "open private"
+    "open meetings"
+    "lounge meetings";
   gap: 18px;
-  padding: 22px;
-  border-radius: 28px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  background: linear-gradient(180deg, rgba(53, 57, 66, 0.95), rgba(36, 38, 44, 0.95));
 }
 
-.monitor-stack {
-  display: flex;
-  gap: 16px;
-  align-items: end;
-}
-
-.monitor {
-  border-radius: 20px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  background: linear-gradient(180deg, #20242b, #14171c);
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.03);
-}
-
-.monitor-large {
-  width: 56%;
-  min-height: 104px;
-}
-
-.monitor-small {
-  width: 24%;
-  min-height: 84px;
-}
-
-.monitor-ui {
+.zone-card {
   display: grid;
-  gap: 8px;
-  padding: 16px;
-  color: var(--text-sub);
-}
-
-.monitor-ui b {
-  color: var(--text);
-  font-size: 1.1rem;
-}
-
-.desk-items {
-  display: flex;
-  align-items: end;
-  justify-content: space-between;
-  gap: 16px;
-}
-
-.desk-note {
-  display: grid;
-  gap: 6px;
-  padding: 14px 16px;
-  border-radius: 18px;
-  background: rgba(255, 255, 255, 0.05);
-  color: var(--text-sub);
-}
-
-.desk-note b {
-  color: var(--text);
-}
-
-.desk-lamp,
-.desk-mug {
-  border-radius: 18px;
+  gap: 14px;
+  padding: 18px;
+  border-radius: 26px;
   border: 1px solid rgba(255, 255, 255, 0.08);
   background: rgba(255, 255, 255, 0.04);
 }
 
-.desk-lamp {
-  width: 56px;
-  height: 56px;
+.zone-open {
+  grid-area: open;
+}
+
+.zone-private {
+  grid-area: private;
+}
+
+.zone-meetings {
+  grid-area: meetings;
+}
+
+.zone-lounge {
+  grid-area: lounge;
+}
+
+.zone-head {
+  display: grid;
+  gap: 4px;
+}
+
+.zone-head b {
+  font-size: 1rem;
+  letter-spacing: -0.03em;
+}
+
+.open-desk-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.desk-pod {
+  min-height: 84px;
   display: grid;
   place-items: center;
+  gap: 10px;
+  padding: 14px;
+  border-radius: 18px;
+  background: rgba(10, 12, 16, 0.28);
+  border: 1px solid rgba(255, 255, 255, 0.05);
 }
 
-.desk-mug {
-  width: 34px;
-  height: 42px;
+.desk-screen {
+  width: 48px;
+  height: 28px;
+  border-radius: 8px;
+  background: linear-gradient(180deg, #485364, #28303c);
 }
 
-.desk-leg {
-  position: absolute;
-  bottom: -42px;
-  width: 12px;
-  height: 52px;
+.desk-chair {
+  width: 26px;
+  height: 26px;
   border-radius: 999px;
-  background: linear-gradient(180deg, #585d68, #2c2f36);
+  background: linear-gradient(180deg, #2f3947, #1c232c);
 }
 
-.desk-leg-left {
-  left: 86px;
+.room-box {
+  display: grid;
+  gap: 14px;
+  padding: 16px;
+  border-radius: 20px;
+  background: rgba(10, 12, 16, 0.28);
+  border: 1px solid rgba(255, 255, 255, 0.05);
 }
 
-.desk-leg-right {
-  right: 86px;
+.room-box-large {
+  min-height: 160px;
+  align-content: space-between;
 }
 
-.office-avatar {
-  position: absolute;
-  left: 50%;
-  bottom: 144px;
-  width: 170px;
-  height: 220px;
-  transform: translateX(-50%);
+.room-label {
+  color: var(--text-sub);
+  font-size: 0.9rem;
 }
 
-.avatar-head,
-.avatar-body,
-.avatar-arm,
-.avatar-chair {
-  position: absolute;
+.room-monitor {
+  width: 86px;
+  height: 46px;
+  border-radius: 12px;
+  background: linear-gradient(180deg, #4a5566, #27303c);
 }
 
-.avatar-head {
-  top: 8px;
-  left: 52px;
-  width: 54px;
-  height: 54px;
+.room-chair {
+  width: 38px;
+  height: 38px;
   border-radius: 999px;
-  background: linear-gradient(180deg, #ece4d8, #c4b6a0);
+  background: linear-gradient(180deg, #2f3947, #1c232c);
 }
 
-.avatar-body {
-  top: 56px;
-  left: 34px;
-  width: 96px;
-  height: 112px;
-  border-radius: 30px 30px 18px 18px;
-  background: linear-gradient(180deg, #252b35, #181c23);
+.meeting-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
 }
 
-.avatar-arm {
-  top: 92px;
-  width: 60px;
+.seat-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.seat-dot {
+  width: 18px;
   height: 18px;
   border-radius: 999px;
-  background: linear-gradient(180deg, #252b35, #181c23);
+  background: linear-gradient(180deg, #3a4656, #1d242d);
 }
 
-.avatar-arm-left {
-  left: 4px;
-  transform: rotate(16deg);
+.lounge-layout {
+  min-height: 120px;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr auto;
+  align-items: center;
+  gap: 14px;
 }
 
-.avatar-arm-right {
-  right: 0;
-  transform: rotate(-16deg);
+.sofa,
+.lounge-table,
+.coffee-bar {
+  border-radius: 18px;
+  background: rgba(10, 12, 16, 0.28);
+  border: 1px solid rgba(255, 255, 255, 0.05);
 }
 
-.avatar-chair {
-  left: 30px;
-  bottom: 0;
-  width: 108px;
-  height: 94px;
-  border-radius: 28px;
-  background: linear-gradient(180deg, #3b4554, #262d38);
-  z-index: -1;
+.sofa {
+  height: 74px;
+}
+
+.lounge-table {
+  width: 78px;
+  height: 58px;
+}
+
+.coffee-bar {
+  width: 58px;
+  height: 58px;
+  display: grid;
+  place-items: center;
 }
 
 .room-meta-grid {
@@ -1004,8 +996,17 @@ select {
   }
 
   .room-meta-grid,
-  .office-wall {
+  .office-header-bar,
+  .shared-office-map {
     grid-template-columns: 1fr;
+  }
+
+  .shared-office-map {
+    grid-template-areas:
+      "open"
+      "private"
+      "meetings"
+      "lounge";
   }
 }
 
@@ -1135,20 +1136,14 @@ select {
     padding: 20px;
   }
 
-  .office-wall {
+  .office-header-bar {
     top: 20px;
     left: 20px;
     right: 20px;
   }
 
-  .office-desk {
-    width: calc(100% - 40px);
-    bottom: 72px;
-  }
-
-  .office-avatar {
-    transform: translateX(-50%) scale(0.9);
-    bottom: 118px;
+  .shared-office-map {
+    inset: 132px 20px 20px;
   }
 }
 
@@ -1209,24 +1204,11 @@ select {
     min-height: 420px;
   }
 
-  .desk-surface {
-    padding: 16px;
-  }
-
-  .monitor-stack,
-  .desk-items,
-  .room-meta-grid {
+  .room-meta-grid,
+  .meeting-grid,
+  .open-desk-grid,
+  .lounge-layout {
     display: grid;
     grid-template-columns: 1fr;
-  }
-
-  .monitor-large,
-  .monitor-small {
-    width: 100%;
-  }
-
-  .office-avatar {
-    transform: translateX(-50%) scale(0.76);
-    bottom: 96px;
   }
 }

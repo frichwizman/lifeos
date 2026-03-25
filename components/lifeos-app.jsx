@@ -850,10 +850,9 @@ export function LifeOSApp({ view = "dashboard" }) {
                 <div className="room-stage">
                   <div className="room-glow room-glow-left" />
                   <div className="room-glow room-glow-right" />
-
-                  <div className="office-wall">
+                  <div className="office-header-bar">
                     <div className="wall-panel wall-panel-wide">
-                      <span>Project Board</span>
+                      <span>Shared Office</span>
                       <div className="wall-lines">
                         <i />
                         <i />
@@ -862,67 +861,90 @@ export function LifeOSApp({ view = "dashboard" }) {
                     </div>
                     <div className="wall-panel">
                       <LayoutPanelTop size={16} />
-                      <span>Focus Queue</span>
+                      <span>{formatNumber(todayXP)} XP online</span>
                     </div>
                   </div>
 
-                  <div className="office-desk">
-                    <div className="desk-surface">
-                      <div className="monitor-stack">
-                        <div className="monitor monitor-large">
-                          <div className="monitor-ui">
-                            <span>Main Job</span>
-                            <b>{state.workProjects[0]?.todos?.length ?? 0} tasks active</b>
-                          </div>
-                        </div>
-                        <div className="monitor monitor-small">
-                          <div className="monitor-ui">
-                            <span>Today XP</span>
-                            <b>{formatNumber(todayXP)}</b>
-                          </div>
-                        </div>
+                  <div className="shared-office-map">
+                    <section className="zone-card zone-open">
+                      <div className="zone-head">
+                        <span className="eyebrow">Open Desks</span>
+                        <b>Open workspace</b>
                       </div>
+                      <div className="open-desk-grid">
+                        {Array.from({ length: 8 }).map((_, index) => (
+                          <div key={index} className="desk-pod">
+                            <div className="desk-screen" />
+                            <div className="desk-chair" />
+                          </div>
+                        ))}
+                      </div>
+                    </section>
 
-                      <div className="desk-items">
-                        <div className="desk-note">
-                          <span>Deep Work</span>
-                          <b>90 min block</b>
-                        </div>
-                        <div className="desk-lamp">
+                    <section className="zone-card zone-private">
+                      <div className="zone-head">
+                        <span className="eyebrow">Private Office</span>
+                        <b>Independent room</b>
+                      </div>
+                      <div className="room-box room-box-large">
+                        <div className="room-label">Founder Suite</div>
+                        <div className="room-monitor" />
+                        <div className="room-chair" />
+                      </div>
+                    </section>
+
+                    <section className="zone-card zone-meetings">
+                      <div className="zone-head">
+                        <span className="eyebrow">Focus Rooms</span>
+                        <b>1 / 2 / 3 / 5 seats</b>
+                      </div>
+                      <div className="meeting-grid">
+                        {[1, 2, 3, 5].map((size) => (
+                          <div key={size} className="room-box">
+                            <div className="room-label">{size}-Person</div>
+                            <div className={`seat-row seat-row-${size}`}>
+                              {Array.from({ length: size }).map((__, seat) => (
+                                <span key={seat} className="seat-dot" />
+                              ))}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </section>
+
+                    <section className="zone-card zone-lounge">
+                      <div className="zone-head">
+                        <span className="eyebrow">Shared Lounge</span>
+                        <b>Reset and casual talk</b>
+                      </div>
+                      <div className="lounge-layout">
+                        <div className="sofa sofa-left" />
+                        <div className="lounge-table" />
+                        <div className="sofa sofa-right" />
+                        <div className="coffee-bar">
                           <LampDesk size={18} />
                         </div>
-                        <div className="desk-mug" />
                       </div>
-                    </div>
-                    <div className="desk-leg desk-leg-left" />
-                    <div className="desk-leg desk-leg-right" />
-                  </div>
-
-                  <div className="office-avatar">
-                    <div className="avatar-head" />
-                    <div className="avatar-body" />
-                    <div className="avatar-arm avatar-arm-left" />
-                    <div className="avatar-arm avatar-arm-right" />
-                    <div className="avatar-chair" />
+                    </section>
                   </div>
                 </div>
 
                 <div className="room-meta-grid">
                   <article className="room-meta-card">
                     <span className="eyebrow">Scene Intent</span>
-                    <h3>Command center for serious work.</h3>
+                    <h3>Shared office for workers and solo founders.</h3>
                     <p className="muted">
-                      This room is meant to feel like an operating environment, not a cute mini-game. The space carries your focus.
+                      The office is organized like a real coworking space: open desks for ambient focus, private rooms for deeper work, and shared space for low-pressure breaks.
                     </p>
                   </article>
 
                   <article className="room-meta-card">
                     <span className="eyebrow">What It Could Show</span>
                     <ul className="room-list">
-                      <li>Current project stack</li>
-                      <li>Focused work block</li>
-                      <li>Work XP momentum</li>
-                      <li>Desk upgrades as you progress</li>
+                      <li>Real users occupying desk zones</li>
+                      <li>Status badges like Working, Focus, Break</li>
+                      <li>Room access by solo or team size</li>
+                      <li>Work module tasks linked to a chosen seat</li>
                     </ul>
                   </article>
                 </div>
