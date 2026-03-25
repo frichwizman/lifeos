@@ -94,6 +94,12 @@ const OFFICE_ZONES = [
   { id: "lounge", label: "Shared Lounge", kind: "Break Area", x: 46, y: 366, width: 360, height: 158, seats: [{ id: "lounge-a", x: 130, y: 438 }, { id: "lounge-b", x: 224, y: 438 }, { id: "lounge-c", x: 318, y: 438 }] }
 ];
 
+const OFFICE_PEERS = [
+  { id: "allison", name: "Allison", zoneId: "open-desks", x: 308, y: 244, mood: "Design" },
+  { id: "brad", name: "Brad", zoneId: "room-5", x: 820, y: 514, mood: "Ops" },
+  { id: "jin", name: "Jinen", zoneId: "lounge", x: 154, y: 486, mood: "Break" }
+];
+
 export function LifeOSApp({ view = "dashboard" }) {
   const [state, setState] = useState(DEFAULT_STATE);
   const [ready, setReady] = useState(false);
@@ -157,6 +163,26 @@ export function LifeOSApp({ view = "dashboard" }) {
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [view]);
+
+  useEffect(() => {
+    if (view !== "office-room" || officePresence.seatId) return;
+
+    const zone =
+      OFFICE_ZONES.find(
+        (item) =>
+          officePresence.x >= item.x &&
+          officePresence.x <= item.x + item.width &&
+          officePresence.y >= item.y &&
+          officePresence.y <= item.y + item.height
+      ) ?? OFFICE_ZONES[0];
+
+    if (zone.id !== officePresence.zoneId) {
+      setOfficePresence((current) => ({
+        ...current,
+        zoneId: zone.id
+      }));
+    }
+  }, [view, officePresence.x, officePresence.y, officePresence.zoneId, officePresence.seatId]);
 
   useEffect(() => {
     if (!ready || state.sync.mode !== "anonymous" || !state.sync.syncCode) return;
@@ -922,7 +948,7 @@ export function LifeOSApp({ view = "dashboard" }) {
                       <div className="office-map-toolbar">
                         <div>
                           <span className="eyebrow">Shared Office MVP</span>
-                          <h3>Move with WASD or arrow keys. Click a seat to join it.</h3>
+                          <h3>Single-room office. Walk, sit, and test the layout language.</h3>
                         </div>
                         <div className="office-status-pill">{officePresence.status}</div>
                       </div>
@@ -932,10 +958,16 @@ export function LifeOSApp({ view = "dashboard" }) {
                         className="office-map-surface"
                         style={{ "--map-width": `${OFFICE_MAP.width}px`, "--map-height": `${OFFICE_MAP.height}px` }}
                       >
+                        <div className="office-floor office-floor-main" />
+                        <div className="office-floor office-floor-lounge" />
+                        <div className="office-wall office-wall-vertical" />
+                        <div className="office-wall office-wall-horizontal" />
+                        <div className="office-room-pill">Product Team</div>
+
                         {OFFICE_ZONES.map((zone) => (
                           <section
                             key={zone.id}
-                            className={`office-zone ${officePresence.zoneId === zone.id ? "is-active" : ""}`}
+                            className={`office-zone zone-${zone.id} ${officePresence.zoneId === zone.id ? "is-active" : ""}`}
                             style={{
                               left: `${zone.x}px`,
                               top: `${zone.y}px`,
@@ -947,6 +979,7 @@ export function LifeOSApp({ view = "dashboard" }) {
                               <strong>{zone.label}</strong>
                               <span>{zone.kind}</span>
                             </div>
+                            <OfficeZoneDecor zone={zone} />
                             {zone.seats.map((seat) => (
                               <button
                                 key={seat.id}
@@ -959,12 +992,35 @@ export function LifeOSApp({ view = "dashboard" }) {
                           </section>
                         ))}
 
+                        {OFFICE_PEERS.map((peer) => (
+                          <div
+                            key={peer.id}
+                            className={`office-peer ${peer.zoneId === officePresence.zoneId ? "is-nearby" : ""}`}
+                            style={{ left: `${peer.x - 18}px`, top: `${peer.y - 18}px` }}
+                          >
+                            <div className="office-peer-badge">
+                              <span>{peer.name}</span>
+                              <small>{peer.mood}</small>
+                            </div>
+                            <div className="office-avatar-sprite is-peer">
+                              <i />
+                              <b />
+                            </div>
+                          </div>
+                        ))}
+
                         <div
-                          className="office-avatar-token"
+                          className="office-peer office-peer-self"
                           style={{ left: `${officePresence.x - 18}px`, top: `${officePresence.y - 18}px` }}
                         >
-                          <span>{(state.profile.name || "U").slice(0, 1).toUpperCase()}</span>
-                          <small>{state.profile.name || "User"}</small>
+                          <div className="office-peer-badge is-self">
+                            <span>{state.profile.name || "User"}</span>
+                            <small>You</small>
+                          </div>
+                          <div className="office-avatar-sprite">
+                            <i />
+                            <b />
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -973,7 +1029,7 @@ export function LifeOSApp({ view = "dashboard" }) {
                       <article className="office-info-card">
                         <span className="eyebrow">Current Zone</span>
                         <h3>{activeOfficeZone.label}</h3>
-                        <p className="muted">Open desks support ambient work. Private rooms support deeper focus or small-group collaboration.</p>
+                        <p className="muted">Open desks are ambient. Smaller rooms are for focused work. The lounge is for visible downtime.</p>
                       </article>
 
                       <article className="office-info-card">
@@ -992,12 +1048,12 @@ export function LifeOSApp({ view = "dashboard" }) {
                       </article>
 
                       <article className="office-info-card">
-                        <span className="eyebrow">Why This Version</span>
+                        <span className="eyebrow">This MVP Tests</span>
                         <ul className="room-list">
-                          <li>Validates movement before heavy game systems</li>
-                          <li>Lets you test seat and room logic quickly</li>
-                          <li>Can later show real users in each zone</li>
-                          <li>Maps cleanly to Work and founder use cases</li>
+                          <li>A more Gather-like top-down office language</li>
+                          <li>Presence labels without heavy multiplayer systems</li>
+                          <li>Seat selection before real-time movement</li>
+                          <li>Whether shared work feels stronger than static pages</li>
                         </ul>
                       </article>
                     </aside>
@@ -1038,6 +1094,59 @@ function ModuleCard({ title, color, icon: Icon, children }) {
       {children}
     </section>
   );
+}
+
+function OfficeZoneDecor({ zone }) {
+  if (zone.id === "open-desks") {
+    return (
+      <>
+        <div className="office-furniture desk-wide" style={{ left: 38, top: 54, width: 132 }} />
+        <div className="office-furniture desk-wide" style={{ left: 188, top: 54, width: 132 }} />
+        <div className="office-furniture desk-wide" style={{ left: 38, top: 136, width: 132 }} />
+        <div className="office-furniture desk-wide" style={{ left: 188, top: 136, width: 132 }} />
+        <div className="office-furniture monitor" style={{ left: 62, top: 36 }} />
+        <div className="office-furniture monitor" style={{ left: 126, top: 36 }} />
+        <div className="office-furniture monitor" style={{ left: 212, top: 36 }} />
+        <div className="office-furniture monitor" style={{ left: 276, top: 36 }} />
+        <div className="office-furniture monitor" style={{ left: 62, top: 118 }} />
+        <div className="office-furniture monitor" style={{ left: 126, top: 118 }} />
+        <div className="office-furniture monitor" style={{ left: 212, top: 118 }} />
+        <div className="office-furniture monitor" style={{ left: 276, top: 118 }} />
+      </>
+    );
+  }
+
+  if (zone.id === "private-office") {
+    return (
+      <>
+        <div className="office-furniture desk-exec" style={{ left: 46, top: 66, width: 118 }} />
+        <div className="office-furniture plant" style={{ left: 166, top: 44 }} />
+        <div className="office-furniture shelf" style={{ left: 28, top: 26, width: 54 }} />
+      </>
+    );
+  }
+
+  if (zone.id === "room-1" || zone.id === "room-2" || zone.id === "room-3" || zone.id === "room-5") {
+    return (
+      <>
+        <div className="office-furniture meeting-table" style={{ left: 26, top: zone.id === "room-5" ? 54 : 34, width: zone.width - 52 }} />
+        <div className="office-furniture wall-screen" style={{ left: zone.width / 2 - 28, top: 14 }} />
+      </>
+    );
+  }
+
+  if (zone.id === "lounge") {
+    return (
+      <>
+        <div className="office-furniture sofa" style={{ left: 34, top: 64, width: 86 }} />
+        <div className="office-furniture sofa" style={{ left: 240, top: 64, width: 86 }} />
+        <div className="office-furniture coffee-table" style={{ left: 142, top: 82, width: 74 }} />
+        <div className="office-furniture plant" style={{ left: 304, top: 26 }} />
+      </>
+    );
+  }
+
+  return null;
 }
 
 function TaskList({ tasks, logs, todayKey, notes, onLog, currency, showStreaks = false }) {
