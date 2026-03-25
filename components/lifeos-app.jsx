@@ -73,6 +73,7 @@ const navItems = [
   { href: "/dashboard", label: "Dashboard" },
   { href: "/work", label: "Work" },
   { href: "/study", label: "Study" },
+  { href: "/rooms/study", label: "Study Room" },
   { href: "/life", label: "Life" },
   { href: "/money", label: "Money" },
   { href: "/settings", label: "Settings" },
@@ -100,6 +101,88 @@ const OFFICE_PEERS = [
   { id: "jin", name: "Jinen", zoneId: "lounge", x: 154, y: 486, mood: "Break", avatar: "male" }
 ];
 
+const STUDY_ROOM_MAP = {
+  width: 980,
+  height: 700
+};
+
+const STUDY_ROOM_ZONES = [
+  {
+    id: "quiet-zone",
+    label: "A Zone",
+    kind: "Quiet Focus",
+    x: 42,
+    y: 78,
+    width: 404,
+    height: 226,
+    seats: [
+      { id: "A1", x: 118, y: 136 },
+      { id: "A2", x: 228, y: 136 },
+      { id: "A3", x: 338, y: 136 },
+      { id: "A4", x: 118, y: 220 },
+      { id: "A5", x: 228, y: 220 },
+      { id: "A6", x: 338, y: 220 }
+    ]
+  },
+  {
+    id: "focus-zone",
+    label: "B Zone",
+    kind: "Light Focus",
+    x: 42,
+    y: 344,
+    width: 404,
+    height: 236,
+    seats: [
+      { id: "B1", x: 118, y: 414 },
+      { id: "B2", x: 228, y: 414 },
+      { id: "B3", x: 338, y: 414 },
+      { id: "B4", x: 118, y: 500 },
+      { id: "B5", x: 228, y: 500 },
+      { id: "B6", x: 338, y: 500 }
+    ]
+  },
+  {
+    id: "booth-zone",
+    label: "C Zone",
+    kind: "Booth Seats",
+    x: 482,
+    y: 78,
+    width: 208,
+    height: 226,
+    seats: [
+      { id: "C1", x: 544, y: 132 },
+      { id: "C2", x: 628, y: 132 },
+      { id: "C3", x: 544, y: 220 },
+      { id: "C4", x: 628, y: 220 }
+    ]
+  },
+  {
+    id: "window-zone",
+    label: "D Zone",
+    kind: "Window Seats",
+    x: 482,
+    y: 344,
+    width: 208,
+    height: 236,
+    seats: [
+      { id: "D1", x: 544, y: 420 },
+      { id: "D2", x: 628, y: 420 },
+      { id: "D3", x: 544, y: 506 },
+      { id: "D4", x: 628, y: 506 }
+    ]
+  },
+  {
+    id: "commons",
+    label: "Commons",
+    kind: "Lounge + Tea",
+    x: 724,
+    y: 78,
+    width: 214,
+    height: 502,
+    seats: []
+  }
+];
+
 export function LifeOSApp({ view = "dashboard" }) {
   const [state, setState] = useState(DEFAULT_STATE);
   const [ready, setReady] = useState(false);
@@ -111,6 +194,11 @@ export function LifeOSApp({ view = "dashboard" }) {
     zoneId: "open-desks",
     seatId: "open-1",
     status: "Working"
+  });
+  const [studyPresence, setStudyPresence] = useState({
+    zoneId: "quiet-zone",
+    seatId: "A3",
+    mode: "Deep Focus"
   });
   const todayKey = getTodayKey();
   const pathname = usePathname();
@@ -574,6 +662,10 @@ export function LifeOSApp({ view = "dashboard" }) {
       title: "Settings",
       description: "Adjust your profile, timeline assumptions, and annual target without cluttering the dashboard."
     },
+    "study-room": {
+      title: "Study Room",
+      description: "A calmer floorplan for picking a seat, settling in, and starting focused study."
+    },
     "office-room": {
       title: "Office",
       description: "A focused room mockup for deep work, project momentum, and daily execution."
@@ -582,6 +674,7 @@ export function LifeOSApp({ view = "dashboard" }) {
 
   const activePath = pathname === "/" ? "/dashboard" : pathname;
   const activeOfficeZone = OFFICE_ZONES.find((zone) => zone.id === officePresence.zoneId) ?? OFFICE_ZONES[0];
+  const activeStudyZone = STUDY_ROOM_ZONES.find((zone) => zone.id === studyPresence.zoneId) ?? STUDY_ROOM_ZONES[0];
 
   const moveToSeat = (zoneId, seat) => {
     setOfficePresence((current) => ({
@@ -597,6 +690,21 @@ export function LifeOSApp({ view = "dashboard" }) {
     setOfficePresence((current) => ({
       ...current,
       status
+    }));
+  };
+
+  const moveToStudySeat = (zoneId, seat) => {
+    setStudyPresence((current) => ({
+      ...current,
+      zoneId,
+      seatId: seat.id
+    }));
+  };
+
+  const setStudyMode = (mode) => {
+    setStudyPresence((current) => ({
+      ...current,
+      mode
     }));
   };
 
@@ -1077,6 +1185,103 @@ export function LifeOSApp({ view = "dashboard" }) {
                 </div>
               </section>
             ) : null}
+
+            {view === "study-room" ? (
+              <section className="room-shell">
+                <div className="room-stage room-stage-study">
+                  <div className="room-glow room-glow-left" />
+                  <div className="room-glow room-glow-right" />
+                  <div className="study-room-layout">
+                    <div className="study-map-panel">
+                      <div className="study-map-toolbar">
+                        <div>
+                          <span className="eyebrow">Study Room MVP</span>
+                          <h3>Pick a seat, settle into a zone, and keep the commons more open.</h3>
+                        </div>
+                        <div className="study-status-pill">{studyPresence.mode}</div>
+                      </div>
+
+                      <div className="study-map-viewport">
+                        <div className="study-map-hint">Drag to browse the floorplan on mobile.</div>
+                        <div
+                          className="study-map-surface"
+                          style={{ "--study-map-width": `${STUDY_ROOM_MAP.width}px`, "--study-map-height": `${STUDY_ROOM_MAP.height}px` }}
+                        >
+                          <div className="study-hallway study-hallway-main" />
+                          <div className="study-hallway study-hallway-inner" />
+                          {STUDY_ROOM_ZONES.map((zone) => (
+                            <section
+                              key={zone.id}
+                              className={`study-zone study-zone-${zone.id} ${studyPresence.zoneId === zone.id ? "is-active" : ""}`}
+                              style={{
+                                left: `${zone.x}px`,
+                                top: `${zone.y}px`,
+                                width: `${zone.width}px`,
+                                height: `${zone.height}px`
+                              }}
+                            >
+                              <div className="study-zone-label">
+                                <strong>{zone.label}</strong>
+                                <span>{zone.kind}</span>
+                              </div>
+                              <StudyZoneDecor zone={zone} />
+                              {zone.seats.map((seat) => (
+                                <button
+                                  key={seat.id}
+                                  className={`study-seat ${studyPresence.seatId === seat.id ? "is-selected" : ""}`}
+                                  style={{ left: `${seat.x - zone.x - 24}px`, top: `${seat.y - zone.y - 18}px` }}
+                                  onClick={() => moveToStudySeat(zone.id, seat)}
+                                  aria-label={`${seat.id} seat`}
+                                >
+                                  <span>{seat.id}</span>
+                                </button>
+                              ))}
+                            </section>
+                          ))}
+                          <div className="study-door study-door-entry" />
+                          <div className="study-door study-door-quiet" />
+                          <div className="study-door study-door-focus" />
+                          <div className="study-door study-door-booth" />
+                          <div className="study-door study-door-window" />
+                          <div className="study-door study-door-commons" />
+                        </div>
+                      </div>
+                    </div>
+
+                    <aside className="study-side-panel">
+                      <article className="study-info-card">
+                        <span className="eyebrow">Selected Seat</span>
+                        <h3>{studyPresence.seatId}</h3>
+                        <p className="muted">
+                          {activeStudyZone.label} · {activeStudyZone.kind}
+                        </p>
+                      </article>
+
+                      <article className="study-info-card">
+                        <span className="eyebrow">Mode</span>
+                        <div className="preset-row">
+                          {["Deep Focus", "Review", "Co-study", "Break"].map((mode) => (
+                            <button key={mode} className={`chip ${studyPresence.mode === mode ? "is-active" : ""}`} onClick={() => setStudyMode(mode)}>
+                              {mode}
+                            </button>
+                          ))}
+                        </div>
+                      </article>
+
+                      <article className="study-info-card">
+                        <span className="eyebrow">Why This Layout</span>
+                        <ul className="room-list">
+                          <li>Seat density is lower than the office prototype</li>
+                          <li>The commons zone takes more area for breaks and reset</li>
+                          <li>Booths and window seats support different study moods</li>
+                          <li>The floorplan is simpler to scale into real seat booking later</li>
+                        </ul>
+                      </article>
+                    </aside>
+                  </div>
+                </div>
+              </section>
+            ) : null}
           </section>
         </>
       )}
@@ -1189,6 +1394,56 @@ function OfficeZoneDecor({ zone }) {
         <div className="office-furniture mug" style={{ left: 168, top: 88 }} />
         <div className="office-furniture magazine" style={{ left: 188, top: 88 }} />
         <div className="office-furniture plant" style={{ left: 304, top: 26 }} />
+      </>
+    );
+  }
+
+  return null;
+}
+
+function StudyZoneDecor({ zone }) {
+  if (zone.id === "quiet-zone" || zone.id === "focus-zone") {
+    return (
+      <>
+        <div className="study-furniture desk-row" style={{ left: 48, top: 58, width: zone.width - 96 }} />
+        <div className="study-furniture desk-row" style={{ left: 48, top: 142, width: zone.width - 96 }} />
+        <div className="study-furniture aisle-strip" style={{ left: 26, top: zone.height - 48, width: zone.width - 52 }} />
+      </>
+    );
+  }
+
+  if (zone.id === "booth-zone") {
+    return (
+      <>
+        <div className="study-furniture booth-wall" style={{ left: 24, top: 56, width: 64, height: 62 }} />
+        <div className="study-furniture booth-wall" style={{ left: 116, top: 56, width: 64, height: 62 }} />
+        <div className="study-furniture booth-wall" style={{ left: 24, top: 146, width: 64, height: 62 }} />
+        <div className="study-furniture booth-wall" style={{ left: 116, top: 146, width: 64, height: 62 }} />
+      </>
+    );
+  }
+
+  if (zone.id === "window-zone") {
+    return (
+      <>
+        <div className="study-furniture window-strip" style={{ left: 28, top: 46, width: zone.width - 56 }} />
+        <div className="study-furniture lounge-bench" style={{ left: 34, top: 146, width: zone.width - 68 }} />
+        <div className="study-furniture plant-pot" style={{ left: zone.width - 56, top: 182 }} />
+      </>
+    );
+  }
+
+  if (zone.id === "commons") {
+    return (
+      <>
+        <div className="study-furniture snack-counter" style={{ left: 24, top: 48, width: 74 }} />
+        <div className="study-furniture tea-counter" style={{ left: 116, top: 48, width: 74 }} />
+        <div className="study-furniture locker-wall" style={{ left: 24, top: 150, width: 42, height: 122 }} />
+        <div className="study-furniture commons-sofa" style={{ left: 92, top: 214, width: 90 }} />
+        <div className="study-furniture commons-rug" style={{ left: 38, top: 318, width: 148 }} />
+        <div className="study-furniture round-table" style={{ left: 54, top: 360 }} />
+        <div className="study-furniture round-table" style={{ left: 126, top: 390 }} />
+        <div className="study-furniture plant-pot" style={{ left: 166, top: 328 }} />
       </>
     );
   }
