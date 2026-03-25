@@ -640,6 +640,14 @@ select {
   border-radius: 0;
 }
 
+.office-hallway {
+  position: absolute;
+  background:
+    repeating-linear-gradient(0deg, #f0e2d2 0 14px, #ebd9c6 14px 28px),
+    repeating-linear-gradient(90deg, #f0e2d2 0 14px, #ebd9c6 14px 28px);
+  border: 3px solid rgba(188, 146, 106, 0.34);
+}
+
 .office-floor-main {
   inset: 26px 26px 26px 286px;
   background:
@@ -657,6 +665,20 @@ select {
   background:
     repeating-linear-gradient(0deg, #b8aef3 0 18px, #ab9fea 18px 36px),
     repeating-linear-gradient(90deg, #b8aef3 0 18px, #ab9fea 18px 36px);
+}
+
+.office-hallway-main {
+  left: 274px;
+  top: 26px;
+  width: 124px;
+  height: 588px;
+}
+
+.office-hallway-rooms {
+  left: 398px;
+  top: 174px;
+  width: 556px;
+  height: 86px;
 }
 
 .office-wall {
@@ -697,6 +719,74 @@ select {
   font-size: 1.1rem;
   font-weight: 600;
   box-shadow: 0 4px 0 rgba(168, 151, 132, 0.9);
+}
+
+.office-door {
+  position: absolute;
+  z-index: 2;
+  background: linear-gradient(180deg, #98633b, #764729);
+  border: 2px solid #4f2f18;
+  box-shadow: 0 3px 0 rgba(79, 47, 24, 0.65);
+}
+
+.office-door::after {
+  content: "";
+  position: absolute;
+  width: 4px;
+  height: 4px;
+  right: 4px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: #f0d46f;
+}
+
+.office-door-entry {
+  left: 22px;
+  top: 306px;
+  width: 18px;
+  height: 56px;
+}
+
+.office-door-private {
+  left: 526px;
+  top: 252px;
+  width: 42px;
+  height: 16px;
+}
+
+.office-door-room-1 {
+  left: 792px;
+  top: 196px;
+  width: 42px;
+  height: 16px;
+}
+
+.office-door-room-2 {
+  left: 792px;
+  top: 324px;
+  width: 42px;
+  height: 16px;
+}
+
+.office-door-room-3 {
+  left: 522px;
+  top: 436px;
+  width: 42px;
+  height: 16px;
+}
+
+.office-door-room-5 {
+  left: 792px;
+  top: 526px;
+  width: 42px;
+  height: 16px;
+}
+
+.office-door-lounge {
+  left: 246px;
+  top: 320px;
+  width: 16px;
+  height: 42px;
 }
 
 .office-zone {
@@ -759,6 +849,14 @@ select {
   box-shadow: 0 2px 0 rgba(39, 48, 65, 0.7);
 }
 
+.keyboard {
+  height: 8px;
+  border: 2px solid rgba(68, 76, 90, 0.58);
+  background:
+    repeating-linear-gradient(90deg, #c9d6f1 0 4px, #a7badc 4px 8px);
+  box-shadow: 0 2px 0 rgba(79, 87, 99, 0.35);
+}
+
 .wall-screen {
   width: 56px;
   height: 20px;
@@ -794,6 +892,14 @@ select {
   border-radius: 0;
   background: #e5ccad;
   box-shadow: 0 3px 0 #c2a077;
+}
+
+.pixel-chair {
+  width: 18px;
+  height: 18px;
+  background:
+    linear-gradient(180deg, #424d5d 0 8px, #222c35 8px 18px);
+  box-shadow: 0 2px 0 rgba(24, 29, 38, 0.48);
 }
 
 .office-seat {
@@ -851,13 +957,16 @@ select {
 .office-avatar-sprite {
   position: relative;
   width: 24px;
-  height: 34px;
+  height: 38px;
 }
 
 .office-avatar-sprite i,
-.office-avatar-sprite b {
+.office-avatar-sprite em,
+.office-avatar-sprite b,
+.office-avatar-sprite u {
   position: absolute;
   display: block;
+  text-decoration: none;
   left: 50%;
   transform: translateX(-50%);
 }
@@ -868,8 +977,15 @@ select {
   height: 14px;
   display: grid;
   border-radius: 0;
-  background: #2d3138;
+  background: #f0c3a2;
   box-shadow: inset -2px -2px 0 rgba(255, 255, 255, 0.08);
+}
+
+.office-avatar-sprite em {
+  top: -2px;
+  width: 16px;
+  height: 8px;
+  background: #2d3138;
 }
 
 .office-avatar-sprite b {
@@ -881,8 +997,31 @@ select {
   box-shadow: inset -2px -2px 0 rgba(255, 255, 255, 0.08);
 }
 
-.office-avatar-sprite.is-peer b {
-  background: #d68d6d;
+.office-avatar-sprite u {
+  top: 30px;
+  width: 16px;
+  height: 6px;
+  background:
+    linear-gradient(90deg, #2f3640 0 6px, transparent 6px 10px, #2f3640 10px 16px);
+}
+
+.office-avatar-sprite.is-male em {
+  background: #2a2d36;
+}
+
+.office-avatar-sprite.is-male b {
+  background: #5f6db7;
+}
+
+.office-avatar-sprite.is-female em {
+  width: 18px;
+  height: 10px;
+  background: #7a4b38;
+}
+
+.office-avatar-sprite.is-female b {
+  height: 20px;
+  background: #d6768c;
 }
 
 .office-info-card h3 {

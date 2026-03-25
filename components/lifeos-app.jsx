@@ -95,9 +95,9 @@ const OFFICE_ZONES = [
 ];
 
 const OFFICE_PEERS = [
-  { id: "allison", name: "Allison", zoneId: "open-desks", x: 308, y: 244, mood: "Design" },
-  { id: "brad", name: "Brad", zoneId: "room-5", x: 820, y: 514, mood: "Ops" },
-  { id: "jin", name: "Jinen", zoneId: "lounge", x: 154, y: 486, mood: "Break" }
+  { id: "allison", name: "Allison", zoneId: "open-desks", x: 308, y: 244, mood: "Design", avatar: "female" },
+  { id: "brad", name: "Brad", zoneId: "room-5", x: 820, y: 514, mood: "Ops", avatar: "male" },
+  { id: "jin", name: "Jinen", zoneId: "lounge", x: 154, y: 486, mood: "Break", avatar: "male" }
 ];
 
 export function LifeOSApp({ view = "dashboard" }) {
@@ -962,8 +962,17 @@ export function LifeOSApp({ view = "dashboard" }) {
                         >
                           <div className="office-floor office-floor-main" />
                           <div className="office-floor office-floor-lounge" />
+                          <div className="office-hallway office-hallway-main" />
+                          <div className="office-hallway office-hallway-rooms" />
                           <div className="office-wall office-wall-vertical" />
                           <div className="office-wall office-wall-horizontal" />
+                          <div className="office-door office-door-entry" />
+                          <div className="office-door office-door-private" />
+                          <div className="office-door office-door-room-1" />
+                          <div className="office-door office-door-room-2" />
+                          <div className="office-door office-door-room-3" />
+                          <div className="office-door office-door-room-5" />
+                          <div className="office-door office-door-lounge" />
                           <div className="office-room-pill">Product Team</div>
 
                           {OFFICE_ZONES.map((zone) => (
@@ -1004,9 +1013,11 @@ export function LifeOSApp({ view = "dashboard" }) {
                                 <span>{peer.name}</span>
                                 <small>{peer.mood}</small>
                               </div>
-                              <div className="office-avatar-sprite is-peer">
+                              <div className={`office-avatar-sprite is-peer ${peer.avatar === "female" ? "is-female" : "is-male"}`}>
                                 <i />
+                                <em />
                                 <b />
+                                <u />
                               </div>
                             </div>
                           ))}
@@ -1019,9 +1030,11 @@ export function LifeOSApp({ view = "dashboard" }) {
                               <span>{state.profile.name || "User"}</span>
                               <small>You</small>
                             </div>
-                            <div className="office-avatar-sprite">
+                            <div className="office-avatar-sprite is-male">
                               <i />
+                              <em />
                               <b />
+                              <u />
                             </div>
                           </div>
                         </div>
@@ -1107,6 +1120,10 @@ function OfficeZoneDecor({ zone }) {
         <div className="office-furniture desk-wide" style={{ left: 188, top: 54, width: 132 }} />
         <div className="office-furniture desk-wide" style={{ left: 38, top: 136, width: 132 }} />
         <div className="office-furniture desk-wide" style={{ left: 188, top: 136, width: 132 }} />
+        <div className="office-furniture keyboard" style={{ left: 76, top: 70, width: 24 }} />
+        <div className="office-furniture keyboard" style={{ left: 226, top: 70, width: 24 }} />
+        <div className="office-furniture keyboard" style={{ left: 76, top: 152, width: 24 }} />
+        <div className="office-furniture keyboard" style={{ left: 226, top: 152, width: 24 }} />
         <div className="office-furniture monitor" style={{ left: 62, top: 36 }} />
         <div className="office-furniture monitor" style={{ left: 126, top: 36 }} />
         <div className="office-furniture monitor" style={{ left: 212, top: 36 }} />
@@ -1115,6 +1132,14 @@ function OfficeZoneDecor({ zone }) {
         <div className="office-furniture monitor" style={{ left: 126, top: 118 }} />
         <div className="office-furniture monitor" style={{ left: 212, top: 118 }} />
         <div className="office-furniture monitor" style={{ left: 276, top: 118 }} />
+        <div className="office-furniture pixel-chair" style={{ left: 78, top: 96 }} />
+        <div className="office-furniture pixel-chair" style={{ left: 160, top: 96 }} />
+        <div className="office-furniture pixel-chair" style={{ left: 228, top: 96 }} />
+        <div className="office-furniture pixel-chair" style={{ left: 310, top: 96 }} />
+        <div className="office-furniture pixel-chair" style={{ left: 78, top: 178 }} />
+        <div className="office-furniture pixel-chair" style={{ left: 160, top: 178 }} />
+        <div className="office-furniture pixel-chair" style={{ left: 228, top: 178 }} />
+        <div className="office-furniture pixel-chair" style={{ left: 310, top: 178 }} />
       </>
     );
   }
@@ -1125,6 +1150,8 @@ function OfficeZoneDecor({ zone }) {
         <div className="office-furniture desk-exec" style={{ left: 46, top: 66, width: 118 }} />
         <div className="office-furniture plant" style={{ left: 166, top: 44 }} />
         <div className="office-furniture shelf" style={{ left: 28, top: 26, width: 54 }} />
+        <div className="office-furniture keyboard" style={{ left: 88, top: 84, width: 28 }} />
+        <div className="office-furniture pixel-chair" style={{ left: 92, top: 106 }} />
       </>
     );
   }
@@ -1134,6 +1161,13 @@ function OfficeZoneDecor({ zone }) {
       <>
         <div className="office-furniture meeting-table" style={{ left: 26, top: zone.id === "room-5" ? 54 : 34, width: zone.width - 52 }} />
         <div className="office-furniture wall-screen" style={{ left: zone.width / 2 - 28, top: 14 }} />
+        {zone.seats.map((seat) => (
+          <div
+            key={`${seat.id}-chair`}
+            className="office-furniture pixel-chair"
+            style={{ left: `${seat.x - zone.x - 9}px`, top: `${seat.y - zone.y + 10}px` }}
+          />
+        ))}
       </>
     );
   }
