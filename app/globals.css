@@ -529,216 +529,144 @@ select {
   background: rgba(232, 184, 75, 0.16);
 }
 
-.office-header-bar {
+.room-stage-office {
+  min-height: 720px;
+  padding: 24px;
+}
+
+.office-mvp-layout {
   position: absolute;
-  top: 32px;
-  left: 32px;
-  right: 32px;
+  inset: 24px;
   display: grid;
-  grid-template-columns: 1.5fr 0.8fr;
+  grid-template-columns: minmax(0, 1fr) 300px;
+  gap: 18px;
+}
+
+.office-map-panel,
+.office-side-panel,
+.office-info-card {
+  display: grid;
+  gap: 14px;
+}
+
+.office-map-toolbar,
+.office-side-panel,
+.office-info-card {
+  position: relative;
+  z-index: 1;
+}
+
+.office-map-toolbar,
+.office-info-card {
+  padding: 16px 18px;
+  border-radius: 22px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.045);
+}
+
+.office-map-toolbar {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
   gap: 16px;
 }
 
-.wall-panel {
-  display: grid;
-  gap: 10px;
-  padding: 16px 18px;
-  border-radius: 20px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  background: rgba(255, 255, 255, 0.04);
-  color: var(--text-sub);
-}
-
-.wall-panel-wide {
-  min-height: 90px;
-}
-
-.wall-lines {
-  display: grid;
-  gap: 8px;
-}
-
-.wall-lines i {
-  display: block;
-  height: 8px;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.08);
-}
-
-.shared-office-map {
-  position: absolute;
-  inset: 144px 32px 32px;
-  display: grid;
-  grid-template-columns: 1.2fr 0.9fr;
-  grid-template-areas:
-    "open private"
-    "open meetings"
-    "lounge meetings";
-  gap: 18px;
-}
-
-.zone-card {
-  display: grid;
-  gap: 14px;
-  padding: 18px;
-  border-radius: 26px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  background: rgba(255, 255, 255, 0.04);
-}
-
-.zone-open {
-  grid-area: open;
-}
-
-.zone-private {
-  grid-area: private;
-}
-
-.zone-meetings {
-  grid-area: meetings;
-}
-
-.zone-lounge {
-  grid-area: lounge;
-}
-
-.zone-head {
-  display: grid;
-  gap: 4px;
-}
-
-.zone-head b {
-  font-size: 1rem;
+.office-map-toolbar h3 {
+  font-size: 1.02rem;
   letter-spacing: -0.03em;
 }
 
-.open-desk-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 14px;
-}
-
-.desk-pod {
-  min-height: 84px;
-  display: grid;
-  place-items: center;
-  gap: 10px;
-  padding: 14px;
-  border-radius: 18px;
-  background: rgba(10, 12, 16, 0.28);
-  border: 1px solid rgba(255, 255, 255, 0.05);
-}
-
-.desk-screen {
-  width: 48px;
-  height: 28px;
-  border-radius: 8px;
-  background: linear-gradient(180deg, #485364, #28303c);
-}
-
-.desk-chair {
-  width: 26px;
-  height: 26px;
-  border-radius: 999px;
-  background: linear-gradient(180deg, #2f3947, #1c232c);
-}
-
-.room-box {
-  display: grid;
-  gap: 14px;
-  padding: 16px;
-  border-radius: 20px;
-  background: rgba(10, 12, 16, 0.28);
-  border: 1px solid rgba(255, 255, 255, 0.05);
-}
-
-.room-box-large {
-  min-height: 160px;
-  align-content: space-between;
-}
-
-.room-label {
-  color: var(--text-sub);
-  font-size: 0.9rem;
-}
-
-.room-monitor {
-  width: 86px;
-  height: 46px;
-  border-radius: 12px;
-  background: linear-gradient(180deg, #4a5566, #27303c);
-}
-
-.room-chair {
-  width: 38px;
-  height: 38px;
-  border-radius: 999px;
-  background: linear-gradient(180deg, #2f3947, #1c232c);
-}
-
-.meeting-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 14px;
-}
-
-.seat-row {
-  display: flex;
+.office-status-pill {
+  display: inline-flex;
   align-items: center;
-  gap: 8px;
-  flex-wrap: wrap;
-}
-
-.seat-dot {
-  width: 18px;
-  height: 18px;
+  min-height: 34px;
+  padding: 0 12px;
   border-radius: 999px;
-  background: linear-gradient(180deg, #3a4656, #1d242d);
+  border: 1px solid rgba(126, 232, 162, 0.28);
+  background: rgba(126, 232, 162, 0.08);
+  color: #c9f6d5;
+  white-space: nowrap;
 }
 
-.lounge-layout {
-  min-height: 120px;
-  display: grid;
-  grid-template-columns: 1fr auto 1fr auto;
-  align-items: center;
-  gap: 14px;
+.office-map-surface {
+  position: relative;
+  overflow: hidden;
+  min-height: 640px;
+  border-radius: 28px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background:
+    linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+    linear-gradient(180deg, rgba(17, 20, 26, 0.92), rgba(10, 12, 17, 0.96));
+  background-size: 24px 24px, 24px 24px, auto;
 }
 
-.sofa,
-.lounge-table,
-.coffee-bar {
-  border-radius: 18px;
-  background: rgba(10, 12, 16, 0.28);
-  border: 1px solid rgba(255, 255, 255, 0.05);
-}
-
-.sofa {
-  height: 74px;
-}
-
-.lounge-table {
-  width: 78px;
-  height: 58px;
-}
-
-.coffee-bar {
-  width: 58px;
-  height: 58px;
-  display: grid;
-  place-items: center;
-}
-
-.room-meta-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 18px;
-}
-
-.room-meta-card {
-  display: grid;
-  gap: 12px;
-  padding: 20px;
+.office-zone {
+  position: absolute;
   border-radius: 24px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.04);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.03);
+}
+
+.office-zone.is-active {
+  border-color: rgba(232, 184, 75, 0.38);
+  box-shadow: inset 0 0 0 1px rgba(232, 184, 75, 0.18);
+}
+
+.office-zone-label {
+  display: grid;
+  gap: 4px;
+  padding: 14px;
+  color: var(--text-sub);
+}
+
+.office-zone-label strong {
+  color: var(--text);
+  font-size: 0.95rem;
+}
+
+.office-seat {
+  position: absolute;
+  width: 20px;
+  height: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 999px;
+  background: linear-gradient(180deg, #394454, #1d242d);
+}
+
+.office-seat.is-occupied {
+  border-color: rgba(232, 184, 75, 0.5);
+  background: linear-gradient(180deg, #e8b84b, #9c7420);
+}
+
+.office-avatar-token {
+  position: absolute;
+  display: grid;
+  justify-items: center;
+  gap: 6px;
+  transition: left 140ms ease, top 140ms ease;
+}
+
+.office-avatar-token span {
+  width: 36px;
+  height: 36px;
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  background: linear-gradient(180deg, #7ed3f7, #326d88);
+  color: #071116;
+  font-weight: 700;
+}
+
+.office-avatar-token small {
+  color: var(--text);
+  white-space: nowrap;
+}
+
+.office-info-card h3 {
+  font-size: 1.05rem;
+  letter-spacing: -0.03em;
 }
 
 .room-list {
@@ -995,18 +923,8 @@ select {
     grid-template-columns: 1fr;
   }
 
-  .room-meta-grid,
-  .office-header-bar,
-  .shared-office-map {
+  .office-mvp-layout {
     grid-template-columns: 1fr;
-  }
-
-  .shared-office-map {
-    grid-template-areas:
-      "open"
-      "private"
-      "meetings"
-      "lounge";
   }
 }
 
@@ -1136,14 +1054,17 @@ select {
     padding: 20px;
   }
 
-  .office-header-bar {
-    top: 20px;
-    left: 20px;
-    right: 20px;
+  .room-stage-office {
+    min-height: auto;
   }
 
-  .shared-office-map {
-    inset: 132px 20px 20px;
+  .office-mvp-layout {
+    position: relative;
+    inset: auto;
+  }
+
+  .office-map-surface {
+    min-height: 560px;
   }
 }
 
@@ -1204,11 +1125,11 @@ select {
     min-height: 420px;
   }
 
-  .room-meta-grid,
-  .meeting-grid,
-  .open-desk-grid,
-  .lounge-layout {
-    display: grid;
-    grid-template-columns: 1fr;
+  .office-map-toolbar {
+    flex-direction: column;
+  }
+
+  .office-map-surface {
+    min-height: 480px;
   }
 }

@@ -10,8 +10,6 @@ import {
   Command,
   Droplets,
   Download,
-  LampDesk,
-  LayoutPanelTop,
   Flame,
   Gem,
   GraduationCap,
@@ -81,15 +79,38 @@ const navItems = [
   { href: "/rooms/office", label: "Office" }
 ];
 
+const OFFICE_MAP = {
+  width: 980,
+  height: 640
+};
+
+const OFFICE_ZONES = [
+  { id: "open-desks", label: "Open Desks", kind: "Open Workspace", x: 46, y: 86, width: 360, height: 246, seats: [{ id: "open-1", x: 108, y: 138 }, { id: "open-2", x: 190, y: 138 }, { id: "open-3", x: 272, y: 138 }, { id: "open-4", x: 108, y: 222 }, { id: "open-5", x: 190, y: 222 }, { id: "open-6", x: 272, y: 222 }] },
+  { id: "private-office", label: "Private Office", kind: "Independent Room", x: 432, y: 86, width: 214, height: 168, seats: [{ id: "private-1", x: 538, y: 160 }] },
+  { id: "room-1", label: "1-Person Room", kind: "Focus Room", x: 686, y: 86, width: 246, height: 112, seats: [{ id: "room-1-seat", x: 808, y: 140 }] },
+  { id: "room-2", label: "2-Person Room", kind: "Focus Room", x: 686, y: 214, width: 246, height: 112, seats: [{ id: "room-2-seat-a", x: 774, y: 270 }, { id: "room-2-seat-b", x: 844, y: 270 }] },
+  { id: "room-3", label: "3-Person Room", kind: "Focus Room", x: 432, y: 272, width: 214, height: 162, seats: [{ id: "room-3-seat-a", x: 486, y: 354 }, { id: "room-3-seat-b", x: 540, y: 354 }, { id: "room-3-seat-c", x: 594, y: 354 }] },
+  { id: "room-5", label: "5-Person Room", kind: "Team Room", x: 686, y: 346, width: 246, height: 178, seats: [{ id: "room-5-seat-a", x: 734, y: 430 }, { id: "room-5-seat-b", x: 776, y: 430 }, { id: "room-5-seat-c", x: 818, y: 430 }, { id: "room-5-seat-d", x: 860, y: 430 }, { id: "room-5-seat-e", x: 798, y: 476 }] },
+  { id: "lounge", label: "Shared Lounge", kind: "Break Area", x: 46, y: 366, width: 360, height: 158, seats: [{ id: "lounge-a", x: 130, y: 438 }, { id: "lounge-b", x: 224, y: 438 }, { id: "lounge-c", x: 318, y: 438 }] }
+];
+
 export function LifeOSApp({ view = "dashboard" }) {
   const [state, setState] = useState(DEFAULT_STATE);
   const [ready, setReady] = useState(false);
   const [syncCodeInput, setSyncCodeInput] = useState("");
   const [backupCount, setBackupCount] = useState(0);
+  const [officePresence, setOfficePresence] = useState({
+    x: 108,
+    y: 138,
+    zoneId: "open-desks",
+    seatId: "open-1",
+    status: "Working"
+  });
   const todayKey = getTodayKey();
   const pathname = usePathname();
   const pollingRef = useRef(null);
   const pushTimeoutRef = useRef(null);
+  const officeMapRef = useRef(null);
 
   useEffect(() => {
     try {
@@ -108,6 +129,34 @@ export function LifeOSApp({ view = "dashboard" }) {
     if (!ready) return;
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
   }, [ready, state]);
+
+  useEffect(() => {
+    if (view !== "office-room") return;
+
+    const onKeyDown = (event) => {
+      const key = event.key.toLowerCase();
+      if (!["arrowup", "arrowdown", "arrowleft", "arrowright", "w", "a", "s", "d"].includes(key)) return;
+      event.preventDefault();
+      const step = event.shiftKey ? 24 : 16;
+      setOfficePresence((current) => {
+        let x = current.x;
+        let y = current.y;
+        if (key === "arrowup" || key === "w") y -= step;
+        if (key === "arrowdown" || key === "s") y += step;
+        if (key === "arrowleft" || key === "a") x -= step;
+        if (key === "arrowright" || key === "d") x += step;
+        return {
+          ...current,
+          x: Math.max(24, Math.min(OFFICE_MAP.width - 24, x)),
+          y: Math.max(24, Math.min(OFFICE_MAP.height - 24, y)),
+          seatId: ""
+        };
+      });
+    };
+
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [view]);
 
   useEffect(() => {
     if (!ready || state.sync.mode !== "anonymous" || !state.sync.syncCode) return;
@@ -506,6 +555,24 @@ export function LifeOSApp({ view = "dashboard" }) {
   }[view];
 
   const activePath = pathname === "/" ? "/dashboard" : pathname;
+  const activeOfficeZone = OFFICE_ZONES.find((zone) => zone.id === officePresence.zoneId) ?? OFFICE_ZONES[0];
+
+  const moveToSeat = (zoneId, seat) => {
+    setOfficePresence((current) => ({
+      ...current,
+      zoneId,
+      seatId: seat.id,
+      x: seat.x,
+      y: seat.y
+    }));
+  };
+
+  const setOfficeStatus = (status) => {
+    setOfficePresence((current) => ({
+      ...current,
+      status
+    }));
+  };
 
   return (
     <main className="page-shell">
@@ -847,106 +914,94 @@ export function LifeOSApp({ view = "dashboard" }) {
 
             {view === "office-room" ? (
               <section className="room-shell">
-                <div className="room-stage">
+                <div className="room-stage room-stage-office">
                   <div className="room-glow room-glow-left" />
                   <div className="room-glow room-glow-right" />
-                  <div className="office-header-bar">
-                    <div className="wall-panel wall-panel-wide">
-                      <span>Shared Office</span>
-                      <div className="wall-lines">
-                        <i />
-                        <i />
-                        <i />
+                  <div className="office-mvp-layout">
+                    <div className="office-map-panel">
+                      <div className="office-map-toolbar">
+                        <div>
+                          <span className="eyebrow">Shared Office MVP</span>
+                          <h3>Move with WASD or arrow keys. Click a seat to join it.</h3>
+                        </div>
+                        <div className="office-status-pill">{officePresence.status}</div>
                       </div>
-                    </div>
-                    <div className="wall-panel">
-                      <LayoutPanelTop size={16} />
-                      <span>{formatNumber(todayXP)} XP online</span>
-                    </div>
-                  </div>
 
-                  <div className="shared-office-map">
-                    <section className="zone-card zone-open">
-                      <div className="zone-head">
-                        <span className="eyebrow">Open Desks</span>
-                        <b>Open workspace</b>
-                      </div>
-                      <div className="open-desk-grid">
-                        {Array.from({ length: 8 }).map((_, index) => (
-                          <div key={index} className="desk-pod">
-                            <div className="desk-screen" />
-                            <div className="desk-chair" />
-                          </div>
-                        ))}
-                      </div>
-                    </section>
-
-                    <section className="zone-card zone-private">
-                      <div className="zone-head">
-                        <span className="eyebrow">Private Office</span>
-                        <b>Independent room</b>
-                      </div>
-                      <div className="room-box room-box-large">
-                        <div className="room-label">Founder Suite</div>
-                        <div className="room-monitor" />
-                        <div className="room-chair" />
-                      </div>
-                    </section>
-
-                    <section className="zone-card zone-meetings">
-                      <div className="zone-head">
-                        <span className="eyebrow">Focus Rooms</span>
-                        <b>1 / 2 / 3 / 5 seats</b>
-                      </div>
-                      <div className="meeting-grid">
-                        {[1, 2, 3, 5].map((size) => (
-                          <div key={size} className="room-box">
-                            <div className="room-label">{size}-Person</div>
-                            <div className={`seat-row seat-row-${size}`}>
-                              {Array.from({ length: size }).map((__, seat) => (
-                                <span key={seat} className="seat-dot" />
-                              ))}
+                      <div
+                        ref={officeMapRef}
+                        className="office-map-surface"
+                        style={{ "--map-width": `${OFFICE_MAP.width}px`, "--map-height": `${OFFICE_MAP.height}px` }}
+                      >
+                        {OFFICE_ZONES.map((zone) => (
+                          <section
+                            key={zone.id}
+                            className={`office-zone ${officePresence.zoneId === zone.id ? "is-active" : ""}`}
+                            style={{
+                              left: `${zone.x}px`,
+                              top: `${zone.y}px`,
+                              width: `${zone.width}px`,
+                              height: `${zone.height}px`
+                            }}
+                          >
+                            <div className="office-zone-label">
+                              <strong>{zone.label}</strong>
+                              <span>{zone.kind}</span>
                             </div>
-                          </div>
+                            {zone.seats.map((seat) => (
+                              <button
+                                key={seat.id}
+                                className={`office-seat ${officePresence.seatId === seat.id ? "is-occupied" : ""}`}
+                                style={{ left: `${seat.x - zone.x - 10}px`, top: `${seat.y - zone.y - 10}px` }}
+                                onClick={() => moveToSeat(zone.id, seat)}
+                                aria-label={`${zone.label} seat`}
+                              />
+                            ))}
+                          </section>
                         ))}
-                      </div>
-                    </section>
 
-                    <section className="zone-card zone-lounge">
-                      <div className="zone-head">
-                        <span className="eyebrow">Shared Lounge</span>
-                        <b>Reset and casual talk</b>
-                      </div>
-                      <div className="lounge-layout">
-                        <div className="sofa sofa-left" />
-                        <div className="lounge-table" />
-                        <div className="sofa sofa-right" />
-                        <div className="coffee-bar">
-                          <LampDesk size={18} />
+                        <div
+                          className="office-avatar-token"
+                          style={{ left: `${officePresence.x - 18}px`, top: `${officePresence.y - 18}px` }}
+                        >
+                          <span>{(state.profile.name || "U").slice(0, 1).toUpperCase()}</span>
+                          <small>{state.profile.name || "User"}</small>
                         </div>
                       </div>
-                    </section>
+                    </div>
+
+                    <aside className="office-side-panel">
+                      <article className="office-info-card">
+                        <span className="eyebrow">Current Zone</span>
+                        <h3>{activeOfficeZone.label}</h3>
+                        <p className="muted">Open desks support ambient work. Private rooms support deeper focus or small-group collaboration.</p>
+                      </article>
+
+                      <article className="office-info-card">
+                        <span className="eyebrow">Status</span>
+                        <div className="preset-row">
+                          {["Working", "Deep Focus", "Break"].map((status) => (
+                            <button
+                              key={status}
+                              className={`chip ${officePresence.status === status ? "is-active" : ""}`}
+                              onClick={() => setOfficeStatus(status)}
+                            >
+                              {status}
+                            </button>
+                          ))}
+                        </div>
+                      </article>
+
+                      <article className="office-info-card">
+                        <span className="eyebrow">Why This Version</span>
+                        <ul className="room-list">
+                          <li>Validates movement before heavy game systems</li>
+                          <li>Lets you test seat and room logic quickly</li>
+                          <li>Can later show real users in each zone</li>
+                          <li>Maps cleanly to Work and founder use cases</li>
+                        </ul>
+                      </article>
+                    </aside>
                   </div>
-                </div>
-
-                <div className="room-meta-grid">
-                  <article className="room-meta-card">
-                    <span className="eyebrow">Scene Intent</span>
-                    <h3>Shared office for workers and solo founders.</h3>
-                    <p className="muted">
-                      The office is organized like a real coworking space: open desks for ambient focus, private rooms for deeper work, and shared space for low-pressure breaks.
-                    </p>
-                  </article>
-
-                  <article className="room-meta-card">
-                    <span className="eyebrow">What It Could Show</span>
-                    <ul className="room-list">
-                      <li>Real users occupying desk zones</li>
-                      <li>Status badges like Working, Focus, Break</li>
-                      <li>Room access by solo or team size</li>
-                      <li>Work module tasks linked to a chosen seat</li>
-                    </ul>
-                  </article>
                 </div>
               </section>
             ) : null}
