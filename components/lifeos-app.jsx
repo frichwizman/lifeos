@@ -953,73 +953,76 @@ export function LifeOSApp({ view = "dashboard" }) {
                         <div className="office-status-pill">{officePresence.status}</div>
                       </div>
 
-                      <div
-                        ref={officeMapRef}
-                        className="office-map-surface"
-                        style={{ "--map-width": `${OFFICE_MAP.width}px`, "--map-height": `${OFFICE_MAP.height}px` }}
-                      >
-                        <div className="office-floor office-floor-main" />
-                        <div className="office-floor office-floor-lounge" />
-                        <div className="office-wall office-wall-vertical" />
-                        <div className="office-wall office-wall-horizontal" />
-                        <div className="office-room-pill">Product Team</div>
+                      <div className="office-map-viewport">
+                        <div className="office-map-hint">Drag to explore the room on mobile.</div>
+                        <div
+                          ref={officeMapRef}
+                          className="office-map-surface"
+                          style={{ "--map-width": `${OFFICE_MAP.width}px`, "--map-height": `${OFFICE_MAP.height}px` }}
+                        >
+                          <div className="office-floor office-floor-main" />
+                          <div className="office-floor office-floor-lounge" />
+                          <div className="office-wall office-wall-vertical" />
+                          <div className="office-wall office-wall-horizontal" />
+                          <div className="office-room-pill">Product Team</div>
 
-                        {OFFICE_ZONES.map((zone) => (
-                          <section
-                            key={zone.id}
-                            className={`office-zone zone-${zone.id} ${officePresence.zoneId === zone.id ? "is-active" : ""}`}
-                            style={{
-                              left: `${zone.x}px`,
-                              top: `${zone.y}px`,
-                              width: `${zone.width}px`,
-                              height: `${zone.height}px`
-                            }}
-                          >
-                            <div className="office-zone-label">
-                              <strong>{zone.label}</strong>
-                              <span>{zone.kind}</span>
+                          {OFFICE_ZONES.map((zone) => (
+                            <section
+                              key={zone.id}
+                              className={`office-zone zone-${zone.id} ${officePresence.zoneId === zone.id ? "is-active" : ""}`}
+                              style={{
+                                left: `${zone.x}px`,
+                                top: `${zone.y}px`,
+                                width: `${zone.width}px`,
+                                height: `${zone.height}px`
+                              }}
+                            >
+                              <div className="office-zone-label">
+                                <strong>{zone.label}</strong>
+                                <span>{zone.kind}</span>
+                              </div>
+                              <OfficeZoneDecor zone={zone} />
+                              {zone.seats.map((seat) => (
+                                <button
+                                  key={seat.id}
+                                  className={`office-seat ${officePresence.seatId === seat.id ? "is-occupied" : ""}`}
+                                  style={{ left: `${seat.x - zone.x - 10}px`, top: `${seat.y - zone.y - 10}px` }}
+                                  onClick={() => moveToSeat(zone.id, seat)}
+                                  aria-label={`${zone.label} seat`}
+                                />
+                              ))}
+                            </section>
+                          ))}
+
+                          {OFFICE_PEERS.map((peer) => (
+                            <div
+                              key={peer.id}
+                              className={`office-peer ${peer.zoneId === officePresence.zoneId ? "is-nearby" : ""}`}
+                              style={{ left: `${peer.x - 18}px`, top: `${peer.y - 18}px` }}
+                            >
+                              <div className="office-peer-badge">
+                                <span>{peer.name}</span>
+                                <small>{peer.mood}</small>
+                              </div>
+                              <div className="office-avatar-sprite is-peer">
+                                <i />
+                                <b />
+                              </div>
                             </div>
-                            <OfficeZoneDecor zone={zone} />
-                            {zone.seats.map((seat) => (
-                              <button
-                                key={seat.id}
-                                className={`office-seat ${officePresence.seatId === seat.id ? "is-occupied" : ""}`}
-                                style={{ left: `${seat.x - zone.x - 10}px`, top: `${seat.y - zone.y - 10}px` }}
-                                onClick={() => moveToSeat(zone.id, seat)}
-                                aria-label={`${zone.label} seat`}
-                              />
-                            ))}
-                          </section>
-                        ))}
+                          ))}
 
-                        {OFFICE_PEERS.map((peer) => (
                           <div
-                            key={peer.id}
-                            className={`office-peer ${peer.zoneId === officePresence.zoneId ? "is-nearby" : ""}`}
-                            style={{ left: `${peer.x - 18}px`, top: `${peer.y - 18}px` }}
+                            className="office-peer office-peer-self"
+                            style={{ left: `${officePresence.x - 18}px`, top: `${officePresence.y - 18}px` }}
                           >
-                            <div className="office-peer-badge">
-                              <span>{peer.name}</span>
-                              <small>{peer.mood}</small>
+                            <div className="office-peer-badge is-self">
+                              <span>{state.profile.name || "User"}</span>
+                              <small>You</small>
                             </div>
-                            <div className="office-avatar-sprite is-peer">
+                            <div className="office-avatar-sprite">
                               <i />
                               <b />
                             </div>
-                          </div>
-                        ))}
-
-                        <div
-                          className="office-peer office-peer-self"
-                          style={{ left: `${officePresence.x - 18}px`, top: `${officePresence.y - 18}px` }}
-                        >
-                          <div className="office-peer-badge is-self">
-                            <span>{state.profile.name || "User"}</span>
-                            <small>You</small>
-                          </div>
-                          <div className="office-avatar-sprite">
-                            <i />
-                            <b />
                           </div>
                         </div>
                       </div>
