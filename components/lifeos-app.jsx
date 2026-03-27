@@ -21,6 +21,9 @@ import {
   ShieldCheck,
   Sparkle,
   Plus,
+  Play,
+  Pause,
+  CheckCircle2,
   Sparkles,
   Users,
   Timer
@@ -79,6 +82,13 @@ const navItems = [
   { href: "/settings", label: "Settings" },
   { href: "/rooms/office", label: "Office" }
 ];
+
+const ATTRIBUTE_LABELS = {
+  mind: "Mind",
+  body: "Body",
+  wealth: "Wealth",
+  social: "Social"
+};
 
 const OFFICE_MAP = {
   width: 980,
@@ -205,6 +215,7 @@ export function LifeOSApp({ view = "dashboard" }) {
   const pollingRef = useRef(null);
   const pushTimeoutRef = useRef(null);
   const officeMapRef = useRef(null);
+  const [executionNow, setExecutionNow] = useState(Date.now());
 
   useEffect(() => {
     try {
@@ -271,6 +282,12 @@ export function LifeOSApp({ view = "dashboard" }) {
       }));
     }
   }, [view, officePresence.x, officePresence.y, officePresence.zoneId, officePresence.seatId]);
+
+  useEffect(() => {
+    if (state.execution.status !== "active") return;
+    const timer = window.setInterval(() => setExecutionNow(Date.now()), 1000);
+    return () => window.clearInterval(timer);
+  }, [state.execution.status]);
 
   useEffect(() => {
     if (!ready || state.sync.mode !== "anonymous" || !state.sync.syncCode) return;
@@ -361,41 +378,43 @@ export function LifeOSApp({ view = "dashboard" }) {
   const pbReady = state.profile.pbXP > 0;
   const pbRatio = pbReady ? clamp(todayXP / state.profile.pbXP, 0, 1.25) : 0;
 
-  const logTask = (task, value) => {
+  const applyTrackedLog = (current, task, value) => {
     const normalized =
       task.type === "boolean" ? Boolean(value) : typeof value === "number" ? value : Number(value || 0);
-    commitState((current) => {
-      const previousXP = current.logs?.[todayKey]?.[task.id]?.xp ?? 0;
-      const xpBase =
-        task.type === "ratingReverse"
-          ? Math.round((6 - normalized) * task.xpPerUnit)
-          : task.type === "boolean"
-            ? normalized
-              ? task.xpPerUnit
-              : 0
-            : Math.round(normalized * task.xpPerUnit);
-      const todayWithoutCurrent = getTodayXP(current.logs, todayKey) - previousXP;
-      const nextTodayXP = todayWithoutCurrent + xpBase;
-      return {
-        ...current,
-        profile: {
-          ...current.profile,
-          totalXP: current.profile.totalXP - previousXP + xpBase,
-          pbXP: Math.max(current.profile.pbXP, nextTodayXP)
-        },
-        logs: {
-          ...current.logs,
-          [todayKey]: {
-            ...(current.logs?.[todayKey] ?? {}),
-            [task.id]: {
-              value: normalized,
-              xp: xpBase,
-              ts: Date.now()
-            }
+    const previousXP = current.logs?.[todayKey]?.[task.id]?.xp ?? 0;
+    const xpBase =
+      task.type === "ratingReverse"
+        ? Math.round((6 - normalized) * task.xpPerUnit)
+        : task.type === "boolean"
+          ? normalized
+            ? task.xpPerUnit
+            : 0
+          : Math.round(normalized * task.xpPerUnit);
+    const todayWithoutCurrent = getTodayXP(current.logs, todayKey) - previousXP;
+    const nextTodayXP = todayWithoutCurrent + xpBase;
+    return {
+      ...current,
+      profile: {
+        ...current.profile,
+        totalXP: current.profile.totalXP - previousXP + xpBase,
+        pbXP: Math.max(current.profile.pbXP, nextTodayXP)
+      },
+      logs: {
+        ...current.logs,
+        [todayKey]: {
+          ...(current.logs?.[todayKey] ?? {}),
+          [task.id]: {
+            value: normalized,
+            xp: xpBase,
+            ts: Date.now()
           }
         }
-      };
-    });
+      }
+    };
+  };
+
+  const logTask = (task, value) => {
+    commitState((current) => applyTrackedLog(current, task, value));
   };
 
   const toggleTodo = (projectId, todoId) => {
@@ -637,6 +656,93 @@ export function LifeOSApp({ view = "dashboard" }) {
     [lifeDoneCount, state.logs, state.workProjects.length, studyDoneCount, todayKey]
   );
 
+  const dashboardTasks = useMemo(() => {
+    const workTasks = state.workProjects.flatMap((project) =>
+      project.todos
+        .filter((todo) => !Boolean(getLogValue(state.logs, todayKey, `${project.id}:${todo.id}`)))
+        .map((todo) => ({
+          id: `work:${project.id}:${todo.id}`,
+          sourceType: "work-todo",
+          sourceId: todo.id,
+          projectId: project.id,
+          label: todo.label || "Untitled task",
+          category: "Work",
+          context: project.name,
+          xpReward: 10,
+          attributeKey: "wealth",
+          attributeDelta: project.id === "side-business" ? 3 : 2
+        }))
+    );
+
+    const studyExecutionTasks = studyTasks
+      .filter((task) => Number(getLogValue(state.logs, todayKey, task.id) ?? 0) <= 0)
+      .map((task) => ({
+        id: `study:${task.id}`,
+        sourceType: "tracked-task",
+        sourceId: task.id,
+        projectId: "",
+        label: task.label,
+        category: "Study",
+        context: "Learning block",
+        xpReward: Math.round((task.presets?.[0] ?? 1) * task.xpPerUnit),
+        completionValue: task.presets?.[0] ?? 1,
+        task,
+        attributeKey: "mind",
+        attributeDelta: 2
+      }));
+
+    const actionableLifeTasks = lifeGroups
+      .flatMap((group) => group.items)
+      .filter((task) => !["sleep-quality", "stress-level", "risky-substances"].includes(task.id))
+      .filter((task) => Number(getLogValue(state.logs, todayKey, task.id) ?? 0) <= 0)
+      .map((task) => ({
+        id: `life:${task.id}`,
+        sourceType: "tracked-task",
+        sourceId: task.id,
+        projectId: "",
+        label: task.label,
+        category: "Life",
+        context: task.id === "social-connection" ? "Connection" : "Daily upkeep",
+        xpReward: Math.round((task.presets?.[0] ?? 1) * task.xpPerUnit),
+        completionValue: task.presets?.[0] ?? 1,
+        task,
+        attributeKey: task.id === "social-connection" ? "social" : task.id === "meditation" ? "mind" : "body",
+        attributeDelta: task.id === "social-connection" ? 2 : 1
+      }));
+
+    return [...workTasks, ...studyExecutionTasks, ...actionableLifeTasks];
+  }, [state.logs, state.workProjects, todayKey]);
+
+  const mainTask =
+    dashboardTasks.find((task) => task.id === state.execution.mainTaskId) ??
+    dashboardTasks[0] ??
+    null;
+
+  const activeExecutionTask =
+    dashboardTasks.find((task) => task.id === state.execution.currentTaskId) ??
+    (state.execution.currentTaskId
+      ? {
+          id: state.execution.currentTaskId,
+          label: state.execution.currentTaskLabel,
+          category: state.execution.currentCategory,
+          context: "",
+          xpReward: state.execution.xpReward,
+          attributeKey: state.execution.attributeKey,
+          attributeDelta: state.execution.attributeDelta,
+          sourceType: state.execution.sourceType,
+          sourceId: state.execution.sourceId,
+          projectId: state.execution.projectId
+        }
+      : null);
+
+  const executionElapsedMs =
+    state.execution.elapsedMs +
+    (state.execution.status === "active" && state.execution.startTime ? Math.max(0, executionNow - new Date(state.execution.startTime).getTime()) : 0);
+
+  const executionMinutes = Math.floor(executionElapsedMs / 60000);
+  const executionSeconds = Math.floor((executionElapsedMs % 60000) / 1000);
+  const formattedExecutionTime = `${String(executionMinutes).padStart(2, "0")}:${String(executionSeconds).padStart(2, "0")}`;
+
   const pageMeta = {
     dashboard: {
       title: "Dashboard",
@@ -708,6 +814,100 @@ export function LifeOSApp({ view = "dashboard" }) {
     }));
   };
 
+  const startExecution = (task) => {
+    commitState((current) => ({
+      ...current,
+      execution: {
+        ...current.execution,
+        status: "active",
+        currentTaskId: task.id,
+        currentTaskLabel: task.label,
+        currentCategory: task.category,
+        sourceType: task.sourceType,
+        sourceId: task.sourceId,
+        projectId: task.projectId ?? "",
+        startTime: new Date().toISOString(),
+        elapsedMs: current.execution.currentTaskId === task.id ? current.execution.elapsedMs : 0,
+        xpReward: task.xpReward ?? 0,
+        attributeKey: task.attributeKey ?? "",
+        attributeDelta: task.attributeDelta ?? 0,
+        mainTaskId: current.execution.mainTaskId || task.id
+      }
+    }));
+  };
+
+  const toggleExecutionPause = () => {
+    if (!state.execution.currentTaskId) return;
+    if (state.execution.status === "active") {
+      const nextElapsed =
+        state.execution.elapsedMs +
+        (state.execution.startTime ? Math.max(0, Date.now() - new Date(state.execution.startTime).getTime()) : 0);
+      commitState((current) => ({
+        ...current,
+        execution: {
+          ...current.execution,
+          status: "paused",
+          startTime: null,
+          elapsedMs: nextElapsed
+        }
+      }));
+      return;
+    }
+
+    commitState((current) => ({
+      ...current,
+      execution: {
+        ...current.execution,
+        status: "active",
+        startTime: new Date().toISOString()
+      }
+    }));
+  };
+
+  const completeExecution = () => {
+    if (!activeExecutionTask) return;
+
+    commitState((current) => {
+      let next = current;
+
+      if (activeExecutionTask.sourceType === "work-todo") {
+        next = applyTrackedLog(
+          next,
+          {
+            id: `${activeExecutionTask.projectId}:${activeExecutionTask.sourceId}`,
+            type: "boolean",
+            xpPerUnit: activeExecutionTask.xpReward || 10
+          },
+          true
+        );
+      }
+
+      if (activeExecutionTask.sourceType === "tracked-task") {
+        const sourceTask =
+          activeExecutionTask.category === "Study"
+            ? studyTasks.find((task) => task.id === activeExecutionTask.sourceId)
+            : lifeGroups.flatMap((group) => group.items).find((task) => task.id === activeExecutionTask.sourceId);
+
+        if (sourceTask) {
+          next = applyTrackedLog(next, sourceTask, activeExecutionTask.completionValue ?? sourceTask.presets?.[0] ?? true);
+        }
+      }
+
+      return {
+        ...next,
+        attributes: {
+          ...next.attributes,
+          [activeExecutionTask.attributeKey || "mind"]:
+            Number(next.attributes?.[activeExecutionTask.attributeKey || "mind"] ?? 0) + Number(activeExecutionTask.attributeDelta ?? 0)
+        },
+        execution: {
+          ...DEFAULT_STATE.execution,
+          mainTaskId: current.execution.mainTaskId
+        }
+      };
+    });
+  };
+
   return (
     <main className="page-shell">
       <section className="hero-panel">
@@ -738,8 +938,75 @@ export function LifeOSApp({ view = "dashboard" }) {
         ))}
       </nav>
 
+      {state.execution.currentTaskId ? (
+        <section className="execution-active-panel">
+          <div className="execution-active-copy">
+            <p className="eyebrow">Execution State</p>
+            <h2>{activeExecutionTask?.label || state.execution.currentTaskLabel}</h2>
+            <div className="execution-meta">
+              <span>{activeExecutionTask?.category || state.execution.currentCategory}</span>
+              <span>Time {formattedExecutionTime}</span>
+              <span>+{activeExecutionTask?.xpReward || state.execution.xpReward} XP</span>
+              {activeExecutionTask?.attributeKey ? (
+                <span>
+                  +{activeExecutionTask.attributeDelta} {ATTRIBUTE_LABELS[activeExecutionTask.attributeKey]}
+                </span>
+              ) : null}
+            </div>
+          </div>
+          <div className="execution-active-actions">
+            <button className="ghost-button" onClick={toggleExecutionPause}>
+              {state.execution.status === "active" ? <Pause size={16} /> : <Play size={16} />}
+              {state.execution.status === "active" ? "Pause" : "Resume"}
+            </button>
+            <button className="ghost-button execution-complete-button" onClick={completeExecution}>
+              <CheckCircle2 size={16} />
+              Complete
+            </button>
+          </div>
+        </section>
+      ) : null}
+
       {view === "dashboard" ? (
         <>
+          <section className="execution-entry">
+            <div className="execution-main-card">
+              <div className="execution-main-copy">
+                <p className="eyebrow">Main Quest Today</p>
+                <h2>{mainTask ? mainTask.label : "No priority task yet"}</h2>
+                <p className="muted">
+                  {mainTask
+                    ? `${mainTask.category} · ${mainTask.context} · +${mainTask.xpReward} XP`
+                    : "Add a work todo or keep logging study and life tasks to create a clearer daily quest."}
+                </p>
+              </div>
+              {mainTask ? (
+                <button className="ghost-button execution-start-button" onClick={() => startExecution(mainTask)}>
+                  <Play size={16} />
+                  Start
+                </button>
+              ) : null}
+            </div>
+
+            <div className="execution-queue">
+              {dashboardTasks.slice(0, 8).map((task) => (
+                <article key={task.id} className={`execution-task-card ${mainTask?.id === task.id ? "is-main" : ""}`}>
+                  <div className="execution-task-copy">
+                    <span className="execution-task-category">{task.category}</span>
+                    <strong>{task.label}</strong>
+                    <small>
+                      {task.context} · +{task.xpReward} XP · +{task.attributeDelta} {ATTRIBUTE_LABELS[task.attributeKey]}
+                    </small>
+                  </div>
+                  <button className="ghost-button" onClick={() => startExecution(task)}>
+                    <Play size={16} />
+                    Start
+                  </button>
+                </article>
+              ))}
+            </div>
+          </section>
+
           <section className="dashboard-grid">
             <Card title="Life Timeline" icon={Activity} className="card-timeline">
               <div className="timeline-metrics">
