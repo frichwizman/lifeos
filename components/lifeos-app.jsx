@@ -377,6 +377,12 @@ export function LifeOSApp({ view = "dashboard" }) {
   const allHabitsDone = lifeDoneCount === 7 && studyDoneCount === studyTasks.length;
   const pbReady = state.profile.pbXP > 0;
   const pbRatio = pbReady ? clamp(todayXP / state.profile.pbXP, 0, 1.25) : 0;
+  const completedWorkCount = state.workProjects.reduce(
+    (sum, project) =>
+      sum + project.todos.filter((todo) => Boolean(getLogValue(state.logs, todayKey, `${project.id}:${todo.id}`))).length,
+    0
+  );
+  const todayCompletedCount = completedWorkCount + studyDoneCount + lifeDoneCount;
 
   const applyTrackedLog = (current, task, value) => {
     const normalized =
@@ -938,7 +944,7 @@ export function LifeOSApp({ view = "dashboard" }) {
         ))}
       </nav>
 
-      {state.execution.currentTaskId ? (
+      {view !== "dashboard" && state.execution.currentTaskId ? (
         <section className="execution-active-panel">
           <div className="execution-active-copy">
             <p className="eyebrow">Execution State</p>
@@ -969,165 +975,124 @@ export function LifeOSApp({ view = "dashboard" }) {
 
       {view === "dashboard" ? (
         <>
-          <section className="execution-entry">
-            <div className="execution-main-card">
-              <div className="execution-main-copy">
-                <p className="eyebrow">Main Quest Today</p>
-                <h2>{mainTask ? mainTask.label : "No priority task yet"}</h2>
-                <p className="muted">
-                  {mainTask
-                    ? `${mainTask.category} · ${mainTask.context} · +${mainTask.xpReward} XP`
-                    : "Add a work todo or keep logging study and life tasks to create a clearer daily quest."}
-                </p>
-              </div>
-              {mainTask ? (
-                <button className="ghost-button execution-start-button" onClick={() => startExecution(mainTask)}>
-                  <Play size={16} />
-                  Start
-                </button>
-              ) : null}
-            </div>
-
-            <div className="execution-queue">
-              {dashboardTasks.slice(0, 8).map((task) => (
-                <article key={task.id} className={`execution-task-card ${mainTask?.id === task.id ? "is-main" : ""}`}>
-                  <div className="execution-task-copy">
-                    <span className="execution-task-category">{task.category}</span>
-                    <strong>{task.label}</strong>
-                    <small>
-                      {task.context} · +{task.xpReward} XP · +{task.attributeDelta} {ATTRIBUTE_LABELS[task.attributeKey]}
-                    </small>
+          <section className="execution-layout">
+            <div className="execution-layout-primary">
+              <section className="execution-entry">
+                <div className="execution-main-card">
+                  <div className="execution-main-copy">
+                    <p className="eyebrow">Main Quest Today</p>
+                    <h2>{mainTask ? mainTask.label : "No priority task yet"}</h2>
+                    <p className="muted">
+                      {mainTask
+                        ? `${mainTask.category} · ${mainTask.context} · +${mainTask.xpReward} XP`
+                        : "Add a work todo or keep logging study and life tasks to create a clearer daily quest."}
+                    </p>
                   </div>
-                  <button className="ghost-button" onClick={() => startExecution(task)}>
-                    <Play size={16} />
-                    Start
-                  </button>
-                </article>
-              ))}
-            </div>
-          </section>
-
-          <section className="dashboard-grid">
-            <Card title="Life Timeline" icon={Activity} className="card-timeline">
-              <div className="timeline-metrics">
-                <TimelineMetric label="Life Used" value={`${Math.round((state.profile.age / state.profile.lifeExpectancy) * 100)}%`} />
-                <TimelineMetric
-                  label="Days Left"
-                  value={formatNumber((state.profile.lifeExpectancy - state.profile.age) * 365)}
-                />
-                <TimelineMetric
-                  label="To Retirement"
-                  value={formatNumber(Math.max(0, (state.profile.retirementAge - state.profile.age) * 365))}
-                />
-              </div>
-              <div className="timeline-track">
-                <span style={{ width: `${(state.profile.age / state.profile.lifeExpectancy) * 100}%` }} />
-              </div>
-              <div className="timeline-steps">
-                {[0, 18, 25, 35, 65, 85].map((age) => (
-                  <span key={age}>{age}</span>
-                ))}
-              </div>
-            </Card>
-
-            <Card title="Year Goal" icon={Gem} className="card-year-goal">
-              <div className="metric-row">
-                <strong>
-                  {state.profile.currency}
-                  {formatNumber(state.profile.yearGoal)}
-                </strong>
-                <span>{Math.round(income.progress * 100)}% through the year</span>
-              </div>
-              <div className="progress-track">
-                <span style={{ width: `${income.progress * 100}%` }} />
-              </div>
-              <div className="timeline-metrics compact">
-                <TimelineMetric label="Daily" value={`${state.profile.currency}${formatNumber(income.dailyTarget)}`} />
-                <TimelineMetric label="Monthly" value={`${state.profile.currency}${formatNumber(income.monthlyTarget)}`} />
-                <TimelineMetric label="Should Have" value={`${state.profile.currency}${formatNumber(income.shouldHaveMade)}`} />
-              </div>
-            </Card>
-
-            <Card title="Personal Best" icon={Sparkles} className="card-pb">
-              <div className="metric-row">
-                <strong>{formatNumber(todayXP)} XP</strong>
-                <span>PB {formatNumber(state.profile.pbXP || 0)}</span>
-              </div>
-              <div className={`progress-track ${pbReady && todayXP >= state.profile.pbXP ? "is-gold" : ""}`}>
-                <span style={{ width: `${pbReady ? Math.min(pbRatio, 1) * 100 : 0}%` }} />
-              </div>
-              <p className="muted">
-                {pbReady ? "Push past your best session and the bar turns gold." : "PB tracking starts after your first full day."}
-              </p>
-            </Card>
-
-            <Card title="Core Streaks" icon={Flame} className="card-streaks">
-              <div className="streak-widget">
-                {["exercise", "meditation", "reading"].map((taskId) => (
-                  <StreakMini
-                    key={taskId}
-                    label={taskId.replace("-", " ")}
-                    streak={getStreak(state.logs, taskId)}
-                    history={getTaskHistory(state.logs, taskId, 7)}
-                  />
-                ))}
-              </div>
-            </Card>
-
-            <Card title="Life Pillars" icon={HeartPulse} className="card-pillars">
-              <div className="pillars-grid">
-                {LIFE_PILLARS.map((pillar) => {
-                  const done = Boolean(getLogValue(state.logs, todayKey, pillar.id));
-                  const PillarIcon = pillarIcons[pillar.id] ?? HeartPulse;
-                  return (
-                    <div
-                      key={pillar.id}
-                      className={`pillar-hex ${done ? "is-done" : ""}`}
-                      style={{ "--pillar-color": pillar.color }}
-                    >
-                      <PillarIcon size={18} className="pillar-icon" />
-                      <span className="pillar-label">{pillar.short}</span>
-                    </div>
-                  );
-                })}
-              </div>
-              <p className="muted">
-                {lifeDoneCount === 7 ? "All done. Every pillar got attention today." : `${lifeDoneCount}/7 pillars completed today.`}
-              </p>
-            </Card>
-
-          </section>
-
-          <section className="summary-strip">
-            <div className="summary-copy">
-              <p className="eyebrow">XP Hero Card</p>
-              <h2>Today is a compounding system, not a checklist.</h2>
-              <p className="muted">Complete all default Life and Study tasks to trigger the daily completion moment.</p>
-            </div>
-            <div className="overview-cards">
-              {heroCards.map((card) => (
-                <div key={card.label} className="overview-card" style={{ "--accent": card.color }}>
-                  <card.icon size={18} />
-                  <span>{card.label}</span>
-                  <strong>{card.value}</strong>
+                  {mainTask ? (
+                    <button className="ghost-button execution-start-button" onClick={() => startExecution(mainTask)}>
+                      <Play size={16} />
+                      Start
+                    </button>
+                  ) : null}
                 </div>
-              ))}
-            </div>
-          </section>
 
-          {allHabitsDone ? (
-            <section className="completion-sheet">
-              <div>
-                <p className="eyebrow">Daily Completion</p>
-                <h3>Life + Study default stack completed.</h3>
-              </div>
-              <div className="completion-stats">
-                <span>{formatNumber(todayXP)} XP today</span>
-                <span>LV {level.level}</span>
-                <span>{allDefaultTrackedTaskIds.length} defaults cleared</span>
-              </div>
-            </section>
-          ) : null}
+                <div className="execution-side-list">
+                  <div className="execution-section-head">
+                    <p className="eyebrow">Side Tasks</p>
+                    <span className="muted">{Math.max(0, dashboardTasks.length - (mainTask ? 1 : 0))} remaining</span>
+                  </div>
+                  <div className="execution-queue">
+                    {dashboardTasks.filter((task) => task.id !== mainTask?.id).slice(0, 8).map((task) => (
+                      <article key={task.id} className="execution-task-card">
+                        <div className="execution-task-copy">
+                          <span className="execution-task-category">{task.category}</span>
+                          <strong>{task.label}</strong>
+                          <small>
+                            {task.context} · +{task.xpReward} XP · +{task.attributeDelta} {ATTRIBUTE_LABELS[task.attributeKey]}
+                          </small>
+                        </div>
+                        <button className="ghost-button" onClick={() => startExecution(task)}>
+                          <Play size={16} />
+                          Start
+                        </button>
+                      </article>
+                    ))}
+                  </div>
+                </div>
+              </section>
+            </div>
+
+            <aside className="execution-layout-secondary">
+              <article className="execution-feedback-card">
+                <p className="eyebrow">Character State</p>
+                <div className="execution-feedback-stack">
+                  <div className="execution-stat-row">
+                    <span>Level</span>
+                    <strong>{level.level}</strong>
+                  </div>
+                  <div className="execution-stat-row">
+                    <span>XP Progress</span>
+                    <strong>
+                      {formatNumber(level.current)} / {formatNumber(level.needed)}
+                    </strong>
+                  </div>
+                  <div className="progress-track execution-progress-track">
+                    <span style={{ width: `${(level.current / level.needed) * 100}%` }} />
+                  </div>
+                </div>
+              </article>
+
+              <article className="execution-feedback-card execution-current-task-card">
+                <p className="eyebrow">Current Task</p>
+                {activeExecutionTask ? (
+                  <div className="execution-feedback-stack">
+                    <h3>{activeExecutionTask.label}</h3>
+                    <div className="execution-stat-row">
+                      <span>Status</span>
+                      <strong>{state.execution.status === "paused" ? "Paused" : "Active"}</strong>
+                    </div>
+                    <div className="execution-stat-row">
+                      <span>Timer</span>
+                      <strong>{formattedExecutionTime}</strong>
+                    </div>
+                    <div className="execution-stat-row">
+                      <span>Reward</span>
+                      <strong>+{activeExecutionTask.xpReward} XP</strong>
+                    </div>
+                    <div className="execution-feedback-actions">
+                      <button className="ghost-button" onClick={toggleExecutionPause}>
+                        {state.execution.status === "active" ? <Pause size={16} /> : <Play size={16} />}
+                        {state.execution.status === "active" ? "Pause" : "Resume"}
+                      </button>
+                      <button className="ghost-button execution-complete-button" onClick={completeExecution}>
+                        <CheckCircle2 size={16} />
+                        Complete
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="execution-feedback-stack">
+                    <h3>Idle</h3>
+                    <p className="muted">No active task</p>
+                  </div>
+                )}
+              </article>
+
+              <article className="execution-feedback-card">
+                <p className="eyebrow">Today Progress</p>
+                <div className="execution-feedback-stack">
+                  <div className="execution-stat-row">
+                    <span>Tasks completed</span>
+                    <strong>{todayCompletedCount}</strong>
+                  </div>
+                  <div className="execution-stat-row">
+                    <span>XP gained today</span>
+                    <strong>{formatNumber(todayXP)} XP</strong>
+                  </div>
+                </div>
+              </article>
+            </aside>
+          </section>
         </>
       ) : (
         <>

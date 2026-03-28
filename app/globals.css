@@ -581,6 +581,19 @@ h1 {
   margin-top: 18px;
 }
 
+.execution-layout {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 20px;
+  align-items: start;
+}
+
+.execution-layout-primary,
+.execution-layout-secondary {
+  display: grid;
+  gap: 18px;
+}
+
 .execution-active-panel,
 .execution-main-card,
 .execution-task-card {
@@ -632,8 +645,7 @@ h1 {
 
 .execution-entry {
   display: grid;
-  gap: 14px;
-  margin-bottom: 18px;
+  gap: 22px;
 }
 
 .execution-main-card {
@@ -652,9 +664,21 @@ h1 {
   gap: 8px;
 }
 
+.execution-side-list {
+  display: grid;
+  gap: 12px;
+}
+
+.execution-section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
 .execution-queue {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: 1fr;
   gap: 12px;
 }
 
@@ -695,6 +719,49 @@ h1 {
 
 .execution-start-button {
   min-width: 108px;
+}
+
+.execution-feedback-card {
+  display: grid;
+  gap: 12px;
+  padding: 18px;
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  background: var(--surface);
+  box-shadow: var(--shadow);
+}
+
+.execution-feedback-stack {
+  display: grid;
+  gap: 12px;
+}
+
+.execution-stat-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.execution-stat-row span {
+  color: var(--text-sub);
+  font-size: 0.9rem;
+}
+
+.execution-current-task-card {
+  min-height: 210px;
+}
+
+.execution-feedback-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 4px;
+}
+
+.execution-progress-track {
+  margin-top: 0;
 }
 
 .card-timeline {
@@ -2184,6 +2251,10 @@ select {
     grid-template-columns: 1fr;
   }
 
+  .execution-layout {
+    grid-template-columns: 1fr;
+  }
+
   .dashboard-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
@@ -2215,8 +2286,8 @@ select {
     grid-template-columns: 1fr;
   }
 
-  .execution-queue {
-    grid-template-columns: 1fr;
+  .execution-layout-secondary {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }
 
@@ -2271,6 +2342,10 @@ select {
     align-items: flex-start;
     grid-template-columns: 1fr;
     flex-direction: column;
+  }
+
+  .execution-layout-secondary {
+    grid-template-columns: 1fr;
   }
 
   .hero-inline-stats {
