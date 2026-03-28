@@ -1158,6 +1158,49 @@ select {
   align-content: start;
 }
 
+.life-task-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.life-task-card {
+  display: grid;
+  gap: 12px;
+  padding: 16px;
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  background: var(--surface-2);
+}
+
+.life-task-head {
+  display: grid;
+  gap: 4px;
+}
+
+.life-task-head strong {
+  font-size: 1rem;
+  letter-spacing: -0.03em;
+}
+
+.life-task-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.life-task-actions.is-rating {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.life-task-actions .chip {
+  justify-content: center;
+}
+
+.life-task-boolean {
+  justify-content: center;
+}
+
 .life-page-secondary .panel-card {
   min-height: 0;
   height: auto;
@@ -2530,6 +2573,10 @@ select {
   .life-quick-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 8px;
+  }
+
+  .life-task-grid {
+    grid-template-columns: 1fr;
   }
 
   .card-timeline,

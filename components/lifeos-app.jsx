@@ -1343,7 +1343,7 @@ export function LifeOSApp({ view = "dashboard" }) {
               <section className="life-page-layout">
                 <div className="life-page-primary">
                   <ModuleCard title="Life" color={MODULE_COLORS.life} icon={HeartPulse}>
-                    <TaskList tasks={lifePageTasks} logs={state.logs} todayKey={todayKey} notes={state.notes} onLog={logTask} showStreaks />
+                    <LifeTaskGrid tasks={lifePageTasks} logs={state.logs} todayKey={todayKey} onLog={logTask} showStreaks />
                   </ModuleCard>
                 </div>
 
@@ -1904,15 +1904,7 @@ function TaskList({ tasks, logs, todayKey, notes, onLog, currency, showStreaks =
             <div className="task-copy">
               <div className="task-heading">
                 <strong>{task.label}</strong>
-                <span className="task-value">
-                  {task.type === "boolean"
-                    ? value
-                      ? "Clean"
-                      : "Pending"
-                    : value
-                      ? `${currency && task.unit === "$" ? currency : ""}${value}${task.unit !== "$" ? ` ${task.unit}` : ""}`
-                      : `0 ${task.unit}`}
-                </span>
+                <span className="task-value">{formatTaskValue(task, value, currency)}</span>
               </div>
               {notes?.[task.id] ? <p>{notes[task.id]}</p> : null}
               {task.type !== "boolean" ? (
@@ -1954,6 +1946,75 @@ function TaskList({ tasks, logs, todayKey, notes, onLog, currency, showStreaks =
       })}
     </div>
   );
+}
+
+function LifeTaskGrid({ tasks, logs, todayKey, onLog, currency, showStreaks = false }) {
+  return (
+    <div className="life-task-grid">
+      {tasks.map((task) => {
+        const value = getLogValue(logs, todayKey, task.id);
+        const isRating = task.type === "rating" || task.type === "ratingReverse";
+
+        return (
+          <article key={task.id} className="life-task-card">
+            <div className="life-task-head">
+              <strong>{task.label}</strong>
+              <span className="task-value">{formatTaskValue(task, value, currency)}</span>
+            </div>
+
+            {task.type !== "boolean" ? (
+              <div className={`life-task-actions ${isRating ? "is-rating" : ""}`}>
+                {task.presets?.map((preset) => (
+                  <button key={preset} className="chip" onClick={() => onLog(task, preset)}>
+                    {currency && task.unit === "$" ? currency : ""}
+                    {preset}
+                    {task.unit !== "$" ? task.unit : ""}
+                  </button>
+                ))}
+              </div>
+            ) : null}
+
+            {isRating ? (
+              <div className="life-task-actions is-rating">
+                {[1, 2, 3, 4, 5].map((rating) => (
+                  <button key={rating} className={`chip ${value === rating ? "is-active" : ""}`} onClick={() => onLog(task, rating)}>
+                    {rating}★
+                  </button>
+                ))}
+              </div>
+            ) : null}
+
+            {task.type === "boolean" ? (
+              <button className={`boolean-log life-task-boolean ${value ? "is-active" : ""}`} onClick={() => onLog(task, !value)}>
+                {value ? "✓ Clean" : "Log Clean Day"}
+              </button>
+            ) : null}
+
+            {showStreaks ? (
+              <div className="streak-row">
+                {getTaskHistory(logs, task.id).map((entry) => (
+                  <span key={entry.key} className={entry.done ? "is-on" : ""} />
+                ))}
+                {getStreak(logs, task.id) >= 2 ? <em>🔥 {getStreak(logs, task.id)}</em> : null}
+              </div>
+            ) : null}
+          </article>
+        );
+      })}
+    </div>
+  );
+}
+
+function formatTaskValue(task, value, currency) {
+  if (task.type === "boolean") {
+    return value ? "Clean" : "Pending";
+  }
+
+  if (value) {
+    return `${currency && task.unit === "$" ? currency : ""}${value}${task.unit !== "$" ? ` ${task.unit}` : ""}`;
+  }
+
+  return `0 ${task.unit}`;
 }
 
 function TimelineMetric({ label, value }) {
