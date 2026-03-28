@@ -1061,11 +1061,13 @@ export function LifeOSApp({ view = "dashboard" }) {
                 <div className="timeline-track">
                   <span style={{ width: `${lifeUsedRatio * 100}%` }} />
                 </div>
-                <div className="timeline-metrics compact">
-                  <TimelineMetric label="Life Used" value={`${Math.round(lifeUsedRatio * 100)}%`} />
-                  <TimelineMetric label="Days Left" value={formatNumber(daysLeft)} />
-                  <TimelineMetric label="To Retirement" value={`${yearsToRetirement} yrs`} />
-                </div>
+                <CompactStatList
+                  items={[
+                    { label: "Life Used", value: `${Math.round(lifeUsedRatio * 100)}%` },
+                    { label: "Days Left", value: formatNumber(daysLeft) },
+                    { label: "To Retirement", value: `${yearsToRetirement} yrs` }
+                  ]}
+                />
               </Card>
 
               <Card title="Year Goal" icon={CircleDollarSign} className="card-year-goal dashboard-rail-card">
@@ -1079,20 +1081,13 @@ export function LifeOSApp({ view = "dashboard" }) {
                 <div className="timeline-track">
                   <span style={{ width: `${income.progress * 100}%` }} />
                 </div>
-                <div className="timeline-metrics compact">
-                  <TimelineMetric
-                    label="Daily Target"
-                    value={`${state.profile.currency}${formatNumber(income.dailyTarget)}`}
-                  />
-                  <TimelineMetric
-                    label="Monthly Target"
-                    value={`${state.profile.currency}${formatNumber(income.monthlyTarget)}`}
-                  />
-                  <TimelineMetric
-                    label="Should Be At"
-                    value={`${state.profile.currency}${formatNumber(income.shouldHaveMade)}`}
-                  />
-                </div>
+                <CompactStatList
+                  items={[
+                    { label: "Daily Target", value: `${state.profile.currency}${formatNumber(income.dailyTarget)}` },
+                    { label: "Monthly Target", value: `${state.profile.currency}${formatNumber(income.monthlyTarget)}` },
+                    { label: "Should Be At", value: `${state.profile.currency}${formatNumber(income.shouldHaveMade)}` }
+                  ]}
+                />
               </Card>
 
               <Card title="Personal Best" icon={Gem} className="card-pb dashboard-rail-card">
@@ -1103,11 +1098,13 @@ export function LifeOSApp({ view = "dashboard" }) {
                 <div className="progress-track is-gold">
                   <span style={{ width: `${Math.min(pbRatio, 1) * 100}%` }} />
                 </div>
-                <div className="timeline-metrics compact">
-                  <TimelineMetric label="PB XP" value={`${formatNumber(state.profile.pbXP || 0)} XP`} />
-                  <TimelineMetric label="Tasks Done" value={formatNumber(todayCompletedCount)} />
-                  <TimelineMetric label="Status" value={allHabitsDone ? "Clean day" : "In progress"} />
-                </div>
+                <CompactStatList
+                  items={[
+                    { label: "PB XP", value: `${formatNumber(state.profile.pbXP || 0)} XP` },
+                    { label: "Tasks Done", value: formatNumber(todayCompletedCount) },
+                    { label: "Status", value: allHabitsDone ? "Clean day" : "In progress" }
+                  ]}
+                />
               </Card>
 
               <Card title="Core Streaks" icon={Flame} className="card-streaks dashboard-rail-card">
@@ -1863,6 +1860,19 @@ function TimelineMetric({ label, value }) {
     <div className="timeline-metric">
       <span>{label}</span>
       <strong>{value}</strong>
+    </div>
+  );
+}
+
+function CompactStatList({ items }) {
+  return (
+    <div className="compact-stat-list">
+      {items.map((item) => (
+        <div key={item.label} className="compact-stat-row">
+          <span>{item.label}</span>
+          <strong>{item.value}</strong>
+        </div>
+      ))}
     </div>
   );
 }

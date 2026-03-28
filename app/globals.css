@@ -639,6 +639,35 @@ h1 {
   margin-top: 12px;
 }
 
+.dashboard-support-rail .compact-stat-list {
+  display: grid;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.dashboard-support-rail .compact-stat-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: baseline;
+  gap: 12px;
+}
+
+.dashboard-support-rail .compact-stat-row span,
+.dashboard-support-rail .compact-stat-row strong {
+  overflow-wrap: anywhere;
+}
+
+.dashboard-support-rail .compact-stat-row span {
+  color: var(--text-sub);
+  font-size: 0.7rem;
+}
+
+.dashboard-support-rail .compact-stat-row strong {
+  font-size: 0.96rem;
+  line-height: 1.15;
+  text-align: right;
+}
+
 .dashboard-support-rail .timeline-metric {
   padding: 9px 10px;
 }
