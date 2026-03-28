@@ -595,13 +595,28 @@ h1 {
 }
 
 .dashboard-support-rail {
+  gap: 16px;
   align-content: start;
 }
 
 .dashboard-rail-card {
   min-height: 0;
-  padding: 18px;
+  padding: 16px;
   border-radius: 22px;
+}
+
+.dashboard-support-rail .panel-card,
+.dashboard-support-rail .execution-feedback-card {
+  align-self: start;
+  height: auto;
+}
+
+.dashboard-support-rail .panel-card > .muted:last-child,
+.dashboard-support-rail .panel-card > .streak-widget,
+.dashboard-support-rail .panel-card > .pillars-grid,
+.dashboard-support-rail .panel-card > .controls-grid,
+.dashboard-support-rail .panel-card > .timeline-metrics:last-child {
+  margin-top: 12px;
 }
 
 .dashboard-support-rail .panel-title,
@@ -620,12 +635,12 @@ h1 {
 }
 
 .dashboard-support-rail .timeline-metrics {
-  gap: 10px;
-  margin-top: 14px;
+  gap: 8px;
+  margin-top: 12px;
 }
 
 .dashboard-support-rail .timeline-metric {
-  padding: 10px;
+  padding: 9px 10px;
 }
 
 .dashboard-support-rail .timeline-metric strong {
@@ -638,13 +653,13 @@ h1 {
 
 .dashboard-support-rail .pillars-grid {
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 10px;
-  margin-top: 14px;
+  gap: 8px;
+  margin-top: 12px;
 }
 
 .dashboard-support-rail .pillar-hex {
-  min-height: 78px;
-  padding: 10px 8px;
+  min-height: 72px;
+  padding: 8px 7px;
 }
 
 .dashboard-support-rail .pillar-hex span {
@@ -652,12 +667,12 @@ h1 {
 }
 
 .dashboard-support-rail .streak-widget {
-  gap: 10px;
-  margin-top: 14px;
+  gap: 8px;
+  margin-top: 12px;
 }
 
 .dashboard-support-rail .streak-inline {
-  gap: 10px;
+  gap: 8px;
 }
 
 .execution-active-panel,
@@ -843,6 +858,29 @@ h1 {
 
 .execution-progress-track {
   margin-top: 0;
+}
+
+.dashboard-support-rail .execution-feedback-card {
+  gap: 10px;
+  padding: 16px;
+}
+
+.dashboard-support-rail .execution-feedback-stack {
+  gap: 10px;
+}
+
+.dashboard-support-rail .execution-current-task-card {
+  min-height: 0;
+}
+
+.dashboard-support-rail .execution-feedback-actions {
+  gap: 8px;
+  margin-top: 2px;
+}
+
+.dashboard-support-rail .progress-track,
+.dashboard-support-rail .timeline-track {
+  margin-top: 10px;
 }
 
 .card-timeline {
