@@ -383,6 +383,34 @@ export function LifeOSApp({ view = "dashboard" }) {
     0
   );
   const todayCompletedCount = completedWorkCount + studyDoneCount + lifeDoneCount;
+  const lifeUsedRatio = clamp(state.profile.age / state.profile.lifeExpectancy, 0, 1);
+  const daysLeft = Math.max(0, Math.round((state.profile.lifeExpectancy - state.profile.age) * 365));
+  const yearsToRetirement = Math.max(0, state.profile.retirementAge - state.profile.age);
+  const pillarCompletion = LIFE_PILLARS.map((pillar) => {
+    const value = getLogValue(state.logs, todayKey, pillar.id);
+    const done = typeof value === "boolean" ? value : Number(value) > 0;
+    return {
+      ...pillar,
+      done
+    };
+  });
+  const coreStreaks = [
+    {
+      label: "Language Skills",
+      history: getTaskHistory(state.logs, "language-skills", 7),
+      streak: getStreak(state.logs, "language-skills")
+    },
+    {
+      label: "Exercise",
+      history: getTaskHistory(state.logs, "exercise", 7),
+      streak: getStreak(state.logs, "exercise")
+    },
+    {
+      label: "Meditation",
+      history: getTaskHistory(state.logs, "meditation", 7),
+      streak: getStreak(state.logs, "meditation")
+    }
+  ];
 
   const applyTrackedLog = (current, task, value) => {
     const normalized =
@@ -1024,7 +1052,90 @@ export function LifeOSApp({ view = "dashboard" }) {
               </section>
             </div>
 
-            <aside className="execution-layout-secondary">
+            <aside className="execution-layout-secondary dashboard-support-rail">
+              <Card title="Life Timeline" icon={Timer} className="card-timeline dashboard-rail-card">
+                <div className="metric-row">
+                  <span className="muted">Life Used</span>
+                  <strong>{Math.round(lifeUsedRatio * 100)}%</strong>
+                </div>
+                <div className="timeline-track">
+                  <span style={{ width: `${lifeUsedRatio * 100}%` }} />
+                </div>
+                <div className="timeline-metrics compact">
+                  <TimelineMetric label="Life Used" value={`${Math.round(lifeUsedRatio * 100)}%`} />
+                  <TimelineMetric label="Days Left" value={formatNumber(daysLeft)} />
+                  <TimelineMetric label="To Retirement" value={`${yearsToRetirement} yrs`} />
+                </div>
+              </Card>
+
+              <Card title="Year Goal" icon={CircleDollarSign} className="card-year-goal dashboard-rail-card">
+                <div className="metric-row">
+                  <span className="muted">Year Goal</span>
+                  <strong>
+                    {state.profile.currency}
+                    {formatNumber(state.profile.yearGoal)}
+                  </strong>
+                </div>
+                <div className="timeline-track">
+                  <span style={{ width: `${income.progress * 100}%` }} />
+                </div>
+                <div className="timeline-metrics compact">
+                  <TimelineMetric
+                    label="Daily Target"
+                    value={`${state.profile.currency}${formatNumber(income.dailyTarget)}`}
+                  />
+                  <TimelineMetric
+                    label="Monthly Target"
+                    value={`${state.profile.currency}${formatNumber(income.monthlyTarget)}`}
+                  />
+                  <TimelineMetric
+                    label="Should Be At"
+                    value={`${state.profile.currency}${formatNumber(income.shouldHaveMade)}`}
+                  />
+                </div>
+              </Card>
+
+              <Card title="Personal Best" icon={Gem} className="card-pb dashboard-rail-card">
+                <div className="metric-row">
+                  <span className="muted">Today XP</span>
+                  <strong>{formatNumber(todayXP)} XP</strong>
+                </div>
+                <div className="progress-track is-gold">
+                  <span style={{ width: `${Math.min(pbRatio, 1) * 100}%` }} />
+                </div>
+                <div className="timeline-metrics compact">
+                  <TimelineMetric label="PB XP" value={`${formatNumber(state.profile.pbXP || 0)} XP`} />
+                  <TimelineMetric label="Tasks Done" value={formatNumber(todayCompletedCount)} />
+                  <TimelineMetric label="Status" value={allHabitsDone ? "Clean day" : "In progress"} />
+                </div>
+              </Card>
+
+              <Card title="Core Streaks" icon={Flame} className="card-streaks dashboard-rail-card">
+                <div className="streak-widget">
+                  {coreStreaks.map((item) => (
+                    <StreakMini key={item.label} label={item.label} history={item.history} streak={item.streak} />
+                  ))}
+                </div>
+              </Card>
+
+              <Card title="Life Pillars" icon={Sparkles} className="card-pillars dashboard-rail-card">
+                <div className="pillars-grid">
+                  {pillarCompletion.map((pillar) => {
+                    const Icon = pillarIcons[pillar.id];
+                    return (
+                      <div
+                        key={pillar.id}
+                        className={`pillar-hex ${pillar.done ? "is-done" : ""}`}
+                        style={{ "--pillar-color": pillar.color }}
+                      >
+                        <Icon size={18} className="pillar-icon" />
+                        <span>{pillar.short}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </Card>
+
               <article className="execution-feedback-card execution-current-task-card">
                 <p className="eyebrow">Current Task</p>
                 {activeExecutionTask ? (

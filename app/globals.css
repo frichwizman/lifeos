@@ -594,6 +594,72 @@ h1 {
   gap: 20px;
 }
 
+.dashboard-support-rail {
+  align-content: start;
+}
+
+.dashboard-rail-card {
+  min-height: 0;
+  padding: 18px;
+  border-radius: 22px;
+}
+
+.dashboard-support-rail .panel-title,
+.dashboard-support-rail .metric-row,
+.dashboard-support-rail .timeline-metric,
+.dashboard-support-rail .streak-inline {
+  min-width: 0;
+}
+
+.dashboard-support-rail .panel-title span,
+.dashboard-support-rail .timeline-metric strong,
+.dashboard-support-rail .timeline-metric span,
+.dashboard-support-rail .metric-row strong,
+.dashboard-support-rail .metric-row span {
+  overflow-wrap: anywhere;
+}
+
+.dashboard-support-rail .timeline-metrics {
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.dashboard-support-rail .timeline-metric {
+  padding: 10px;
+}
+
+.dashboard-support-rail .timeline-metric strong {
+  font-size: 0.96rem;
+}
+
+.dashboard-support-rail .timeline-metric span {
+  font-size: 0.7rem;
+}
+
+.dashboard-support-rail .pillars-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.dashboard-support-rail .pillar-hex {
+  min-height: 78px;
+  padding: 10px 8px;
+}
+
+.dashboard-support-rail .pillar-hex span {
+  font-size: 0.72rem;
+}
+
+.dashboard-support-rail .streak-widget {
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.dashboard-support-rail .streak-inline {
+  gap: 10px;
+}
+
 .execution-active-panel,
 .execution-main-card,
 .execution-task-card {
