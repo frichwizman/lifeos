@@ -601,22 +601,31 @@ h1 {
 
 .dashboard-rail-card {
   min-height: 0;
-  padding: 16px;
+  padding: 14px 16px;
   border-radius: 22px;
 }
 
 .dashboard-support-rail .panel-card,
 .dashboard-support-rail .execution-feedback-card {
   align-self: start;
+  min-height: 0;
   height: auto;
+}
+
+.dashboard-support-rail .panel-card {
+  display: grid;
+  gap: 10px;
+  align-content: start;
+  flex: none;
 }
 
 .dashboard-support-rail .panel-card > .muted:last-child,
 .dashboard-support-rail .panel-card > .streak-widget,
 .dashboard-support-rail .panel-card > .pillars-grid,
 .dashboard-support-rail .panel-card > .controls-grid,
-.dashboard-support-rail .panel-card > .timeline-metrics:last-child {
-  margin-top: 12px;
+.dashboard-support-rail .panel-card > .timeline-metrics:last-child,
+.dashboard-support-rail .panel-card > .compact-stat-grid:last-child {
+  margin-top: 10px;
 }
 
 .dashboard-support-rail .panel-title,
@@ -643,7 +652,7 @@ h1 {
   display: grid;
   grid-template-columns: repeat(var(--compact-columns, 3), minmax(0, 1fr));
   gap: 8px;
-  margin-top: 12px;
+  margin-top: 10px;
 }
 
 .dashboard-support-rail .compact-stat-card {
