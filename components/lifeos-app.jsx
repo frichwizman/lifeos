@@ -1011,10 +1011,12 @@ export function LifeOSApp({ view = "dashboard" }) {
                             {task.context} · +{task.xpReward} XP · +{task.attributeDelta} {ATTRIBUTE_LABELS[task.attributeKey]}
                           </small>
                         </div>
-                        <button className="ghost-button" onClick={() => startExecution(task)}>
-                          <Play size={16} />
-                          Start
-                        </button>
+                        <div className="execution-task-actions">
+                          <button className="ghost-button" onClick={() => startExecution(task)}>
+                            <Play size={16} />
+                            Start
+                          </button>
+                        </div>
                       </article>
                     ))}
                   </div>
@@ -1023,25 +1025,6 @@ export function LifeOSApp({ view = "dashboard" }) {
             </div>
 
             <aside className="execution-layout-secondary">
-              <article className="execution-feedback-card">
-                <p className="eyebrow">Character State</p>
-                <div className="execution-feedback-stack">
-                  <div className="execution-stat-row">
-                    <span>Level</span>
-                    <strong>{level.level}</strong>
-                  </div>
-                  <div className="execution-stat-row">
-                    <span>XP Progress</span>
-                    <strong>
-                      {formatNumber(level.current)} / {formatNumber(level.needed)}
-                    </strong>
-                  </div>
-                  <div className="progress-track execution-progress-track">
-                    <span style={{ width: `${(level.current / level.needed) * 100}%` }} />
-                  </div>
-                </div>
-              </article>
-
               <article className="execution-feedback-card execution-current-task-card">
                 <p className="eyebrow">Current Task</p>
                 {activeExecutionTask ? (
@@ -1088,6 +1071,25 @@ export function LifeOSApp({ view = "dashboard" }) {
                   <div className="execution-stat-row">
                     <span>XP gained today</span>
                     <strong>{formatNumber(todayXP)} XP</strong>
+                  </div>
+                </div>
+              </article>
+
+              <article className="execution-feedback-card">
+                <p className="eyebrow">Character State</p>
+                <div className="execution-feedback-stack">
+                  <div className="execution-stat-row">
+                    <span>Level</span>
+                    <strong>{level.level}</strong>
+                  </div>
+                  <div className="execution-stat-row">
+                    <span>XP Progress</span>
+                    <strong>
+                      {formatNumber(level.current)} / {formatNumber(level.needed)}
+                    </strong>
+                  </div>
+                  <div className="progress-track execution-progress-track">
+                    <span style={{ width: `${(level.current / level.needed) * 100}%` }} />
                   </div>
                 </div>
               </article>
