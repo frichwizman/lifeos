@@ -5,28 +5,41 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   Activity,
+  Armchair,
   BriefcaseBusiness,
   CircleDollarSign,
   Command,
+  CookingPot,
   Droplets,
   Download,
   Flame,
+  Footprints,
+  Gamepad2,
   Gem,
   GraduationCap,
   HeartPulse,
+  Home,
   Link2,
+  MessageCircle,
+  MonitorPlay,
   MoonStar,
+  Music4,
   Save,
   RefreshCw,
+  Package,
   ShieldCheck,
+  ShoppingBasket,
   Sparkle,
   Plus,
   Play,
+  Phone,
   Pause,
   CheckCircle2,
   Sparkles,
+  Trash2,
   Users,
-  Timer
+  Timer,
+  UtensilsCrossed
 } from "lucide-react";
 import {
   CURRENCIES,
@@ -89,6 +102,56 @@ const ATTRIBUTE_LABELS = {
   wealth: "Wealth",
   social: "Social"
 };
+
+const LIFE_QUICK_ACTIONS = [
+  {
+    title: "Household",
+    items: [
+      { label: "Laundry", icon: RefreshCw },
+      { label: "Clean", icon: Sparkles },
+      { label: "Organize", icon: BriefcaseBusiness },
+      { label: "Trash", icon: Trash2 },
+      { label: "Supplies", icon: Package },
+      { label: "Room", icon: Home }
+    ]
+  },
+  {
+    title: "Food",
+    items: [
+      { label: "Cook", icon: CookingPot },
+      { label: "Grocery", icon: ShoppingBasket },
+      { label: "Water", icon: Droplets },
+      { label: "Eat", icon: UtensilsCrossed }
+    ]
+  },
+  {
+    title: "Health",
+    items: [
+      { label: "Exercise", icon: Activity },
+      { label: "Meditation", icon: HeartPulse },
+      { label: "Sleep", icon: MoonStar },
+      { label: "Walk", icon: Footprints }
+    ]
+  },
+  {
+    title: "Social",
+    items: [
+      { label: "Call", icon: Phone },
+      { label: "Meet", icon: Users },
+      { label: "Chat", icon: MessageCircle },
+      { label: "Family", icon: Home }
+    ]
+  },
+  {
+    title: "Leisure",
+    items: [
+      { label: "Game", icon: Gamepad2 },
+      { label: "Video", icon: MonitorPlay },
+      { label: "Music", icon: Music4 },
+      { label: "Rest", icon: Armchair }
+    ]
+  }
+];
 
 const OFFICE_MAP = {
   width: 980,
@@ -198,6 +261,7 @@ export function LifeOSApp({ view = "dashboard" }) {
   const [ready, setReady] = useState(false);
   const [syncCodeInput, setSyncCodeInput] = useState("");
   const [backupCount, setBackupCount] = useState(0);
+  const [lifeQuickAction, setLifeQuickAction] = useState("");
   const [officePresence, setOfficePresence] = useState({
     x: 108,
     y: 138,
@@ -411,6 +475,24 @@ export function LifeOSApp({ view = "dashboard" }) {
       streak: getStreak(state.logs, "meditation")
     }
   ];
+  const lifeTaskMap = useMemo(
+    () =>
+      Object.fromEntries(
+        lifeGroups.flatMap((group) => group.items).map((task) => [task.id, task])
+      ),
+    []
+  );
+  const lifePageTasks = [
+    "exercise",
+    "meditation",
+    "sleep-quality",
+    "water-intake",
+    "stress-level",
+    "social-connection",
+    "risky-substances"
+  ]
+    .map((taskId) => lifeTaskMap[taskId])
+    .filter(Boolean);
 
   const applyTrackedLog = (current, task, value) => {
     const normalized =
@@ -658,6 +740,10 @@ export function LifeOSApp({ view = "dashboard" }) {
         }
       }));
     }
+  };
+
+  const triggerLifeQuickAction = (label) => {
+    setLifeQuickAction(label);
   };
 
   const heroCards = useMemo(
@@ -1254,16 +1340,35 @@ export function LifeOSApp({ view = "dashboard" }) {
             ) : null}
 
             {view === "life" ? (
-              <ModuleCard title="Life" color={MODULE_COLORS.life} icon={HeartPulse}>
-                <div className="group-stack">
-                  {lifeGroups.map((group) => (
-                    <div key={group.title} className="task-group">
-                      <div className="group-title">{group.title}</div>
-                      <TaskList tasks={group.items} logs={state.logs} todayKey={todayKey} notes={state.notes} onLog={logTask} showStreaks />
-                    </div>
-                  ))}
+              <section className="life-page-layout">
+                <div className="life-page-primary">
+                  <ModuleCard title="Life" color={MODULE_COLORS.life} icon={HeartPulse}>
+                    <TaskList tasks={lifePageTasks} logs={state.logs} todayKey={todayKey} notes={state.notes} onLog={logTask} showStreaks />
+                  </ModuleCard>
                 </div>
-              </ModuleCard>
+
+                <aside className="life-page-secondary">
+                  {LIFE_QUICK_ACTIONS.map((group) => (
+                    <Card key={group.title} title={group.title} icon={Sparkle} className="life-quick-card">
+                      <div className="life-quick-grid">
+                        {group.items.map((item) => {
+                          const Icon = item.icon;
+                          return (
+                            <button
+                              key={item.label}
+                              className={`life-quick-action ${lifeQuickAction === item.label ? "is-active" : ""}`}
+                              onClick={() => triggerLifeQuickAction(item.label)}
+                            >
+                              <Icon size={15} />
+                              <span>{item.label}</span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </Card>
+                  ))}
+                </aside>
+              </section>
             ) : null}
 
             {view === "money" ? (

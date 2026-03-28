@@ -1144,6 +1144,58 @@ select {
   grid-template-columns: 1fr;
 }
 
+.life-page-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(280px, 1fr);
+  gap: 20px;
+  width: 100%;
+}
+
+.life-page-primary,
+.life-page-secondary {
+  display: grid;
+  gap: 16px;
+  align-content: start;
+}
+
+.life-page-secondary .panel-card {
+  min-height: 0;
+  height: auto;
+  padding: 16px;
+}
+
+.life-quick-card {
+  gap: 12px;
+}
+
+.life-quick-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.life-quick-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 38px;
+  padding: 0 12px;
+  border: 1px solid var(--border-2);
+  border-radius: 14px;
+  background: var(--button-bg);
+  color: var(--button-text);
+  text-align: left;
+}
+
+.life-quick-action.is-active {
+  background: var(--button-bg-active);
+}
+
+.life-quick-action span {
+  font-size: 0.84rem;
+  line-height: 1.2;
+}
+
 .module-page-intro {
   display: grid;
   gap: 6px;
@@ -2410,6 +2462,10 @@ select {
     grid-template-columns: 1fr;
   }
 
+  .life-page-layout {
+    grid-template-columns: 1fr;
+  }
+
   .execution-layout {
     grid-template-columns: 1fr;
   }
@@ -2469,6 +2525,11 @@ select {
   .overview-cards,
   .hero-stat-strip {
     grid-template-columns: 1fr;
+  }
+
+  .life-quick-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
   }
 
   .card-timeline,
