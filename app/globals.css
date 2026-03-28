@@ -1,13 +1,23 @@
 :root {
-  --bg: #0e0e10;
-  --surface: #141416;
-  --surface-2: #1a1a1d;
-  --border: rgba(255, 255, 255, 0.07);
-  --border-2: rgba(255, 255, 255, 0.12);
-  --text: #ededef;
-  --text-sub: rgba(255, 255, 255, 0.55);
-  --text-dim: rgba(255, 255, 255, 0.28);
-  --accent: #e8b84b;
+  --bg: #f4f6f9;
+  --surface: #ffffff;
+  --surface-2: #f7f9fc;
+  --surface-3: #eef3f8;
+  --border: #dde4ec;
+  --border-2: #c9d4e0;
+  --text: #18212b;
+  --text-sub: #5f6b7a;
+  --text-dim: #8f99a8;
+  --accent: #2f6fe4;
+  --accent-soft: #eaf1ff;
+  --success: #2f8f67;
+  --success-soft: #e8f5ef;
+  --highlight-bg: #eef4ff;
+  --highlight-border: #bfd2ff;
+  --button-bg: #ffffff;
+  --button-bg-active: #edf3fb;
+  --button-text: #24303d;
+  --track-bg: #e7edf4;
   --shadow: 0 24px 60px rgba(0, 0, 0, 0.35);
 }
 
@@ -17,10 +27,7 @@
 
 html {
   min-height: 100%;
-  background:
-    radial-gradient(circle at top, rgba(232, 184, 75, 0.12), transparent 28%),
-    radial-gradient(circle at right, rgba(88, 180, 209, 0.08), transparent 24%),
-    var(--bg);
+  background: var(--bg);
 }
 
 body {
@@ -28,10 +35,7 @@ body {
   margin: 0;
   font-family: "Segoe UI", "Helvetica Neue", Helvetica, Arial, sans-serif;
   color: var(--text);
-  background:
-    radial-gradient(circle at top, rgba(232, 184, 75, 0.12), transparent 28%),
-    radial-gradient(circle at right, rgba(88, 180, 209, 0.08), transparent 24%),
-    var(--bg);
+  background: var(--bg);
 }
 
 code,
@@ -406,7 +410,7 @@ button {
   padding: 0 14px;
   border: 1px solid var(--border);
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.03);
+  background: var(--button-bg);
   color: var(--text-sub);
   text-decoration: none;
   white-space: nowrap;
@@ -414,7 +418,7 @@ button {
 
 .nav-link.is-active {
   color: var(--text);
-  background: rgba(255, 255, 255, 0.09);
+  background: var(--button-bg-active);
   border-color: var(--border-2);
 }
 
@@ -425,7 +429,7 @@ button {
   position: relative;
   z-index: 0;
   backdrop-filter: blur(24px);
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0.01));
+  background: var(--surface);
   border: 1px solid var(--border);
   box-shadow: var(--shadow);
 }
@@ -509,7 +513,7 @@ h1 {
   height: 44px;
   border: 1px solid var(--border);
   border-radius: 14px;
-  background: rgba(255, 255, 255, 0.04);
+  background: var(--surface-2);
   color: var(--text);
 }
 
@@ -523,7 +527,7 @@ h1 {
 .overview-card,
 .project-card,
 .task-row {
-  background: rgba(255, 255, 255, 0.03);
+  background: var(--surface-2);
   border: 1px solid var(--border);
   border-radius: 16px;
   padding: 12px;
@@ -549,7 +553,7 @@ h1 {
   min-height: 56px;
   min-width: 120px;
   border: 1px solid var(--border);
-  background: rgba(255, 255, 255, 0.03);
+  background: var(--surface-2);
   border-radius: 16px;
   padding: 10px 12px;
 }
@@ -581,7 +585,7 @@ h1 {
 .execution-main-card,
 .execution-task-card {
   border: 1px solid var(--border);
-  background: rgba(255, 255, 255, 0.03);
+  background: var(--surface);
   box-shadow: var(--shadow);
 }
 
@@ -621,8 +625,9 @@ h1 {
 }
 
 .execution-complete-button {
-  border-color: rgba(126, 232, 162, 0.35);
-  color: #cbf2d4;
+  border-color: var(--success);
+  color: var(--success);
+  background: var(--success-soft);
 }
 
 .execution-entry {
@@ -638,6 +643,8 @@ h1 {
   gap: 18px;
   padding: 18px;
   border-radius: 22px;
+  border-color: var(--highlight-border);
+  background: var(--highlight-bg);
 }
 
 .execution-main-copy {
@@ -661,8 +668,8 @@ h1 {
 }
 
 .execution-task-card.is-main {
-  border-color: rgba(232, 184, 75, 0.32);
-  background: rgba(232, 184, 75, 0.08);
+  border-color: var(--highlight-border);
+  background: var(--highlight-bg);
 }
 
 .execution-task-copy {
@@ -766,7 +773,7 @@ h1 {
   height: 10px;
   margin-top: 14px;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.07);
+  background: var(--track-bg);
 }
 
 .progress-track span,
@@ -774,11 +781,11 @@ h1 {
   display: block;
   height: 100%;
   border-radius: inherit;
-  background: linear-gradient(90deg, var(--accent), #f2d894);
+  background: var(--accent);
 }
 
 .progress-track.is-gold span {
-  background: linear-gradient(90deg, #f6d56f, #fff4be);
+  background: var(--accent);
 }
 
 .timeline-metrics {
@@ -795,7 +802,7 @@ h1 {
 .timeline-metric {
   padding: 14px;
   border-radius: 18px;
-  background: rgba(255, 255, 255, 0.025);
+  background: var(--surface-2);
   border: 1px solid var(--border);
 }
 
@@ -839,7 +846,7 @@ select {
   border-radius: 14px;
   padding: 0 12px;
   color: var(--text);
-  background: rgba(255, 255, 255, 0.035);
+  background: var(--surface-2);
 }
 
 .pillars-grid {
@@ -854,7 +861,7 @@ select {
   text-align: center;
   padding: 14px;
   clip-path: polygon(25% 5%, 75% 5%, 100% 50%, 75% 95%, 25% 95%, 0 50%);
-  background: rgba(255, 255, 255, 0.03);
+  background: var(--surface-2);
   border: 1px solid var(--border);
 }
 
@@ -870,7 +877,7 @@ select {
 }
 
 .pillar-hex.is-done {
-  background: color-mix(in srgb, var(--pillar-color) 22%, rgba(255, 255, 255, 0.04));
+  background: color-mix(in srgb, var(--pillar-color) 16%, var(--surface-2));
   box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--pillar-color) 55%, transparent);
 }
 
@@ -2010,8 +2017,8 @@ select {
 .todo-row {
   border: 1px solid var(--border-2);
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.025);
-  color: var(--text);
+  background: var(--button-bg);
+  color: var(--button-text);
 }
 
 .chip,
@@ -2022,25 +2029,30 @@ select {
   white-space: nowrap;
 }
 
+.ghost-button {
+  background: var(--button-bg);
+}
+
 .chip.is-active,
 .boolean-log.is-active {
-  background: rgba(255, 255, 255, 0.12);
+  background: var(--button-bg-active);
 }
 
 .boolean-log.is-active {
-  border-color: rgba(126, 232, 162, 0.4);
-  color: #baf4cb;
+  border-color: var(--success);
+  color: var(--success);
+  background: var(--success-soft);
 }
 
 .streak-row span {
   width: 12px;
   height: 12px;
   border-radius: 4px;
-  background: rgba(255, 255, 255, 0.09);
+  background: var(--track-bg);
 }
 
 .streak-row span.is-on {
-  background: linear-gradient(180deg, #8ee2ff, #4e98b1);
+  background: var(--accent);
 }
 
 .streak-row.compact span {
@@ -2049,7 +2061,7 @@ select {
 }
 
 .streak-row em {
-  color: #ffbf5e;
+  color: var(--accent);
   font-style: normal;
   font-size: 0.85rem;
 }
@@ -2136,13 +2148,13 @@ select {
   min-height: 34px;
   border: 1px solid var(--border-2);
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.025);
-  color: var(--text);
+  background: var(--button-bg);
+  color: var(--button-text);
 }
 
 .todo-check.is-done {
-  border-color: rgba(232, 184, 75, 0.3);
-  background: rgba(232, 184, 75, 0.16);
+  border-color: var(--highlight-border);
+  background: var(--highlight-bg);
 }
 
 .todo-input {
@@ -2158,8 +2170,8 @@ select {
 }
 
 .todo-row.is-done {
-  background: rgba(232, 184, 75, 0.12);
-  border-color: rgba(232, 184, 75, 0.3);
+  background: var(--highlight-bg);
+  border-color: var(--highlight-border);
 }
 
 .capitalize {
