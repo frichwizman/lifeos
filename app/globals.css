@@ -639,33 +639,35 @@ h1 {
   margin-top: 12px;
 }
 
-.dashboard-support-rail .compact-stat-list {
+.dashboard-support-rail .compact-stat-grid {
   display: grid;
-  gap: 10px;
+  grid-template-columns: repeat(var(--compact-columns, 3), minmax(0, 1fr));
+  gap: 8px;
   margin-top: 12px;
 }
 
-.dashboard-support-rail .compact-stat-row {
+.dashboard-support-rail .compact-stat-card {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  align-items: baseline;
-  gap: 12px;
+  gap: 3px;
+  padding: 10px;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: var(--surface-2);
 }
 
-.dashboard-support-rail .compact-stat-row span,
-.dashboard-support-rail .compact-stat-row strong {
+.dashboard-support-rail .compact-stat-card span,
+.dashboard-support-rail .compact-stat-card strong {
   overflow-wrap: anywhere;
 }
 
-.dashboard-support-rail .compact-stat-row span {
+.dashboard-support-rail .compact-stat-card span {
   color: var(--text-sub);
   font-size: 0.7rem;
 }
 
-.dashboard-support-rail .compact-stat-row strong {
+.dashboard-support-rail .compact-stat-card strong {
   font-size: 0.96rem;
   line-height: 1.15;
-  text-align: right;
 }
 
 .dashboard-support-rail .timeline-metric {
@@ -2503,6 +2505,10 @@ select {
   .execution-queue {
     grid-template-columns: 1fr;
     gap: 14px;
+  }
+
+  .dashboard-support-rail .compact-stat-grid {
+    grid-template-columns: 1fr;
   }
 
   .execution-task-card {

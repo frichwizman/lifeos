@@ -1054,14 +1054,11 @@ export function LifeOSApp({ view = "dashboard" }) {
 
             <aside className="execution-layout-secondary dashboard-support-rail">
               <Card title="Life Timeline" icon={Timer} className="card-timeline dashboard-rail-card">
-                <div className="metric-row">
-                  <span className="muted">Life Used</span>
-                  <strong>{Math.round(lifeUsedRatio * 100)}%</strong>
-                </div>
                 <div className="timeline-track">
                   <span style={{ width: `${lifeUsedRatio * 100}%` }} />
                 </div>
-                <CompactStatList
+                <CompactStatGrid
+                  columns={3}
                   items={[
                     { label: "Life Used", value: `${Math.round(lifeUsedRatio * 100)}%` },
                     { label: "Days Left", value: formatNumber(daysLeft) },
@@ -1081,7 +1078,8 @@ export function LifeOSApp({ view = "dashboard" }) {
                 <div className="timeline-track">
                   <span style={{ width: `${income.progress * 100}%` }} />
                 </div>
-                <CompactStatList
+                <CompactStatGrid
+                  columns={3}
                   items={[
                     { label: "Daily Target", value: `${state.profile.currency}${formatNumber(income.dailyTarget)}` },
                     { label: "Monthly Target", value: `${state.profile.currency}${formatNumber(income.monthlyTarget)}` },
@@ -1098,7 +1096,8 @@ export function LifeOSApp({ view = "dashboard" }) {
                 <div className="progress-track is-gold">
                   <span style={{ width: `${Math.min(pbRatio, 1) * 100}%` }} />
                 </div>
-                <CompactStatList
+                <CompactStatGrid
+                  columns={3}
                   items={[
                     { label: "PB XP", value: `${formatNumber(state.profile.pbXP || 0)} XP` },
                     { label: "Tasks Done", value: formatNumber(todayCompletedCount) },
@@ -1171,16 +1170,13 @@ export function LifeOSApp({ view = "dashboard" }) {
 
               <article className="execution-feedback-card">
                 <p className="eyebrow">Today Progress</p>
-                <div className="execution-feedback-stack">
-                  <div className="execution-stat-row">
-                    <span>Tasks completed</span>
-                    <strong>{todayCompletedCount}</strong>
-                  </div>
-                  <div className="execution-stat-row">
-                    <span>XP gained today</span>
-                    <strong>{formatNumber(todayXP)} XP</strong>
-                  </div>
-                </div>
+                <CompactStatGrid
+                  columns={2}
+                  items={[
+                    { label: "Tasks completed", value: formatNumber(todayCompletedCount) },
+                    { label: "XP gained today", value: `${formatNumber(todayXP)} XP` }
+                  ]}
+                />
               </article>
 
               <article className="execution-feedback-card">
@@ -1864,11 +1860,11 @@ function TimelineMetric({ label, value }) {
   );
 }
 
-function CompactStatList({ items }) {
+function CompactStatGrid({ items, columns = 3 }) {
   return (
-    <div className="compact-stat-list">
+    <div className="compact-stat-grid" style={{ "--compact-columns": columns }}>
       {items.map((item) => (
-        <div key={item.label} className="compact-stat-row">
+        <div key={item.label} className="compact-stat-card">
           <span>{item.label}</span>
           <strong>{item.value}</strong>
         </div>
