@@ -153,6 +153,12 @@ const LIFE_QUICK_ACTIONS = [
   }
 ];
 
+const LIFE_DEFAULT_INPUTS = {
+  exercise: 5,
+  meditation: 5,
+  "water-intake": 250
+};
+
 const OFFICE_MAP = {
   width: 980,
   height: 640
@@ -1949,11 +1955,16 @@ function TaskList({ tasks, logs, todayKey, notes, onLog, currency, showStreaks =
 }
 
 function LifeTaskGrid({ tasks, logs, todayKey, onLog, currency, showStreaks = false }) {
+  const [customValues, setCustomValues] = useState({});
+
   return (
     <div className="life-task-grid">
       {tasks.map((task) => {
         const value = getLogValue(logs, todayKey, task.id);
         const isRating = task.type === "rating" || task.type === "ratingReverse";
+        const defaultInput = LIFE_DEFAULT_INPUTS[task.id];
+        const dropdownPresets = (task.presets ?? []).filter((preset) => preset !== defaultInput);
+        const customValue = customValues[task.id] ?? "";
 
         return (
           <article key={task.id} className="life-task-card">
@@ -1962,7 +1973,70 @@ function LifeTaskGrid({ tasks, logs, todayKey, onLog, currency, showStreaks = fa
               <span className="task-value">{formatTaskValue(task, value, currency)}</span>
             </div>
 
-            {task.type !== "boolean" ? (
+            {defaultInput ? (
+              <div className="life-task-input-stack">
+                <button className="chip life-task-default-chip" onClick={() => onLog(task, defaultInput)}>
+                  {defaultInput}
+                  {task.unit !== "$" ? task.unit : ""}
+                </button>
+                <select
+                  className="life-task-select"
+                  value=""
+                  onChange={(event) => {
+                    const nextValue = Number(event.target.value || 0);
+                    if (nextValue > 0) onLog(task, nextValue);
+                  }}
+                >
+                  <option value="">More</option>
+                  {dropdownPresets.map((preset) => (
+                    <option key={preset} value={preset}>
+                      {preset}
+                      {task.unit !== "$" ? task.unit : ""}
+                    </option>
+                  ))}
+                </select>
+                <div className="life-task-custom-row">
+                  <input
+                    className="life-task-input"
+                    inputMode="numeric"
+                    type="number"
+                    min="0"
+                    placeholder={task.unit}
+                    value={customValue}
+                    onChange={(event) =>
+                      setCustomValues((current) => ({
+                        ...current,
+                        [task.id]: event.target.value
+                      }))
+                    }
+                    onKeyDown={(event) => {
+                      if (event.key !== "Enter") return;
+                      const nextValue = Number(customValue || 0);
+                      if (nextValue <= 0) return;
+                      onLog(task, nextValue);
+                      setCustomValues((current) => ({
+                        ...current,
+                        [task.id]: ""
+                      }));
+                    }}
+                  />
+                  <button
+                    className="ghost-button life-task-custom-button"
+                    onClick={() => {
+                      const nextValue = Number(customValue || 0);
+                      if (nextValue <= 0) return;
+                      onLog(task, nextValue);
+                      setCustomValues((current) => ({
+                        ...current,
+                        [task.id]: ""
+                      }));
+                    }}
+                  >
+                    Log
+                  </button>
+                </div>
+              </div>
+            ) : task.type !== "boolean" ? (
               <div className={`life-task-actions ${isRating ? "is-rating" : ""}`}>
                 {task.presets?.map((preset) => (
                   <button key={preset} className="chip" onClick={() => onLog(task, preset)}>

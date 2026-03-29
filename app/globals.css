@@ -1189,6 +1189,32 @@ select {
   gap: 8px;
 }
 
+.life-task-input-stack {
+  display: grid;
+  gap: 8px;
+}
+
+.life-task-default-chip {
+  justify-content: center;
+}
+
+.life-task-select,
+.life-task-input {
+  min-height: 36px;
+  border-radius: 12px;
+}
+
+.life-task-custom-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+}
+
+.life-task-custom-button {
+  min-width: 74px;
+  justify-content: center;
+}
+
 .life-task-actions.is-rating {
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
