@@ -651,9 +651,10 @@ h1 {
 
 .dashboard-support-rail .panel-card,
 .dashboard-support-rail .execution-feedback-card {
-  align-self: start;
+  align-self: stretch;
   min-height: 0;
   height: auto;
+  width: 100%;
 }
 
 .dashboard-support-rail .panel-card {
@@ -763,6 +764,17 @@ h1 {
   display: grid;
   grid-template-columns: 1fr;
   gap: 14px;
+  width: 100%;
+}
+
+.dashboard-support-rail > * {
+  width: 100%;
+  min-width: 0;
+}
+
+.dashboard-feedback-stack > * {
+  width: 100%;
+  min-width: 0;
 }
 
 .execution-active-panel,
