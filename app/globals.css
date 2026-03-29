@@ -2740,8 +2740,17 @@ select {
     display: none;
   }
 
+  .nav-group {
+    position: static;
+  }
+
   .nav-dropdown {
-    min-width: 144px;
+    position: fixed;
+    top: 126px;
+    left: 12px;
+    right: 12px;
+    min-width: 0;
+    z-index: 60;
   }
 
   .hero-stat {
