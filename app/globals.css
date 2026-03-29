@@ -767,9 +767,24 @@ h1 {
   width: 100%;
 }
 
+.dashboard-feedback-rail {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 16px;
+  width: 100%;
+  min-width: 0;
+  align-content: start;
+}
+
 .dashboard-support-rail > * {
   width: 100%;
   min-width: 0;
+}
+
+.dashboard-feedback-rail > * {
+  width: 100%;
+  min-width: 0;
+  justify-self: stretch;
 }
 
 .dashboard-feedback-stack > * {
