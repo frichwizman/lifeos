@@ -2748,8 +2748,10 @@ select {
     position: fixed;
     top: 126px;
     left: 12px;
-    right: 12px;
-    min-width: 0;
+    right: auto;
+    width: max-content;
+    min-width: 144px;
+    max-width: calc(100vw - 24px);
     z-index: 60;
   }
 
