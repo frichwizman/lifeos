@@ -1242,7 +1242,7 @@ export function LifeOSApp({ view = "dashboard" }) {
                   <span style={{ width: `${lifeUsedRatio * 100}%` }} />
                 </div>
                 <CompactStatGrid
-                  columns={3}
+                  columns={1}
                   items={[
                     { label: "Life Used", value: `${Math.round(lifeUsedRatio * 100)}%` },
                     { label: "Days Left", value: formatNumber(daysLeft) },
@@ -1263,7 +1263,7 @@ export function LifeOSApp({ view = "dashboard" }) {
                   <span style={{ width: `${income.progress * 100}%` }} />
                 </div>
                 <CompactStatGrid
-                  columns={3}
+                  columns={1}
                   items={[
                     { label: "Daily Target", value: `${state.profile.currency}${formatNumber(income.dailyTarget)}` },
                     { label: "Monthly Target", value: `${state.profile.currency}${formatNumber(income.monthlyTarget)}` },
@@ -1281,7 +1281,7 @@ export function LifeOSApp({ view = "dashboard" }) {
                   <span style={{ width: `${Math.min(pbRatio, 1) * 100}%` }} />
                 </div>
                 <CompactStatGrid
-                  columns={3}
+                  columns={1}
                   items={[
                     { label: "PB XP", value: `${formatNumber(state.profile.pbXP || 0)} XP` },
                     { label: "Tasks Done", value: formatNumber(todayCompletedCount) },
