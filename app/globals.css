@@ -399,6 +399,18 @@ button {
   overflow: visible;
 }
 
+.nav-group {
+  position: relative;
+}
+
+.nav-group summary {
+  list-style: none;
+}
+
+.nav-group summary::-webkit-details-marker {
+  display: none;
+}
+
 .nav-link {
   position: relative;
   z-index: 31;
@@ -414,6 +426,44 @@ button {
   color: var(--text-sub);
   text-decoration: none;
   white-space: nowrap;
+}
+
+.nav-summary {
+  gap: 8px;
+  cursor: pointer;
+}
+
+.nav-dropdown {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  min-width: 160px;
+  display: grid;
+  gap: 6px;
+  padding: 8px;
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  background: var(--surface);
+  box-shadow: var(--shadow);
+}
+
+.nav-dropdown-link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 38px;
+  padding: 0 12px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  color: var(--text-sub);
+  text-decoration: none;
+  background: var(--button-bg);
+  white-space: nowrap;
+}
+
+.nav-dropdown-link.is-active {
+  color: var(--text);
+  background: var(--button-bg-active);
+  border-color: var(--border-2);
 }
 
 .nav-link.is-active {
@@ -2678,7 +2728,20 @@ select {
   }
 
   .top-nav {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    overflow-y: visible;
     padding-bottom: 2px;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+
+  .top-nav::-webkit-scrollbar {
+    display: none;
+  }
+
+  .nav-dropdown {
+    min-width: 144px;
   }
 
   .hero-stat {

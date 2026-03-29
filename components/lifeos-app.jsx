@@ -8,6 +8,7 @@ import {
   Armchair,
   BriefcaseBusiness,
   CircleDollarSign,
+  ChevronDown,
   Command,
   CookingPot,
   Droplets,
@@ -86,14 +87,20 @@ const allDefaultTrackedTaskIds = [
 ];
 
 const navItems = [
-  { href: "/dashboard", label: "Dashboard" },
+  { href: "/dashboard", label: "Home" },
   { href: "/work", label: "Work" },
   { href: "/study", label: "Study" },
-  { href: "/rooms/study", label: "Study Room" },
   { href: "/life", label: "Life" },
+  {
+    href: "/rooms",
+    label: "Rooms",
+    children: [
+      { href: "/rooms/office", label: "Office" },
+      { href: "/rooms/study", label: "Study Room" }
+    ]
+  },
   { href: "/money", label: "Money" },
-  { href: "/settings", label: "Settings" },
-  { href: "/rooms/office", label: "Office" }
+  { href: "/settings", label: "Settings" }
 ];
 
 const ATTRIBUTE_LABELS = {
@@ -1057,11 +1064,36 @@ export function LifeOSApp({ view = "dashboard" }) {
       </section>
 
       <nav className="top-nav" aria-label="Primary">
-        {navItems.map((item) => (
-          <Link key={item.href} href={item.href} className={`nav-link ${activePath === item.href ? "is-active" : ""}`}>
-            {item.label}
-          </Link>
-        ))}
+        {navItems.map((item) => {
+          const isRooms = item.href === "/rooms";
+          const isActive = isRooms
+            ? activePath.startsWith("/rooms/")
+            : activePath === item.href;
+
+          if (item.children) {
+            return (
+              <details key={item.href} className={`nav-group ${isActive ? "is-active" : ""}`}>
+                <summary className={`nav-link nav-summary ${isActive ? "is-active" : ""}`}>
+                  <span>{item.label}</span>
+                  <ChevronDown size={14} />
+                </summary>
+                <div className="nav-dropdown">
+                  {item.children.map((child) => (
+                    <Link key={child.href} href={child.href} className={`nav-dropdown-link ${activePath === child.href ? "is-active" : ""}`}>
+                      {child.label}
+                    </Link>
+                  ))}
+                </div>
+              </details>
+            );
+          }
+
+          return (
+            <Link key={item.href} href={item.href} className={`nav-link ${isActive ? "is-active" : ""}`}>
+              {item.label}
+            </Link>
+          );
+        })}
       </nav>
 
       {view !== "dashboard" && state.execution.currentTaskId ? (
