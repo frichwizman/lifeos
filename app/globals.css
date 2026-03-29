@@ -739,18 +739,20 @@ h1 {
 }
 
 .dashboard-support-rail .pillars-grid {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 8px;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 6px;
   margin-top: 12px;
 }
 
 .dashboard-support-rail .pillar-hex {
-  min-height: 72px;
-  padding: 8px 7px;
+  min-height: 58px;
+  padding: 6px 4px;
+  gap: 4px;
 }
 
 .dashboard-support-rail .pillar-hex span {
-  font-size: 0.72rem;
+  font-size: 0.62rem;
+  line-height: 1.1;
 }
 
 .dashboard-support-rail .streak-widget {
