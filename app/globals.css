@@ -802,6 +802,15 @@ h1 {
   justify-self: stretch;
 }
 
+.dashboard-support-rail .dashboard-feedback-card-frame {
+  min-height: 0;
+  height: auto;
+  display: grid;
+  gap: 10px;
+  align-content: start;
+  flex: none;
+}
+
 .dashboard-feedback-stack > * {
   width: 100%;
   min-width: 0;

@@ -1317,8 +1317,7 @@ export function LifeOSApp({ view = "dashboard" }) {
               </Card>
 
               <div className="dashboard-feedback-rail">
-                <article className="execution-feedback-card execution-current-task-card">
-                  <p className="eyebrow">Current Task</p>
+                <Card title="Current Task" icon={Play} className="dashboard-rail-card dashboard-feedback-card-frame">
                   {activeExecutionTask ? (
                     <div className="execution-feedback-stack">
                       <h3>{activeExecutionTask.label}</h3>
@@ -1351,10 +1350,9 @@ export function LifeOSApp({ view = "dashboard" }) {
                       <p className="muted">No active task</p>
                     </div>
                   )}
-                </article>
+                </Card>
 
-                <article className="execution-feedback-card">
-                  <p className="eyebrow">Today Progress</p>
+                <Card title="Today Progress" icon={CheckCircle2} className="dashboard-rail-card dashboard-feedback-card-frame">
                   <CompactStatGrid
                     columns={1}
                     items={[
@@ -1362,10 +1360,9 @@ export function LifeOSApp({ view = "dashboard" }) {
                       { label: "XP gained today", value: `${formatNumber(todayXP)} XP` }
                     ]}
                   />
-                </article>
+                </Card>
 
-                <article className="execution-feedback-card">
-                  <p className="eyebrow">Character State</p>
+                <Card title="Character State" icon={Gem} className="dashboard-rail-card dashboard-feedback-card-frame">
                   <div className="execution-feedback-stack">
                     <div className="execution-stat-row">
                       <span>Level</span>
@@ -1381,7 +1378,7 @@ export function LifeOSApp({ view = "dashboard" }) {
                       <span style={{ width: `${(level.current / level.needed) * 100}%` }} />
                     </div>
                   </div>
-                </article>
+                </Card>
               </div>
             </aside>
           </section>
