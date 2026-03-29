@@ -274,6 +274,8 @@ export function LifeOSApp({ view = "dashboard" }) {
   const [ready, setReady] = useState(false);
   const [syncCodeInput, setSyncCodeInput] = useState("");
   const [backupCount, setBackupCount] = useState(0);
+  const [openNavMenu, setOpenNavMenu] = useState("");
+  const [roomsMenuPosition, setRoomsMenuPosition] = useState({ top: 0, left: 12 });
   const [lifeQuickAction, setLifeQuickAction] = useState("");
   const [officePresence, setOfficePresence] = useState({
     x: 108,
@@ -292,6 +294,8 @@ export function LifeOSApp({ view = "dashboard" }) {
   const pollingRef = useRef(null);
   const pushTimeoutRef = useRef(null);
   const officeMapRef = useRef(null);
+  const roomsTriggerRef = useRef(null);
+  const roomsDropdownRef = useRef(null);
   const [executionNow, setExecutionNow] = useState(Date.now());
 
   useEffect(() => {
@@ -365,6 +369,39 @@ export function LifeOSApp({ view = "dashboard" }) {
     const timer = window.setInterval(() => setExecutionNow(Date.now()), 1000);
     return () => window.clearInterval(timer);
   }, [state.execution.status]);
+
+  useEffect(() => {
+    if (openNavMenu !== "rooms") return;
+
+    const updatePosition = () => {
+      const trigger = roomsTriggerRef.current;
+      if (!trigger) return;
+      const rect = trigger.getBoundingClientRect();
+      const maxLeft = Math.max(12, window.innerWidth - 196);
+      setRoomsMenuPosition({
+        top: rect.bottom + 8,
+        left: Math.max(12, Math.min(rect.left, maxLeft))
+      });
+    };
+
+    const onPointerDown = (event) => {
+      const trigger = roomsTriggerRef.current;
+      const dropdown = roomsDropdownRef.current;
+      if (trigger?.contains(event.target) || dropdown?.contains(event.target)) return;
+      setOpenNavMenu("");
+    };
+
+    updatePosition();
+    window.addEventListener("resize", updatePosition);
+    window.addEventListener("scroll", updatePosition, true);
+    document.addEventListener("pointerdown", onPointerDown);
+
+    return () => {
+      window.removeEventListener("resize", updatePosition);
+      window.removeEventListener("scroll", updatePosition, true);
+      document.removeEventListener("pointerdown", onPointerDown);
+    };
+  }, [openNavMenu]);
 
   useEffect(() => {
     if (!ready || state.sync.mode !== "anonymous" || !state.sync.syncCode) return;
@@ -1072,19 +1109,42 @@ export function LifeOSApp({ view = "dashboard" }) {
 
           if (item.children) {
             return (
-              <details key={item.href} className={`nav-group ${isActive ? "is-active" : ""}`}>
-                <summary className={`nav-link nav-summary ${isActive ? "is-active" : ""}`}>
+              <div
+                key={item.href}
+                className={`nav-group ${isActive ? "is-active" : ""}`}
+                style={
+                  openNavMenu === "rooms"
+                    ? {
+                        "--nav-dropdown-top": `${roomsMenuPosition.top}px`,
+                        "--nav-dropdown-left": `${roomsMenuPosition.left}px`
+                      }
+                    : undefined
+                }
+              >
+                <button
+                  ref={roomsTriggerRef}
+                  type="button"
+                  className={`nav-link nav-summary ${isActive ? "is-active" : ""}`}
+                  onClick={() => setOpenNavMenu((current) => (current === "rooms" ? "" : "rooms"))}
+                >
                   <span>{item.label}</span>
                   <ChevronDown size={14} />
-                </summary>
-                <div className="nav-dropdown">
-                  {item.children.map((child) => (
-                    <Link key={child.href} href={child.href} className={`nav-dropdown-link ${activePath === child.href ? "is-active" : ""}`}>
-                      {child.label}
-                    </Link>
-                  ))}
-                </div>
-              </details>
+                </button>
+                {openNavMenu === "rooms" ? (
+                  <div ref={roomsDropdownRef} className="nav-dropdown">
+                    {item.children.map((child) => (
+                      <Link
+                        key={child.href}
+                        href={child.href}
+                        className={`nav-dropdown-link ${activePath === child.href ? "is-active" : ""}`}
+                        onClick={() => setOpenNavMenu("")}
+                      >
+                        {child.label}
+                      </Link>
+                    ))}
+                  </div>
+                ) : null}
+              </div>
             );
           }
 

@@ -403,14 +403,6 @@ button {
   position: relative;
 }
 
-.nav-group summary {
-  list-style: none;
-}
-
-.nav-group summary::-webkit-details-marker {
-  display: none;
-}
-
 .nav-link {
   position: relative;
   z-index: 31;
@@ -431,6 +423,8 @@ button {
 .nav-summary {
   gap: 8px;
   cursor: pointer;
+  appearance: none;
+  font: inherit;
 }
 
 .nav-dropdown {
@@ -2746,8 +2740,8 @@ select {
 
   .nav-dropdown {
     position: fixed;
-    top: 126px;
-    left: 12px;
+    top: var(--nav-dropdown-top, 126px);
+    left: var(--nav-dropdown-left, 12px);
     right: auto;
     width: max-content;
     min-width: 144px;
