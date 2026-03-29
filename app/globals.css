@@ -639,8 +639,10 @@ h1 {
 }
 
 .dashboard-support-rail {
+  grid-template-columns: 1fr;
   gap: 16px;
   align-content: start;
+  justify-items: stretch;
 }
 
 .dashboard-rail-card {
@@ -772,8 +774,11 @@ h1 {
   grid-template-columns: 1fr;
   gap: 16px;
   width: 100%;
+  max-width: none;
   min-width: 0;
   align-content: start;
+  justify-items: stretch;
+  justify-self: stretch;
 }
 
 .dashboard-support-rail > * {
@@ -782,7 +787,17 @@ h1 {
 }
 
 .dashboard-feedback-rail > * {
+  box-sizing: border-box;
+  display: grid;
   width: 100%;
+  max-width: none;
+  min-width: 0;
+  justify-self: stretch;
+}
+
+.dashboard-feedback-rail .execution-feedback-card {
+  width: 100%;
+  max-width: none;
   min-width: 0;
   justify-self: stretch;
 }
