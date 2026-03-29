@@ -1174,13 +1174,19 @@ select {
 }
 
 .life-task-head {
-  display: grid;
-  gap: 4px;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
 }
 
 .life-task-head strong {
   font-size: 1rem;
   letter-spacing: -0.03em;
+}
+
+.life-task-head .task-value {
+  white-space: nowrap;
 }
 
 .life-task-actions {
@@ -1191,11 +1197,14 @@ select {
 
 .life-task-input-stack {
   display: grid;
+  grid-template-columns: auto auto minmax(0, 1fr) auto;
   gap: 8px;
+  align-items: center;
 }
 
 .life-task-default-chip {
   justify-content: center;
+  white-space: nowrap;
 }
 
 .life-task-select,
@@ -1205,9 +1214,7 @@ select {
 }
 
 .life-task-custom-row {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  gap: 8px;
+  display: contents;
 }
 
 .life-task-custom-button {
@@ -2603,6 +2610,10 @@ select {
 
   .life-task-grid {
     grid-template-columns: 1fr;
+  }
+
+  .life-task-input-stack {
+    grid-template-columns: auto auto minmax(0, 1fr) auto;
   }
 
   .card-timeline,
