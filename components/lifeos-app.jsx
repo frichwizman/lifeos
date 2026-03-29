@@ -1242,7 +1242,7 @@ export function LifeOSApp({ view = "dashboard" }) {
                   <span style={{ width: `${lifeUsedRatio * 100}%` }} />
                 </div>
                 <CompactStatGrid
-                  columns={1}
+                  columns={3}
                   items={[
                     { label: "Life Used", value: `${Math.round(lifeUsedRatio * 100)}%` },
                     { label: "Days Left", value: formatNumber(daysLeft) },
@@ -1263,7 +1263,7 @@ export function LifeOSApp({ view = "dashboard" }) {
                   <span style={{ width: `${income.progress * 100}%` }} />
                 </div>
                 <CompactStatGrid
-                  columns={1}
+                  columns={3}
                   items={[
                     { label: "Daily Target", value: `${state.profile.currency}${formatNumber(income.dailyTarget)}` },
                     { label: "Monthly Target", value: `${state.profile.currency}${formatNumber(income.monthlyTarget)}` },
@@ -1281,7 +1281,7 @@ export function LifeOSApp({ view = "dashboard" }) {
                   <span style={{ width: `${Math.min(pbRatio, 1) * 100}%` }} />
                 </div>
                 <CompactStatGrid
-                  columns={1}
+                  columns={3}
                   items={[
                     { label: "PB XP", value: `${formatNumber(state.profile.pbXP || 0)} XP` },
                     { label: "Tasks Done", value: formatNumber(todayCompletedCount) },
@@ -1316,71 +1316,73 @@ export function LifeOSApp({ view = "dashboard" }) {
                 </div>
               </Card>
 
-              <article className="execution-feedback-card execution-current-task-card">
-                <p className="eyebrow">Current Task</p>
-                {activeExecutionTask ? (
-                  <div className="execution-feedback-stack">
-                    <h3>{activeExecutionTask.label}</h3>
-                    <div className="execution-stat-row">
-                      <span>Status</span>
-                      <strong>{state.execution.status === "paused" ? "Paused" : "Active"}</strong>
+              <div className="dashboard-feedback-stack">
+                <article className="execution-feedback-card execution-current-task-card">
+                  <p className="eyebrow">Current Task</p>
+                  {activeExecutionTask ? (
+                    <div className="execution-feedback-stack">
+                      <h3>{activeExecutionTask.label}</h3>
+                      <div className="execution-stat-row">
+                        <span>Status</span>
+                        <strong>{state.execution.status === "paused" ? "Paused" : "Active"}</strong>
+                      </div>
+                      <div className="execution-stat-row">
+                        <span>Timer</span>
+                        <strong>{formattedExecutionTime}</strong>
+                      </div>
+                      <div className="execution-stat-row">
+                        <span>Reward</span>
+                        <strong>+{activeExecutionTask.xpReward} XP</strong>
+                      </div>
+                      <div className="execution-feedback-actions">
+                        <button className="ghost-button" onClick={toggleExecutionPause}>
+                          {state.execution.status === "active" ? <Pause size={16} /> : <Play size={16} />}
+                          {state.execution.status === "active" ? "Pause" : "Resume"}
+                        </button>
+                        <button className="ghost-button execution-complete-button" onClick={completeExecution}>
+                          <CheckCircle2 size={16} />
+                          Complete
+                        </button>
+                      </div>
                     </div>
-                    <div className="execution-stat-row">
-                      <span>Timer</span>
-                      <strong>{formattedExecutionTime}</strong>
+                  ) : (
+                    <div className="execution-feedback-stack">
+                      <h3>Idle</h3>
+                      <p className="muted">No active task</p>
                     </div>
-                    <div className="execution-stat-row">
-                      <span>Reward</span>
-                      <strong>+{activeExecutionTask.xpReward} XP</strong>
-                    </div>
-                    <div className="execution-feedback-actions">
-                      <button className="ghost-button" onClick={toggleExecutionPause}>
-                        {state.execution.status === "active" ? <Pause size={16} /> : <Play size={16} />}
-                        {state.execution.status === "active" ? "Pause" : "Resume"}
-                      </button>
-                      <button className="ghost-button execution-complete-button" onClick={completeExecution}>
-                        <CheckCircle2 size={16} />
-                        Complete
-                      </button>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="execution-feedback-stack">
-                    <h3>Idle</h3>
-                    <p className="muted">No active task</p>
-                  </div>
-                )}
-              </article>
+                  )}
+                </article>
 
-              <article className="execution-feedback-card">
-                <p className="eyebrow">Today Progress</p>
-                <CompactStatGrid
-                  columns={2}
-                  items={[
-                    { label: "Tasks completed", value: formatNumber(todayCompletedCount) },
-                    { label: "XP gained today", value: `${formatNumber(todayXP)} XP` }
-                  ]}
-                />
-              </article>
+                <article className="execution-feedback-card">
+                  <p className="eyebrow">Today Progress</p>
+                  <CompactStatGrid
+                    columns={1}
+                    items={[
+                      { label: "Tasks completed", value: formatNumber(todayCompletedCount) },
+                      { label: "XP gained today", value: `${formatNumber(todayXP)} XP` }
+                    ]}
+                  />
+                </article>
 
-              <article className="execution-feedback-card">
-                <p className="eyebrow">Character State</p>
-                <div className="execution-feedback-stack">
-                  <div className="execution-stat-row">
-                    <span>Level</span>
-                    <strong>{level.level}</strong>
+                <article className="execution-feedback-card">
+                  <p className="eyebrow">Character State</p>
+                  <div className="execution-feedback-stack">
+                    <div className="execution-stat-row">
+                      <span>Level</span>
+                      <strong>{level.level}</strong>
+                    </div>
+                    <div className="execution-stat-row">
+                      <span>XP Progress</span>
+                      <strong>
+                        {formatNumber(level.current)} / {formatNumber(level.needed)}
+                      </strong>
+                    </div>
+                    <div className="progress-track execution-progress-track">
+                      <span style={{ width: `${(level.current / level.needed) * 100}%` }} />
+                    </div>
                   </div>
-                  <div className="execution-stat-row">
-                    <span>XP Progress</span>
-                    <strong>
-                      {formatNumber(level.current)} / {formatNumber(level.needed)}
-                    </strong>
-                  </div>
-                  <div className="progress-track execution-progress-track">
-                    <span style={{ width: `${(level.current / level.needed) * 100}%` }} />
-                  </div>
-                </div>
-              </article>
+                </article>
+              </div>
             </aside>
           </section>
         </>
