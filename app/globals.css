@@ -2478,6 +2478,152 @@ select {
   color: var(--button-text);
 }
 
+.history-page-stack {
+  display: grid;
+  gap: 18px;
+}
+
+.history-featured-card,
+.history-day-card,
+.history-empty-card {
+  border: 1px solid var(--border);
+  border-radius: 22px;
+  background: var(--surface-2);
+}
+
+.history-featured-card,
+.history-day-card {
+  display: grid;
+  gap: 16px;
+  padding: 18px;
+}
+
+.history-featured-card {
+  border-color: var(--highlight-border);
+  background: var(--highlight-bg);
+}
+
+.history-day-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.history-day-head h2,
+.history-day-head h3 {
+  letter-spacing: -0.035em;
+}
+
+.history-day-stats {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.history-stat-chip {
+  display: grid;
+  gap: 2px;
+  min-width: 86px;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.56);
+}
+
+.history-stat-chip span {
+  color: var(--text-sub);
+  font-size: 0.72rem;
+}
+
+.history-stat-chip strong {
+  font-size: 0.94rem;
+}
+
+.history-entry-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.history-entry-card {
+  display: grid;
+  gap: 10px;
+  padding: 14px;
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.72);
+}
+
+.history-entry-top,
+.history-entry-row,
+.history-entry-inline {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.history-entry-inline {
+  justify-content: flex-start;
+}
+
+.history-entry-copy {
+  display: grid;
+  gap: 4px;
+}
+
+.history-entry-copy h3 {
+  font-size: 0.98rem;
+  letter-spacing: -0.03em;
+}
+
+.history-entry-tag {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 24px;
+  padding: 0 8px;
+  border-radius: 999px;
+  border: 1px solid var(--border-2);
+  background: var(--surface);
+  color: var(--text-sub);
+  font-size: 0.72rem;
+}
+
+.history-empty-card {
+  display: grid;
+  gap: 6px;
+  padding: 16px;
+}
+
+.history-archive-stack {
+  display: grid;
+  gap: 14px;
+}
+
+.history-entry-list {
+  display: grid;
+  gap: 10px;
+}
+
+.history-entry-row {
+  padding: 10px 0;
+  border-top: 1px solid var(--border);
+}
+
+.history-entry-row:first-child {
+  padding-top: 0;
+  border-top: 0;
+}
+
+.history-entry-value {
+  color: var(--text);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
 .chip,
 .ghost-button,
 .boolean-log {
@@ -2713,6 +2859,19 @@ select {
 
   .life-task-grid {
     grid-template-columns: 1fr;
+  }
+
+  .history-entry-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .history-day-head {
+    flex-direction: column;
+  }
+
+  .history-entry-row {
+    align-items: flex-start;
+    flex-direction: column;
   }
 
   .life-task-input-stack {

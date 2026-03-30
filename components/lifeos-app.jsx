@@ -19,6 +19,7 @@ import {
   Gem,
   GraduationCap,
   HeartPulse,
+  History,
   Home,
   Link2,
   MessageCircle,
@@ -100,6 +101,7 @@ const navItems = [
     ]
   },
   { href: "/money", label: "Money" },
+  { href: "/history", label: "History" },
   { href: "/settings", label: "Settings" }
 ];
 
@@ -538,6 +540,8 @@ export function LifeOSApp({ view = "dashboard" }) {
       ),
     []
   );
+  const studyTaskMap = useMemo(() => Object.fromEntries(studyTasks.map((task) => [task.id, task])), []);
+  const moneyTaskMap = useMemo(() => Object.fromEntries(moneyTasks.map((task) => [task.id, task])), []);
   const lifePageTasks = [
     "exercise",
     "meditation",
@@ -549,6 +553,102 @@ export function LifeOSApp({ view = "dashboard" }) {
   ]
     .map((taskId) => lifeTaskMap[taskId])
     .filter(Boolean);
+  const historyDays = useMemo(() => {
+    const formatDateLabel = (date, isToday) => {
+      if (isToday) return "Today";
+      return new Intl.DateTimeFormat("en-US", {
+        weekday: "short",
+        month: "short",
+        day: "numeric"
+      }).format(date);
+    };
+
+    const formatHistoryValue = (task, rawValue) => {
+      if (task?.type === "boolean") return rawValue ? "Done" : "Not done";
+      if (task?.unit === "$") return `${state.profile.currency}${formatNumber(Number(rawValue || 0))}`;
+      if (task?.unit === "★") return `${rawValue}★`;
+      return `${rawValue} ${task?.unit ?? ""}`.trim();
+    };
+
+    return Array.from({ length: 7 }).map((_, index) => {
+      const date = new Date();
+      date.setDate(date.getDate() - index);
+      const dateKey = date.toISOString().slice(0, 10);
+      const dayLogs = state.logs?.[dateKey] ?? {};
+      const entries = Object.entries(dayLogs)
+        .map(([taskId, record]) => {
+          const rawValue = record?.value;
+          const isDone = typeof rawValue === "boolean" ? rawValue : Number(rawValue) > 0;
+          if (!isDone) return null;
+
+          if (taskId.includes(":")) {
+            const [projectId, todoId] = taskId.split(":");
+            const project = state.workProjects.find((item) => item.id === projectId);
+            const todo = project?.todos.find((item) => item.id === todoId);
+            return {
+              key: taskId,
+              category: "Work",
+              label: todo?.label ?? "Completed work item",
+              value: "Done",
+              meta: project?.name ?? "Work",
+              xp: record?.xp ?? 0
+            };
+          }
+
+          const studyTask = studyTaskMap[taskId];
+          if (studyTask) {
+            return {
+              key: taskId,
+              category: "Study",
+              label: studyTask.label,
+              value: formatHistoryValue(studyTask, rawValue),
+              meta: "",
+              xp: record?.xp ?? 0
+            };
+          }
+
+          const lifeTask = lifeTaskMap[taskId];
+          if (lifeTask) {
+            return {
+              key: taskId,
+              category: "Life",
+              label: lifeTask.label,
+              value: formatHistoryValue(lifeTask, rawValue),
+              meta: "",
+              xp: record?.xp ?? 0
+            };
+          }
+
+          const moneyTask = moneyTaskMap[taskId];
+          if (moneyTask) {
+            return {
+              key: taskId,
+              category: "Money",
+              label: moneyTask.label,
+              value: formatHistoryValue(moneyTask, rawValue),
+              meta: "",
+              xp: record?.xp ?? 0
+            };
+          }
+
+          return null;
+        })
+        .filter(Boolean)
+        .sort((a, b) => a.category.localeCompare(b.category) || a.label.localeCompare(b.label));
+
+      return {
+        key: dateKey,
+        label: formatDateLabel(date, dateKey === todayKey),
+        dateKey,
+        isToday: dateKey === todayKey,
+        xp: getTodayXP(state.logs, dateKey),
+        count: entries.length,
+        entries
+      };
+    });
+  }, [lifeTaskMap, moneyTaskMap, state.logs, state.profile.currency, state.workProjects, studyTaskMap, todayKey]);
+  const featuredHistoryDay = historyDays[0];
+  const previousHistoryDays = historyDays.slice(1);
 
   const applyTrackedLog = (current, task, value) => {
     const normalized =
@@ -939,6 +1039,10 @@ export function LifeOSApp({ view = "dashboard" }) {
     money: {
       title: "Money",
       description: "Record income, expenses, and savings without leaving the operating system."
+    },
+    history: {
+      title: "History",
+      description: "Review today’s full record first, then scan the previous six days of logged execution."
     },
     settings: {
       title: "Settings",
@@ -1484,6 +1588,92 @@ export function LifeOSApp({ view = "dashboard" }) {
                   currency={state.profile.currency}
                   defaultInputs={MONEY_DEFAULT_INPUTS}
                 />
+              </ModuleCard>
+            ) : null}
+
+            {view === "history" ? (
+              <ModuleCard title="History" color="#8892a0" icon={History}>
+                <div className="history-page-stack">
+                  <section className="history-featured-card">
+                    <div className="history-day-head">
+                      <div>
+                        <p className="eyebrow">Today Snapshot</p>
+                        <h2>{featuredHistoryDay.label}</h2>
+                        <p className="muted">{featuredHistoryDay.dateKey}</p>
+                      </div>
+                      <div className="history-day-stats">
+                        <div className="history-stat-chip">
+                          <span>Entries</span>
+                          <strong>{featuredHistoryDay.count}</strong>
+                        </div>
+                        <div className="history-stat-chip">
+                          <span>XP</span>
+                          <strong>{formatNumber(featuredHistoryDay.xp)} XP</strong>
+                        </div>
+                      </div>
+                    </div>
+                    {featuredHistoryDay.entries.length ? (
+                      <div className="history-entry-grid">
+                        {featuredHistoryDay.entries.map((entry) => (
+                          <article key={`${featuredHistoryDay.key}-${entry.key}`} className="history-entry-card is-featured">
+                            <div className="history-entry-top">
+                              <span className="history-entry-tag">{entry.category}</span>
+                              <strong>{entry.value}</strong>
+                            </div>
+                            <div className="history-entry-copy">
+                              <h3>{entry.label}</h3>
+                              {entry.meta ? <p className="muted">{entry.meta}</p> : null}
+                            </div>
+                          </article>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="history-empty-card">
+                        <strong>No entries yet</strong>
+                        <p className="muted">Start logging today and the full day record will appear here.</p>
+                      </div>
+                    )}
+                  </section>
+
+                  <section className="history-archive-stack">
+                    {previousHistoryDays.map((day) => (
+                      <article key={day.key} className="history-day-card">
+                        <div className="history-day-head">
+                          <div>
+                            <h3>{day.label}</h3>
+                            <p className="muted">{day.dateKey}</p>
+                          </div>
+                          <div className="history-day-stats">
+                            <div className="history-stat-chip">
+                              <span>Entries</span>
+                              <strong>{day.count}</strong>
+                            </div>
+                            <div className="history-stat-chip">
+                              <span>XP</span>
+                              <strong>{formatNumber(day.xp)} XP</strong>
+                            </div>
+                          </div>
+                        </div>
+
+                        {day.entries.length ? (
+                          <div className="history-entry-list">
+                            {day.entries.map((entry) => (
+                              <div key={`${day.key}-${entry.key}`} className="history-entry-row">
+                                <div className="history-entry-inline">
+                                  <span className="history-entry-tag">{entry.category}</span>
+                                  <strong>{entry.label}</strong>
+                                </div>
+                                <span className="history-entry-value">{entry.value}</span>
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <p className="muted">No tracked entries.</p>
+                        )}
+                      </article>
+                    ))}
+                  </section>
+                </div>
               </ModuleCard>
             ) : null}
 
