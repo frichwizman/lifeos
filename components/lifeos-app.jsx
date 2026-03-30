@@ -183,7 +183,8 @@ const LIFE_DEFAULT_INPUTS = {
 const MONEY_DEFAULT_INPUTS = {
   "income-logged": 50,
   "expense-tracked": 20,
-  "saved-today": 20
+  "saved-today": 20,
+  "investment-return": 50
 };
 
 const OFFICE_MAP = {
@@ -688,6 +689,15 @@ export function LifeOSApp({ view = "dashboard" }) {
           ...LIFE_QUICK_ACTION_MAP[taskId]
         }))
         .sort((a, b) => a.group.localeCompare(b.group) || a.label.localeCompare(b.label)),
+    [state.logs, todayKey]
+  );
+  const todayMoneySummary = useMemo(
+    () => ({
+      income: Number(getLogValue(state.logs, todayKey, "income-logged") ?? 0),
+      expense: Number(getLogValue(state.logs, todayKey, "expense-tracked") ?? 0),
+      savings: Number(getLogValue(state.logs, todayKey, "saved-today") ?? 0),
+      investment: Number(getLogValue(state.logs, todayKey, "investment-return") ?? 0)
+    }),
     [state.logs, todayKey]
   );
 
@@ -1662,35 +1672,65 @@ export function LifeOSApp({ view = "dashboard" }) {
             ) : null}
 
             {view === "money" ? (
-              <ModuleCard title="Money" color={MODULE_COLORS.money} icon={CircleDollarSign}>
-                <div className="money-log-stack">
-                  <div className="money-log-toolbar">
-                    <label className="money-log-date">
-                      <span>Log Date</span>
-                      <input
-                        type="date"
-                        value={moneyLogDate}
-                        max={todayKey}
-                        onChange={(event) => setMoneyLogDate(event.target.value || todayKey)}
-                      />
-                    </label>
-                    {moneyLogDate !== todayKey ? (
-                      <button className="ghost-button" onClick={() => setMoneyLogDate(todayKey)}>
-                        Today
-                      </button>
-                    ) : null}
-                  </div>
+              <section className="life-page-layout">
+                <div className="life-page-primary">
+                  <ModuleCard title="Money" color={MODULE_COLORS.money} icon={CircleDollarSign}>
+                    <div className="money-log-stack">
+                      <div className="money-log-toolbar">
+                        <label className="money-log-date">
+                          <span>Log Date</span>
+                          <input
+                            type="date"
+                            value={moneyLogDate}
+                            max={todayKey}
+                            onChange={(event) => setMoneyLogDate(event.target.value || todayKey)}
+                          />
+                        </label>
+                        <div className="money-log-toolbar-actions">
+                          <span className="muted money-log-helper">Cards below reflect the selected date.</span>
+                          {moneyLogDate !== todayKey ? (
+                            <button className="ghost-button" onClick={() => setMoneyLogDate(todayKey)}>
+                              Today
+                            </button>
+                          ) : null}
+                        </div>
+                      </div>
 
-                  <LifeTaskGrid
-                    tasks={moneyTasks}
-                    logs={state.logs}
-                    todayKey={moneyLogDate}
-                    onLog={(task, value) => logTaskAtDate(task, value, moneyLogDate)}
-                    currency={state.profile.currency}
-                    defaultInputs={MONEY_DEFAULT_INPUTS}
-                  />
+                      <LifeTaskGrid
+                        tasks={moneyTasks}
+                        logs={state.logs}
+                        todayKey={moneyLogDate}
+                        onLog={(task, value) => logTaskAtDate(task, value, moneyLogDate)}
+                        currency={state.profile.currency}
+                        defaultInputs={MONEY_DEFAULT_INPUTS}
+                      />
+                    </div>
+                  </ModuleCard>
                 </div>
-              </ModuleCard>
+
+                <aside className="life-page-secondary">
+                  <Card title="Today Money" icon={CircleDollarSign} className="life-quick-card">
+                    <div className="money-summary-grid">
+                      <div className="money-summary-item">
+                        <span>Income</span>
+                        <strong>{formatCurrencyValue(todayMoneySummary.income, state.profile.currency)}</strong>
+                      </div>
+                      <div className="money-summary-item">
+                        <span>Expense</span>
+                        <strong>{formatCurrencyValue(todayMoneySummary.expense, state.profile.currency)}</strong>
+                      </div>
+                      <div className="money-summary-item">
+                        <span>Savings</span>
+                        <strong>{formatCurrencyValue(todayMoneySummary.savings, state.profile.currency)}</strong>
+                      </div>
+                      <div className="money-summary-item">
+                        <span>Investment</span>
+                        <strong>{formatCurrencyValue(todayMoneySummary.investment, state.profile.currency)}</strong>
+                      </div>
+                    </div>
+                  </Card>
+                </aside>
+              </section>
             ) : null}
 
             {view === "history" ? (
@@ -2368,6 +2408,7 @@ function LifeTaskGrid({ tasks, logs, todayKey, onLog, currency, showStreaks = fa
       {tasks.map((task) => {
         const value = getLogValue(logs, todayKey, task.id);
         const isRating = task.type === "rating" || task.type === "ratingReverse";
+        const allowsNegative = Boolean(task.allowNegative);
         const defaultInput = defaultInputs[task.id];
         const dropdownPresets = (task.presets ?? []).filter((preset) => preset !== defaultInput);
         const customValue = customValues[task.id] ?? "";
@@ -2390,7 +2431,7 @@ function LifeTaskGrid({ tasks, logs, todayKey, onLog, currency, showStreaks = fa
                   value=""
                   onChange={(event) => {
                     const nextValue = Number(event.target.value || 0);
-                    if (nextValue > 0) onLog(task, nextValue);
+                    if (allowsNegative ? nextValue !== 0 : nextValue > 0) onLog(task, nextValue);
                   }}
                 >
                   <option value="">More</option>
@@ -2406,7 +2447,7 @@ function LifeTaskGrid({ tasks, logs, todayKey, onLog, currency, showStreaks = fa
                     className="life-task-input"
                     inputMode="numeric"
                     type="number"
-                    min="0"
+                    min={allowsNegative ? undefined : "0"}
                     placeholder={task.unit}
                     value={customValue}
                     onChange={(event) =>
@@ -2418,7 +2459,7 @@ function LifeTaskGrid({ tasks, logs, todayKey, onLog, currency, showStreaks = fa
                     onKeyDown={(event) => {
                       if (event.key !== "Enter") return;
                       const nextValue = Number(customValue || 0);
-                      if (nextValue <= 0) return;
+                      if (allowsNegative ? nextValue === 0 : nextValue <= 0) return;
                       onLog(task, nextValue);
                       setCustomValues((current) => ({
                         ...current,
@@ -2430,7 +2471,7 @@ function LifeTaskGrid({ tasks, logs, todayKey, onLog, currency, showStreaks = fa
                     className="ghost-button life-task-custom-button"
                     onClick={() => {
                       const nextValue = Number(customValue || 0);
-                      if (nextValue <= 0) return;
+                      if (allowsNegative ? nextValue === 0 : nextValue <= 0) return;
                       onLog(task, nextValue);
                       setCustomValues((current) => ({
                         ...current,
@@ -2490,11 +2531,22 @@ function formatTaskValue(task, value, currency) {
     return value ? "Clean" : "Pending";
   }
 
+  if (task.unit === "$" && Number(value || 0) !== 0) {
+    return formatCurrencyValue(Number(value || 0), currency);
+  }
+
   if (value) {
     return `${currency && task.unit === "$" ? currency : ""}${value}${task.unit !== "$" ? ` ${task.unit}` : ""}`;
   }
 
   return `0 ${task.unit}`;
+}
+
+function formatCurrencyValue(value, currency) {
+  const numericValue = Number(value || 0);
+  const absValue = formatNumber(Math.abs(numericValue));
+  if (numericValue < 0) return `-${currency}${absValue}`;
+  return `${currency}${absValue}`;
 }
 
 function TimelineMetric({ label, value }) {
