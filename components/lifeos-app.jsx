@@ -925,20 +925,28 @@ export function LifeOSApp({ view = "dashboard" }) {
   const triggerLifeQuickAction = (label) => {
     setLifeQuickAction(label);
     const quickActionId = `life-quick:${label.toLowerCase().replace(/\s+/g, "-")}`;
-    commitState((current) => ({
-      ...current,
-      logs: {
-        ...current.logs,
-        [todayKey]: {
-          ...(current.logs?.[todayKey] ?? {}),
-          [quickActionId]: {
-            value: true,
-            xp: current.logs?.[todayKey]?.[quickActionId]?.xp ?? 0,
-            ts: Date.now()
+    setState((current) => {
+      const next = touchState({
+        ...current,
+        logs: {
+          ...current.logs,
+          [todayKey]: {
+            ...(current.logs?.[todayKey] ?? {}),
+            [quickActionId]: {
+              value: true,
+              xp: current.logs?.[todayKey]?.[quickActionId]?.xp ?? 0,
+              ts: Date.now()
+            }
           }
         }
-      }
-    }));
+      });
+
+      try {
+        window.localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+      } catch {}
+
+      return next;
+    });
   };
 
   const heroCards = useMemo(
