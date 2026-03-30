@@ -162,6 +162,18 @@ const LIFE_QUICK_ACTIONS = [
   }
 ];
 
+const LIFE_QUICK_ACTION_MAP = Object.fromEntries(
+  LIFE_QUICK_ACTIONS.flatMap((group) =>
+    group.items.map((item) => [
+      `life-quick:${item.label.toLowerCase().replace(/\s+/g, "-")}`,
+      {
+        label: item.label,
+        group: group.title
+      }
+    ])
+  )
+);
+
 const LIFE_DEFAULT_INPUTS = {
   exercise: 5,
   meditation: 5,
@@ -631,6 +643,18 @@ export function LifeOSApp({ view = "dashboard" }) {
             };
           }
 
+          const quickAction = LIFE_QUICK_ACTION_MAP[taskId];
+          if (quickAction) {
+            return {
+              key: taskId,
+              category: "Life",
+              label: quickAction.label,
+              value: "Done",
+              meta: quickAction.group,
+              xp: record?.xp ?? 0
+            };
+          }
+
           return null;
         })
         .filter(Boolean)
@@ -900,6 +924,21 @@ export function LifeOSApp({ view = "dashboard" }) {
 
   const triggerLifeQuickAction = (label) => {
     setLifeQuickAction(label);
+    const quickActionId = `life-quick:${label.toLowerCase().replace(/\s+/g, "-")}`;
+    commitState((current) => ({
+      ...current,
+      logs: {
+        ...current.logs,
+        [todayKey]: {
+          ...(current.logs?.[todayKey] ?? {}),
+          [quickActionId]: {
+            value: true,
+            xp: current.logs?.[todayKey]?.[quickActionId]?.xp ?? 0,
+            ts: Date.now()
+          }
+        }
+      }
+    }));
   };
 
   const heroCards = useMemo(
