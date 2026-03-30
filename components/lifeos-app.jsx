@@ -926,20 +926,18 @@ export function LifeOSApp({ view = "dashboard" }) {
     setLifeQuickAction(label);
     const quickActionId = `life-quick:${label.toLowerCase().replace(/\s+/g, "-")}`;
     setState((current) => {
-      const next = touchState({
-        ...current,
-        logs: {
-          ...current.logs,
-          [todayKey]: {
-            ...(current.logs?.[todayKey] ?? {}),
-            [quickActionId]: {
-              value: true,
-              xp: current.logs?.[todayKey]?.[quickActionId]?.xp ?? 0,
-              ts: Date.now()
-            }
-          }
-        }
-      });
+      const next = touchState(
+        applyTrackedLog(
+          current,
+          {
+            id: quickActionId,
+            label,
+            type: "boolean",
+            xpPerUnit: 0
+          },
+          true
+        )
+      );
 
       try {
         window.localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
