@@ -673,6 +673,22 @@ export function LifeOSApp({ view = "dashboard" }) {
   }, [lifeTaskMap, moneyTaskMap, state.logs, state.profile.currency, state.workProjects, studyTaskMap, todayKey]);
   const featuredHistoryDay = historyDays[0];
   const previousHistoryDays = historyDays.slice(1);
+  const todayQuickActions = useMemo(
+    () =>
+      Object.entries(state.logs?.[todayKey] ?? {})
+        .filter(([taskId, record]) => {
+          const action = LIFE_QUICK_ACTION_MAP[taskId];
+          if (!action) return false;
+          const rawValue = record?.value;
+          return typeof rawValue === "boolean" ? rawValue : Number(rawValue) > 0;
+        })
+        .map(([taskId]) => ({
+          id: taskId,
+          ...LIFE_QUICK_ACTION_MAP[taskId]
+        }))
+        .sort((a, b) => a.group.localeCompare(b.group) || a.label.localeCompare(b.label)),
+    [state.logs, todayKey]
+  );
 
   const applyTrackedLog = (current, task, value) => {
     const normalized =
@@ -1600,6 +1616,21 @@ export function LifeOSApp({ view = "dashboard" }) {
                 </div>
 
                 <aside className="life-page-secondary">
+                  <Card title="Today Actions" icon={History} className="life-quick-card">
+                    {todayQuickActions.length ? (
+                      <div className="life-today-actions">
+                        {todayQuickActions.map((item) => (
+                          <div key={item.id} className="life-today-action-pill">
+                            <span className="life-today-action-group">{item.group}</span>
+                            <strong>{item.label}</strong>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="muted">No quick actions logged today yet.</p>
+                    )}
+                  </Card>
+
                   {LIFE_QUICK_ACTIONS.map((group) => (
                     <Card key={group.title} title={group.title} icon={Sparkle} className="life-quick-card">
                       <div className="life-quick-grid">
