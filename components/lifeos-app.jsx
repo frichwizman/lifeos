@@ -51,6 +51,7 @@ import {
   STORAGE_KEY,
   clamp,
   computeIncomeStats,
+  formatDateKey,
   formatNumber,
   getCompletedCount,
   getLevel,
@@ -587,7 +588,7 @@ export function LifeOSApp({ view = "dashboard" }) {
     return Array.from({ length: 7 }).map((_, index) => {
       const date = new Date();
       date.setDate(date.getDate() - index);
-      const dateKey = date.toISOString().slice(0, 10);
+      const dateKey = formatDateKey(date);
       const dayLogs = state.logs?.[dateKey] ?? {};
       const entries = Object.entries(dayLogs)
         .map(([taskId, record]) => {
@@ -694,7 +695,7 @@ export function LifeOSApp({ view = "dashboard" }) {
   const yesterdayKey = useMemo(() => {
     const date = new Date();
     date.setDate(date.getDate() - 1);
-    return date.toISOString().slice(0, 10);
+    return formatDateKey(date);
   }, []);
   const buildMoneySummary = (dateKey) => ({
     income: Number(getLogValue(state.logs, dateKey, "income-logged") ?? 0),
@@ -904,7 +905,7 @@ export function LifeOSApp({ view = "dashboard" }) {
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-    link.download = `lifeos-backup-${new Date().toISOString().slice(0, 10)}.json`;
+    link.download = `lifeos-backup-${formatDateKey(new Date())}.json`;
     link.click();
     URL.revokeObjectURL(url);
   };
