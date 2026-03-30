@@ -181,6 +181,12 @@ const LIFE_DEFAULT_INPUTS = {
   "water-intake": 250
 };
 
+const STUDY_DEFAULT_INPUTS = {
+  "language-skills": 25,
+  "ai-skills": 25,
+  reading: 5
+};
+
 const MONEY_DEFAULT_INPUTS = {
   "income-logged": 50,
   "expense-tracked": 20,
@@ -582,7 +588,7 @@ export function LifeOSApp({ view = "dashboard" }) {
       if (task?.type === "boolean") return rawValue ? "Done" : "Not done";
       if (task?.unit === "$") return `${state.profile.currency}${formatNumber(Number(rawValue || 0))}`;
       if (task?.unit === "★") return `${rawValue}★`;
-      return `${rawValue} ${task?.unit ?? ""}`.trim();
+      return `${rawValue}${task?.compactUnit ? "" : " "}${task?.unit ?? ""}`.trim();
     };
 
     return Array.from({ length: 7 }).map((_, index) => {
@@ -710,6 +716,20 @@ export function LifeOSApp({ view = "dashboard" }) {
   const yesterdayMoneySummary = useMemo(
     () => buildMoneySummary(yesterdayKey),
     [state.logs, yesterdayKey]
+  );
+  const buildStudySummary = (dateKey) =>
+    studyTasks.map((task) => ({
+      id: task.id,
+      label: task.label,
+      value: formatTaskValue(task, getLogValue(state.logs, dateKey, task.id), state.profile.currency)
+    }));
+  const todayStudySummary = useMemo(
+    () => buildStudySummary(todayKey),
+    [state.logs, todayKey, state.profile.currency]
+  );
+  const yesterdayStudySummary = useMemo(
+    () => buildStudySummary(yesterdayKey),
+    [state.logs, yesterdayKey, state.profile.currency]
   );
 
   const applyTrackedLogAtDate = (current, task, value, dateKey) => {
@@ -1630,9 +1650,45 @@ export function LifeOSApp({ view = "dashboard" }) {
             ) : null}
 
             {view === "study" ? (
-              <ModuleCard title="Study" color={MODULE_COLORS.study} icon={GraduationCap}>
-                <TaskList tasks={studyTasks} logs={state.logs} todayKey={todayKey} notes={state.notes} onLog={logTask} showStreaks />
-              </ModuleCard>
+              <section className="life-page-layout">
+                <div className="life-page-primary">
+                  <ModuleCard title="Study" color={MODULE_COLORS.study} icon={GraduationCap}>
+                    <LifeTaskGrid
+                      tasks={studyTasks}
+                      logs={state.logs}
+                      todayKey={todayKey}
+                      onLog={logTask}
+                      defaultInputs={STUDY_DEFAULT_INPUTS}
+                    />
+                  </ModuleCard>
+                </div>
+
+                <aside className="life-page-secondary">
+                  <div className="money-sidebar-stack">
+                    <Card title="Today" icon={GraduationCap} className="life-quick-card">
+                      <div className="money-summary-grid">
+                        {todayStudySummary.map((item) => (
+                          <div key={item.id} className="money-summary-item">
+                            <span>{item.label}</span>
+                            <strong>{item.value}</strong>
+                          </div>
+                        ))}
+                      </div>
+                    </Card>
+
+                    <Card title="Yesterday" icon={GraduationCap} className="life-quick-card">
+                      <div className="money-summary-grid">
+                        {yesterdayStudySummary.map((item) => (
+                          <div key={item.id} className="money-summary-item">
+                            <span>{item.label}</span>
+                            <strong>{item.value}</strong>
+                          </div>
+                        ))}
+                      </div>
+                    </Card>
+                  </div>
+                </aside>
+              </section>
             ) : null}
 
             {view === "life" ? (
@@ -2577,11 +2633,12 @@ function formatTaskValue(task, value, currency) {
     return formatCurrencyValue(Number(value || 0), currency);
   }
 
+  const separator = task.compactUnit ? "" : " ";
   if (value) {
-    return `${currency && task.unit === "$" ? currency : ""}${value}${task.unit !== "$" ? ` ${task.unit}` : ""}`;
+    return `${currency && task.unit === "$" ? currency : ""}${value}${task.unit !== "$" ? `${separator}${task.unit}` : ""}`;
   }
 
-  return `0 ${task.unit}`;
+  return `0${task.unit !== "$" ? `${separator}${task.unit}` : ""}`;
 }
 
 function formatCurrencyValue(value, currency) {
