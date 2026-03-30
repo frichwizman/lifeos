@@ -2443,6 +2443,7 @@ function LifeTaskGrid({ tasks, logs, todayKey, onLog, currency, showStreaks = fa
         const value = getLogValue(logs, todayKey, task.id);
         const isRating = task.type === "rating" || task.type === "ratingReverse";
         const allowsNegative = Boolean(task.allowNegative);
+        const allowsZero = Boolean(task.allowZero);
         const defaultInput = defaultInputs[task.id];
         const dropdownPresets = (task.presets ?? []).filter((preset) => preset !== defaultInput);
         const customValue = customValues[task.id] ?? "";
@@ -2464,8 +2465,11 @@ function LifeTaskGrid({ tasks, logs, todayKey, onLog, currency, showStreaks = fa
                   className="life-task-select"
                   value=""
                   onChange={(event) => {
-                    const nextValue = Number(event.target.value || 0);
-                    if (allowsNegative ? nextValue !== 0 : nextValue > 0) onLog(task, nextValue);
+                    const rawValue = event.target.value;
+                    if (rawValue === "") return;
+                    const nextValue = Number(rawValue);
+                    const canLog = allowsNegative ? (allowsZero ? !Number.isNaN(nextValue) : nextValue !== 0) : allowsZero ? nextValue >= 0 : nextValue > 0;
+                    if (canLog) onLog(task, nextValue);
                   }}
                 >
                   <option value="">More</option>
@@ -2481,7 +2485,7 @@ function LifeTaskGrid({ tasks, logs, todayKey, onLog, currency, showStreaks = fa
                     className="life-task-input"
                     inputMode="numeric"
                     type="number"
-                    min={allowsNegative ? undefined : "0"}
+                    min={allowsNegative || allowsZero ? undefined : "0"}
                     placeholder={task.unit}
                     value={customValue}
                     onChange={(event) =>
@@ -2492,8 +2496,10 @@ function LifeTaskGrid({ tasks, logs, todayKey, onLog, currency, showStreaks = fa
                     }
                     onKeyDown={(event) => {
                       if (event.key !== "Enter") return;
-                      const nextValue = Number(customValue || 0);
-                      if (allowsNegative ? nextValue === 0 : nextValue <= 0) return;
+                      if (customValue === "") return;
+                      const nextValue = Number(customValue);
+                      const canLog = allowsNegative ? (allowsZero ? !Number.isNaN(nextValue) : nextValue !== 0) : allowsZero ? nextValue >= 0 : nextValue > 0;
+                      if (!canLog) return;
                       onLog(task, nextValue);
                       setCustomValues((current) => ({
                         ...current,
@@ -2504,8 +2510,10 @@ function LifeTaskGrid({ tasks, logs, todayKey, onLog, currency, showStreaks = fa
                   <button
                     className="ghost-button life-task-custom-button"
                     onClick={() => {
-                      const nextValue = Number(customValue || 0);
-                      if (allowsNegative ? nextValue === 0 : nextValue <= 0) return;
+                      if (customValue === "") return;
+                      const nextValue = Number(customValue);
+                      const canLog = allowsNegative ? (allowsZero ? !Number.isNaN(nextValue) : nextValue !== 0) : allowsZero ? nextValue >= 0 : nextValue > 0;
+                      if (!canLog) return;
                       onLog(task, nextValue);
                       setCustomValues((current) => ({
                         ...current,
