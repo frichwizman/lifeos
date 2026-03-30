@@ -1367,6 +1367,37 @@ select {
   font-size: 0.8rem;
 }
 
+.money-sidebar-stack {
+  display: grid;
+  gap: 14px;
+}
+
+.money-summary-grid {
+  display: grid;
+  gap: 10px;
+}
+
+.money-summary-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--surface-2);
+}
+
+.money-summary-item span {
+  color: var(--text-sub);
+  font-size: 0.78rem;
+}
+
+.money-summary-item strong {
+  font-size: 0.96rem;
+  letter-spacing: -0.02em;
+}
+
 .life-quick-card {
   gap: 12px;
 }

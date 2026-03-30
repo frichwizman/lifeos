@@ -691,14 +691,24 @@ export function LifeOSApp({ view = "dashboard" }) {
         .sort((a, b) => a.group.localeCompare(b.group) || a.label.localeCompare(b.label)),
     [state.logs, todayKey]
   );
+  const yesterdayKey = useMemo(() => {
+    const date = new Date();
+    date.setDate(date.getDate() - 1);
+    return date.toISOString().slice(0, 10);
+  }, []);
+  const buildMoneySummary = (dateKey) => ({
+    income: Number(getLogValue(state.logs, dateKey, "income-logged") ?? 0),
+    expense: Number(getLogValue(state.logs, dateKey, "expense-tracked") ?? 0),
+    savings: Number(getLogValue(state.logs, dateKey, "saved-today") ?? 0),
+    investment: Number(getLogValue(state.logs, dateKey, "investment-return") ?? 0)
+  });
   const todayMoneySummary = useMemo(
-    () => ({
-      income: Number(getLogValue(state.logs, todayKey, "income-logged") ?? 0),
-      expense: Number(getLogValue(state.logs, todayKey, "expense-tracked") ?? 0),
-      savings: Number(getLogValue(state.logs, todayKey, "saved-today") ?? 0),
-      investment: Number(getLogValue(state.logs, todayKey, "investment-return") ?? 0)
-    }),
+    () => buildMoneySummary(todayKey),
     [state.logs, todayKey]
+  );
+  const yesterdayMoneySummary = useMemo(
+    () => buildMoneySummary(yesterdayKey),
+    [state.logs, yesterdayKey]
   );
 
   const applyTrackedLogAtDate = (current, task, value, dateKey) => {
@@ -1709,26 +1719,49 @@ export function LifeOSApp({ view = "dashboard" }) {
                 </div>
 
                 <aside className="life-page-secondary">
-                  <Card title="Today Money" icon={CircleDollarSign} className="life-quick-card">
-                    <div className="money-summary-grid">
-                      <div className="money-summary-item">
-                        <span>Income</span>
-                        <strong>{formatCurrencyValue(todayMoneySummary.income, state.profile.currency)}</strong>
+                  <div className="money-sidebar-stack">
+                    <Card title="Today" icon={CircleDollarSign} className="life-quick-card">
+                      <div className="money-summary-grid">
+                        <div className="money-summary-item">
+                          <span>Income</span>
+                          <strong>{formatCurrencyValue(todayMoneySummary.income, state.profile.currency)}</strong>
+                        </div>
+                        <div className="money-summary-item">
+                          <span>Expense</span>
+                          <strong>{formatCurrencyValue(todayMoneySummary.expense, state.profile.currency)}</strong>
+                        </div>
+                        <div className="money-summary-item">
+                          <span>Savings</span>
+                          <strong>{formatCurrencyValue(todayMoneySummary.savings, state.profile.currency)}</strong>
+                        </div>
+                        <div className="money-summary-item">
+                          <span>Investment</span>
+                          <strong>{formatCurrencyValue(todayMoneySummary.investment, state.profile.currency)}</strong>
+                        </div>
                       </div>
-                      <div className="money-summary-item">
-                        <span>Expense</span>
-                        <strong>{formatCurrencyValue(todayMoneySummary.expense, state.profile.currency)}</strong>
+                    </Card>
+
+                    <Card title="Yesterday" icon={CircleDollarSign} className="life-quick-card">
+                      <div className="money-summary-grid">
+                        <div className="money-summary-item">
+                          <span>Income</span>
+                          <strong>{formatCurrencyValue(yesterdayMoneySummary.income, state.profile.currency)}</strong>
+                        </div>
+                        <div className="money-summary-item">
+                          <span>Expense</span>
+                          <strong>{formatCurrencyValue(yesterdayMoneySummary.expense, state.profile.currency)}</strong>
+                        </div>
+                        <div className="money-summary-item">
+                          <span>Savings</span>
+                          <strong>{formatCurrencyValue(yesterdayMoneySummary.savings, state.profile.currency)}</strong>
+                        </div>
+                        <div className="money-summary-item">
+                          <span>Investment</span>
+                          <strong>{formatCurrencyValue(yesterdayMoneySummary.investment, state.profile.currency)}</strong>
+                        </div>
                       </div>
-                      <div className="money-summary-item">
-                        <span>Savings</span>
-                        <strong>{formatCurrencyValue(todayMoneySummary.savings, state.profile.currency)}</strong>
-                      </div>
-                      <div className="money-summary-item">
-                        <span>Investment</span>
-                        <strong>{formatCurrencyValue(todayMoneySummary.investment, state.profile.currency)}</strong>
-                      </div>
-                    </div>
-                  </Card>
+                    </Card>
+                  </div>
                 </aside>
               </section>
             ) : null}
