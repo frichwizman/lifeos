@@ -2478,8 +2478,23 @@ select {
   color: var(--button-text);
 }
 
-.history-page-stack {
+.history-page-layout {
   display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(280px, 1fr);
+  gap: 20px;
+  width: 100%;
+}
+
+.history-page-primary,
+.history-page-secondary {
+  display: grid;
+  gap: 16px;
+  align-content: start;
+}
+
+.history-content-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 18px;
 }
 
@@ -2499,6 +2514,7 @@ select {
 }
 
 .history-featured-card {
+  grid-column: 1 / -1;
   border-color: var(--highlight-border);
   background: var(--highlight-bg);
 }
@@ -2601,6 +2617,22 @@ select {
 .history-archive-stack {
   display: grid;
   gap: 14px;
+}
+
+.history-sidebar-card {
+  min-height: 0;
+  height: auto;
+}
+
+.history-sidebar-placeholder {
+  min-height: 220px;
+  border: 1px dashed var(--border-2);
+  border-radius: 18px;
+  background: var(--surface-2);
+  display: grid;
+  place-items: center;
+  padding: 18px;
+  text-align: center;
 }
 
 .history-entry-list {
@@ -2855,6 +2887,14 @@ select {
   .life-quick-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 8px;
+  }
+
+  .history-page-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .history-content-grid {
+    grid-template-columns: 1fr;
   }
 
   .life-task-grid {

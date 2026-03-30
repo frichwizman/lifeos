@@ -1593,87 +1593,97 @@ export function LifeOSApp({ view = "dashboard" }) {
 
             {view === "history" ? (
               <ModuleCard title="History" color="#8892a0" icon={History}>
-                <div className="history-page-stack">
-                  <section className="history-featured-card">
-                    <div className="history-day-head">
-                      <div>
-                        <p className="eyebrow">Today Snapshot</p>
-                        <h2>{featuredHistoryDay.label}</h2>
-                        <p className="muted">{featuredHistoryDay.dateKey}</p>
-                      </div>
-                      <div className="history-day-stats">
-                        <div className="history-stat-chip">
-                          <span>Entries</span>
-                          <strong>{featuredHistoryDay.count}</strong>
-                        </div>
-                        <div className="history-stat-chip">
-                          <span>XP</span>
-                          <strong>{formatNumber(featuredHistoryDay.xp)} XP</strong>
-                        </div>
-                      </div>
-                    </div>
-                    {featuredHistoryDay.entries.length ? (
-                      <div className="history-entry-grid">
-                        {featuredHistoryDay.entries.map((entry) => (
-                          <article key={`${featuredHistoryDay.key}-${entry.key}`} className="history-entry-card is-featured">
-                            <div className="history-entry-top">
-                              <span className="history-entry-tag">{entry.category}</span>
-                              <strong>{entry.value}</strong>
-                            </div>
-                            <div className="history-entry-copy">
-                              <h3>{entry.label}</h3>
-                              {entry.meta ? <p className="muted">{entry.meta}</p> : null}
-                            </div>
-                          </article>
-                        ))}
-                      </div>
-                    ) : (
-                      <div className="history-empty-card">
-                        <strong>No entries yet</strong>
-                        <p className="muted">Start logging today and the full day record will appear here.</p>
-                      </div>
-                    )}
-                  </section>
-
-                  <section className="history-archive-stack">
-                    {previousHistoryDays.map((day) => (
-                      <article key={day.key} className="history-day-card">
+                <section className="history-page-layout">
+                  <div className="history-page-primary">
+                    <div className="history-content-grid">
+                      <section className="history-featured-card">
                         <div className="history-day-head">
                           <div>
-                            <h3>{day.label}</h3>
-                            <p className="muted">{day.dateKey}</p>
+                            <p className="eyebrow">Today Snapshot</p>
+                            <h2>{featuredHistoryDay.label}</h2>
+                            <p className="muted">{featuredHistoryDay.dateKey}</p>
                           </div>
                           <div className="history-day-stats">
                             <div className="history-stat-chip">
                               <span>Entries</span>
-                              <strong>{day.count}</strong>
+                              <strong>{featuredHistoryDay.count}</strong>
                             </div>
                             <div className="history-stat-chip">
                               <span>XP</span>
-                              <strong>{formatNumber(day.xp)} XP</strong>
+                              <strong>{formatNumber(featuredHistoryDay.xp)} XP</strong>
                             </div>
                           </div>
                         </div>
-
-                        {day.entries.length ? (
-                          <div className="history-entry-list">
-                            {day.entries.map((entry) => (
-                              <div key={`${day.key}-${entry.key}`} className="history-entry-row">
-                                <div className="history-entry-inline">
+                        {featuredHistoryDay.entries.length ? (
+                          <div className="history-entry-grid">
+                            {featuredHistoryDay.entries.map((entry) => (
+                              <article key={`${featuredHistoryDay.key}-${entry.key}`} className="history-entry-card is-featured">
+                                <div className="history-entry-top">
                                   <span className="history-entry-tag">{entry.category}</span>
-                                  <strong>{entry.label}</strong>
+                                  <strong>{entry.value}</strong>
                                 </div>
-                                <span className="history-entry-value">{entry.value}</span>
-                              </div>
+                                <div className="history-entry-copy">
+                                  <h3>{entry.label}</h3>
+                                  {entry.meta ? <p className="muted">{entry.meta}</p> : null}
+                                </div>
+                              </article>
                             ))}
                           </div>
                         ) : (
-                          <p className="muted">No tracked entries.</p>
+                          <div className="history-empty-card">
+                            <strong>No entries yet</strong>
+                            <p className="muted">Start logging today and the full day record will appear here.</p>
+                          </div>
                         )}
-                      </article>
-                    ))}
-                  </section>
-                </div>
+                      </section>
+
+                      {previousHistoryDays.map((day) => (
+                        <article key={day.key} className="history-day-card">
+                          <div className="history-day-head">
+                            <div>
+                              <h3>{day.label}</h3>
+                              <p className="muted">{day.dateKey}</p>
+                            </div>
+                            <div className="history-day-stats">
+                              <div className="history-stat-chip">
+                                <span>Entries</span>
+                                <strong>{day.count}</strong>
+                              </div>
+                              <div className="history-stat-chip">
+                                <span>XP</span>
+                                <strong>{formatNumber(day.xp)} XP</strong>
+                              </div>
+                            </div>
+                          </div>
+
+                          {day.entries.length ? (
+                            <div className="history-entry-list">
+                              {day.entries.map((entry) => (
+                                <div key={`${day.key}-${entry.key}`} className="history-entry-row">
+                                  <div className="history-entry-inline">
+                                    <span className="history-entry-tag">{entry.category}</span>
+                                    <strong>{entry.label}</strong>
+                                  </div>
+                                  <span className="history-entry-value">{entry.value}</span>
+                                </div>
+                              ))}
+                            </div>
+                          ) : (
+                            <p className="muted">No tracked entries.</p>
+                          )}
+                        </article>
+                      ))}
+                    </div>
+                  </div>
+
+                  <aside className="history-page-secondary">
+                    <Card title="History Sidebar" icon={History} className="history-sidebar-card">
+                      <div className="history-sidebar-placeholder">
+                        <p className="muted">Reserved for future filters, summaries, and date tools.</p>
+                      </div>
+                    </Card>
+                  </aside>
+                </section>
               </ModuleCard>
             ) : null}
 
