@@ -166,6 +166,12 @@ const LIFE_DEFAULT_INPUTS = {
   "water-intake": 250
 };
 
+const MONEY_DEFAULT_INPUTS = {
+  "income-logged": 50,
+  "expense-tracked": 20,
+  "saved-today": 20
+};
+
 const OFFICE_MAP = {
   width: 980,
   height: 640
@@ -1470,7 +1476,14 @@ export function LifeOSApp({ view = "dashboard" }) {
 
             {view === "money" ? (
               <ModuleCard title="Money" color={MODULE_COLORS.money} icon={CircleDollarSign}>
-                <TaskList tasks={moneyTasks} logs={state.logs} todayKey={todayKey} notes={{}} onLog={logTask} currency={state.profile.currency} />
+                <LifeTaskGrid
+                  tasks={moneyTasks}
+                  logs={state.logs}
+                  todayKey={todayKey}
+                  onLog={logTask}
+                  currency={state.profile.currency}
+                  defaultInputs={MONEY_DEFAULT_INPUTS}
+                />
               </ModuleCard>
             ) : null}
 
@@ -2045,7 +2058,7 @@ function TaskList({ tasks, logs, todayKey, notes, onLog, currency, showStreaks =
   );
 }
 
-function LifeTaskGrid({ tasks, logs, todayKey, onLog, currency, showStreaks = false }) {
+function LifeTaskGrid({ tasks, logs, todayKey, onLog, currency, showStreaks = false, defaultInputs = LIFE_DEFAULT_INPUTS }) {
   const [customValues, setCustomValues] = useState({});
 
   return (
@@ -2053,7 +2066,7 @@ function LifeTaskGrid({ tasks, logs, todayKey, onLog, currency, showStreaks = fa
       {tasks.map((task) => {
         const value = getLogValue(logs, todayKey, task.id);
         const isRating = task.type === "rating" || task.type === "ratingReverse";
-        const defaultInput = LIFE_DEFAULT_INPUTS[task.id];
+        const defaultInput = defaultInputs[task.id];
         const dropdownPresets = (task.presets ?? []).filter((preset) => preset !== defaultInput);
         const customValue = customValues[task.id] ?? "";
 
