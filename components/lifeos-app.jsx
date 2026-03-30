@@ -292,6 +292,7 @@ const STUDY_ROOM_ZONES = [
 export function LifeOSApp({ view = "dashboard" }) {
   const [state, setState] = useState(DEFAULT_STATE);
   const [ready, setReady] = useState(false);
+  const [moneyLogDate, setMoneyLogDate] = useState(getTodayKey());
   const [syncCodeInput, setSyncCodeInput] = useState("");
   const [backupCount, setBackupCount] = useState(0);
   const [openNavMenu, setOpenNavMenu] = useState("");
@@ -690,10 +691,10 @@ export function LifeOSApp({ view = "dashboard" }) {
     [state.logs, todayKey]
   );
 
-  const applyTrackedLog = (current, task, value) => {
+  const applyTrackedLogAtDate = (current, task, value, dateKey) => {
     const normalized =
       task.type === "boolean" ? Boolean(value) : typeof value === "number" ? value : Number(value || 0);
-    const previousXP = current.logs?.[todayKey]?.[task.id]?.xp ?? 0;
+    const previousXP = current.logs?.[dateKey]?.[task.id]?.xp ?? 0;
     const xpBase =
       task.type === "ratingReverse"
         ? Math.round((6 - normalized) * task.xpPerUnit)
@@ -702,19 +703,19 @@ export function LifeOSApp({ view = "dashboard" }) {
             ? task.xpPerUnit
             : 0
           : Math.round(normalized * task.xpPerUnit);
-    const todayWithoutCurrent = getTodayXP(current.logs, todayKey) - previousXP;
-    const nextTodayXP = todayWithoutCurrent + xpBase;
+    const dayWithoutCurrent = getTodayXP(current.logs, dateKey) - previousXP;
+    const nextDayXP = dayWithoutCurrent + xpBase;
     return {
       ...current,
       profile: {
         ...current.profile,
         totalXP: current.profile.totalXP - previousXP + xpBase,
-        pbXP: Math.max(current.profile.pbXP, nextTodayXP)
+        pbXP: Math.max(current.profile.pbXP, nextDayXP)
       },
       logs: {
         ...current.logs,
-        [todayKey]: {
-          ...(current.logs?.[todayKey] ?? {}),
+        [dateKey]: {
+          ...(current.logs?.[dateKey] ?? {}),
           [task.id]: {
             value: normalized,
             xp: xpBase,
@@ -725,8 +726,14 @@ export function LifeOSApp({ view = "dashboard" }) {
     };
   };
 
+  const applyTrackedLog = (current, task, value) => applyTrackedLogAtDate(current, task, value, todayKey);
+
   const logTask = (task, value) => {
     commitState((current) => applyTrackedLog(current, task, value));
+  };
+
+  const logTaskAtDate = (task, value, dateKey) => {
+    commitState((current) => applyTrackedLogAtDate(current, task, value, dateKey));
   };
 
   const toggleTodo = (projectId, todoId) => {
@@ -1656,14 +1663,33 @@ export function LifeOSApp({ view = "dashboard" }) {
 
             {view === "money" ? (
               <ModuleCard title="Money" color={MODULE_COLORS.money} icon={CircleDollarSign}>
-                <LifeTaskGrid
-                  tasks={moneyTasks}
-                  logs={state.logs}
-                  todayKey={todayKey}
-                  onLog={logTask}
-                  currency={state.profile.currency}
-                  defaultInputs={MONEY_DEFAULT_INPUTS}
-                />
+                <div className="money-log-stack">
+                  <div className="money-log-toolbar">
+                    <label className="money-log-date">
+                      <span>Log Date</span>
+                      <input
+                        type="date"
+                        value={moneyLogDate}
+                        max={todayKey}
+                        onChange={(event) => setMoneyLogDate(event.target.value || todayKey)}
+                      />
+                    </label>
+                    {moneyLogDate !== todayKey ? (
+                      <button className="ghost-button" onClick={() => setMoneyLogDate(todayKey)}>
+                        Today
+                      </button>
+                    ) : null}
+                  </div>
+
+                  <LifeTaskGrid
+                    tasks={moneyTasks}
+                    logs={state.logs}
+                    todayKey={moneyLogDate}
+                    onLog={(task, value) => logTaskAtDate(task, value, moneyLogDate)}
+                    currency={state.profile.currency}
+                    defaultInputs={MONEY_DEFAULT_INPUTS}
+                  />
+                </div>
               </ModuleCard>
             ) : null}
 

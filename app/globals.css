@@ -1343,6 +1343,30 @@ select {
   padding: 16px;
 }
 
+.money-log-stack {
+  display: grid;
+  gap: 14px;
+}
+
+.money-log-toolbar {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.money-log-date {
+  display: grid;
+  gap: 6px;
+  min-width: min(220px, 100%);
+}
+
+.money-log-date span {
+  color: var(--text-sub);
+  font-size: 0.8rem;
+}
+
 .life-quick-card {
   gap: 12px;
 }
