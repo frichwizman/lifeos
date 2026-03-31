@@ -682,16 +682,17 @@ h1 {
 
 .focus-task-selector {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  gap: 14px;
-  align-items: center;
+  gap: 10px;
+  justify-items: center;
+  text-align: center;
 }
 
 .focus-task-copy {
   display: flex;
   align-items: center;
   flex-wrap: wrap;
-  gap: 8px 12px;
+  justify-content: center;
+  gap: 6px 10px;
   min-width: 0;
 }
 
@@ -712,7 +713,7 @@ h1 {
 
 .focus-task-actions {
   display: flex;
-  gap: 10px;
+  gap: 8px;
   flex-wrap: wrap;
   justify-content: center;
 }
@@ -3267,7 +3268,6 @@ select {
   }
 
   .focus-task-selector {
-    grid-template-columns: 1fr;
     justify-items: center;
     text-align: center;
   }
