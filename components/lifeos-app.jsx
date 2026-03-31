@@ -438,6 +438,67 @@ export function LifeOSApp({ view = "dashboard" }) {
     return () => window.clearInterval(focusTimerRef.current);
   }, [focusStatus]);
 
+  const lifeTaskMap = useMemo(
+    () =>
+      Object.fromEntries(
+        lifeGroups.flatMap((group) => group.items).map((task) => [task.id, task])
+      ),
+    []
+  );
+  const studyTaskMap = useMemo(() => Object.fromEntries(studyTasks.map((task) => [task.id, task])), []);
+  const moneyTaskMap = useMemo(() => Object.fromEntries(moneyTasks.map((task) => [task.id, task])), []);
+  const lifePageTasks = [
+    "exercise",
+    "meditation",
+    "sleep-quality",
+    "water-intake",
+    "stress-level",
+    "social-connection",
+    "risky-substances"
+  ]
+    .map((taskId) => lifeTaskMap[taskId])
+    .filter(Boolean);
+
+  const focusTaskOptions = useMemo(
+    () => ({
+      work: state.workProjects.flatMap((project) =>
+        (project.todayActions ?? [])
+          .filter((action) => !Boolean(getLogValue(state.logs, todayKey, `${project.id}:${action.id}`)))
+          .map((action) => ({
+            id: `work:${project.id}:${action.id}`,
+            logTaskId: `${project.id}:${action.id}`,
+            taskId: action.id,
+            label: action.label || "Untitled task",
+            meta: project.name,
+            type: "work",
+            sourceType: "work-todo",
+            projectId: project.id
+          }))
+      ),
+      study: studyTasks.map((task) => ({
+        id: `study:${task.id}`,
+        logTaskId: task.id,
+        taskId: task.id,
+        label: task.label,
+        meta: "Study",
+        type: "study",
+        sourceType: "tracked-task"
+      })),
+      life: lifePageTasks
+        .filter((task) => !["stress-level", "risky-substances"].includes(task.id))
+        .map((task) => ({
+          id: `life:${task.id}`,
+          logTaskId: task.id,
+          taskId: task.id,
+          label: task.label,
+          meta: "Life",
+          type: "life",
+          sourceType: "tracked-task"
+        }))
+    }),
+    [lifePageTasks, state.logs, state.workProjects, todayKey]
+  );
+
   useEffect(() => {
     if (view !== "focus") return;
     if (!state.focusPrefill?.type) return;
@@ -637,26 +698,6 @@ export function LifeOSApp({ view = "dashboard" }) {
       streak: getStreak(state.logs, "meditation")
     }
   ];
-  const lifeTaskMap = useMemo(
-    () =>
-      Object.fromEntries(
-        lifeGroups.flatMap((group) => group.items).map((task) => [task.id, task])
-      ),
-    []
-  );
-  const studyTaskMap = useMemo(() => Object.fromEntries(studyTasks.map((task) => [task.id, task])), []);
-  const moneyTaskMap = useMemo(() => Object.fromEntries(moneyTasks.map((task) => [task.id, task])), []);
-  const lifePageTasks = [
-    "exercise",
-    "meditation",
-    "sleep-quality",
-    "water-intake",
-    "stress-level",
-    "social-connection",
-    "risky-substances"
-  ]
-    .map((taskId) => lifeTaskMap[taskId])
-    .filter(Boolean);
   const historyDays = useMemo(() => {
     const formatDateLabel = (date, isToday) => {
       if (isToday) return "Today";
@@ -851,45 +892,6 @@ export function LifeOSApp({ view = "dashboard" }) {
       projects: projectSummaries
     };
   }, [state.logs, state.workProjects, todayKey]);
-  const focusTaskOptions = useMemo(
-    () => ({
-      work: state.workProjects.flatMap((project) =>
-        (project.todayActions ?? [])
-          .filter((action) => !Boolean(getLogValue(state.logs, todayKey, `${project.id}:${action.id}`)))
-          .map((action) => ({
-            id: `work:${project.id}:${action.id}`,
-            logTaskId: `${project.id}:${action.id}`,
-            taskId: action.id,
-            label: action.label || "Untitled task",
-            meta: project.name,
-            type: "work",
-            sourceType: "work-todo",
-            projectId: project.id
-          }))
-      ),
-      study: studyTasks.map((task) => ({
-        id: `study:${task.id}`,
-        logTaskId: task.id,
-        taskId: task.id,
-        label: task.label,
-        meta: "Study",
-        type: "study",
-        sourceType: "tracked-task"
-      })),
-      life: lifePageTasks
-        .filter((task) => !["stress-level", "risky-substances"].includes(task.id))
-        .map((task) => ({
-          id: `life:${task.id}`,
-          logTaskId: task.id,
-          taskId: task.id,
-          label: task.label,
-          meta: "Life",
-          type: "life",
-          sourceType: "tracked-task"
-        }))
-    }),
-    [lifePageTasks, state.logs, state.workProjects, todayKey]
-  );
   const focusAvailableDurations = focusType ? FOCUS_DURATION_OPTIONS[focusType] ?? [] : [];
   const formattedFocusTime = `${String(Math.floor(focusRemainingSeconds / 60)).padStart(2, "0")}:${String(focusRemainingSeconds % 60).padStart(2, "0")}`;
   const focusRewardPreview = useMemo(() => {
