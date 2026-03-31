@@ -1028,6 +1028,26 @@ export function LifeOSApp({ view = "dashboard" }) {
     }));
   };
 
+  const deleteTodayAction = (projectId, actionId) => {
+    commitState((current) => ({
+      ...current,
+      workProjects: current.workProjects.map((project) =>
+        project.id === projectId
+          ? {
+              ...project,
+              todayActions: (project.todayActions ?? []).filter((action) => action.id !== actionId)
+            }
+          : project
+      ),
+      logs: {
+        ...current.logs,
+        [todayKey]: Object.fromEntries(
+          Object.entries(current.logs?.[todayKey] ?? {}).filter(([taskId]) => taskId !== `${projectId}:${actionId}`)
+        )
+      }
+    }));
+  };
+
   const addMiscTodo = () => {
     const label = miscTodoInput.trim();
     if (!label) return;
@@ -2285,7 +2305,7 @@ export function LifeOSApp({ view = "dashboard" }) {
                           </div>
                           <div className="project-card">
                             <div className="project-subhead">
-                              <span>Today</span>
+                              <span>{project.name}</span>
                               <small>{(project.todayActions ?? []).length} / 5</small>
                             </div>
 
@@ -2296,7 +2316,20 @@ export function LifeOSApp({ view = "dashboard" }) {
                                   return (
                                     <article key={action.id} className={`work-action-card ${done ? "is-done" : ""}`}>
                                       <div className="work-action-copy">
-                                        <strong>{action.label}</strong>
+                                        <div className="work-action-main">
+                                          <input
+                                            className="work-action-input"
+                                            value={action.label}
+                                            onChange={(event) => renameTodayAction(project.id, action.id, event.target.value)}
+                                          />
+                                          <button
+                                            className="icon-button"
+                                            aria-label="Delete action"
+                                            onClick={() => deleteTodayAction(project.id, action.id)}
+                                          >
+                                            <Trash2 size={16} />
+                                          </button>
+                                        </div>
                                       </div>
                                       <div className="work-action-controls">
                                         <button className="ghost-button" onClick={() => launchWorkFocus(project, action)}>

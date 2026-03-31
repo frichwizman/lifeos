@@ -3145,6 +3145,30 @@ select {
   letter-spacing: -0.02em;
 }
 
+.work-action-main {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+}
+
+.work-action-input {
+  width: 100%;
+  min-width: 0;
+  border: 0;
+  padding: 0;
+  min-height: 0;
+  background: transparent;
+  font-size: 0.98rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: var(--text-main);
+}
+
+.work-action-input:focus {
+  outline: none;
+}
+
 .work-action-controls {
   display: flex;
   align-items: center;
