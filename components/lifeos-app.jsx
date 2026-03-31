@@ -2671,7 +2671,7 @@ export function LifeOSApp({ view = "dashboard" }) {
                 <aside className="life-page-secondary">
                   <div className="money-sidebar-stack">
                     <Card title="Today" icon={CircleDollarSign} className="life-quick-card">
-                      <div className="money-summary-grid">
+                      <div className="money-summary-grid is-compact-four">
                         <div className="money-summary-item">
                           <span>Income</span>
                           <strong>{formatCurrencyValue(todayMoneySummary.income, state.profile.currency)}</strong>
@@ -2692,7 +2692,7 @@ export function LifeOSApp({ view = "dashboard" }) {
                     </Card>
 
                     <Card title="Yesterday" icon={CircleDollarSign} className="life-quick-card">
-                      <div className="money-summary-grid">
+                      <div className="money-summary-grid is-compact-four">
                         <div className="money-summary-item">
                           <span>Income</span>
                           <strong>{formatCurrencyValue(yesterdayMoneySummary.income, state.profile.currency)}</strong>
