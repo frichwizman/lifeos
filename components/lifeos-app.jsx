@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import {
   Activity,
   Armchair,
@@ -325,6 +325,8 @@ export function LifeOSApp({ view = "dashboard" }) {
   const [focusRemainingSeconds, setFocusRemainingSeconds] = useState(25 * 60);
   const [focusStartedAt, setFocusStartedAt] = useState(null);
   const [focusTaskModalOpen, setFocusTaskModalOpen] = useState(false);
+  const [workActionModalProjectId, setWorkActionModalProjectId] = useState("");
+  const [workActionDraft, setWorkActionDraft] = useState("");
   const [officePresence, setOfficePresence] = useState({
     x: 108,
     y: 138,
@@ -339,6 +341,7 @@ export function LifeOSApp({ view = "dashboard" }) {
   });
   const todayKey = getTodayKey();
   const pathname = usePathname();
+  const router = useRouter();
   const pollingRef = useRef(null);
   const pushTimeoutRef = useRef(null);
   const officeMapRef = useRef(null);
@@ -436,6 +439,27 @@ export function LifeOSApp({ view = "dashboard" }) {
   }, [focusStatus]);
 
   useEffect(() => {
+    if (view !== "focus") return;
+    if (!state.focusPrefill?.type) return;
+
+    const prefillType = state.focusPrefill.type;
+    const nextDuration = FOCUS_DURATION_OPTIONS[prefillType]?.[0] ?? 25;
+    const matchingTask = (focusTaskOptions[prefillType] ?? []).find((item) => item.id === state.focusPrefill.taskId);
+
+    setFocusType(prefillType);
+    setFocusTask(matchingTask ?? null);
+    setFocusDurationMinutes(nextDuration);
+    setFocusRemainingSeconds(nextDuration * 60);
+
+    commitState((current) => ({
+      ...current,
+      focusPrefill: {
+        ...DEFAULT_STATE.focusPrefill
+      }
+    }));
+  }, [view, state.focusPrefill, focusTaskOptions]);
+
+  useEffect(() => {
     if (openNavMenu !== "rooms") return;
 
     const updatePosition = () => {
@@ -467,6 +491,29 @@ export function LifeOSApp({ view = "dashboard" }) {
       document.removeEventListener("pointerdown", onPointerDown);
     };
   }, [openNavMenu]);
+
+  useEffect(() => {
+    if (!ready || state.workDayKey === todayKey) return;
+
+    commitState((current) => ({
+      ...current,
+      workDayKey: todayKey,
+      workProjects: current.workProjects.map((project) => {
+        const unfinished = (project.todayActions ?? []).filter(
+          (action) => !Boolean(getLogValue(current.logs, current.workDayKey, `${project.id}:${action.id}`))
+        );
+        const nextDayCandidates = [...unfinished, ...(project.nextDayCandidates ?? [])]
+          .filter((item, index, array) => array.findIndex((candidate) => candidate.id === item.id) === index)
+          .slice(0, 5);
+
+        return {
+          ...project,
+          todayActions: [],
+          nextDayCandidates
+        };
+      })
+    }));
+  }, [ready, state.workDayKey, todayKey]);
 
   useEffect(() => {
     if (!ready || state.sync.mode !== "anonymous" || !state.sync.syncCode) return;
@@ -558,7 +605,7 @@ export function LifeOSApp({ view = "dashboard" }) {
   const pbRatio = pbReady ? clamp(todayXP / state.profile.pbXP, 0, 1.25) : 0;
   const completedWorkCount = state.workProjects.reduce(
     (sum, project) =>
-      sum + project.todos.filter((todo) => Boolean(getLogValue(state.logs, todayKey, `${project.id}:${todo.id}`))).length,
+      sum + project.todayActions.filter((action) => Boolean(getLogValue(state.logs, todayKey, `${project.id}:${action.id}`))).length,
     0
   );
   const todayCompletedCount = completedWorkCount + studyDoneCount + lifeDoneCount;
@@ -641,7 +688,10 @@ export function LifeOSApp({ view = "dashboard" }) {
           if (taskId.includes(":")) {
             const [projectId, todoId] = taskId.split(":");
             const project = state.workProjects.find((item) => item.id === projectId);
-            const todo = project?.todos.find((item) => item.id === todoId);
+            const todo =
+              project?.todayActions.find((item) => item.id === todoId) ??
+              project?.backlog.find((item) => item.id === todoId) ??
+              project?.nextDayCandidates.find((item) => item.id === todoId);
             return {
               key: taskId,
               category: "Work",
@@ -781,14 +831,16 @@ export function LifeOSApp({ view = "dashboard" }) {
   );
   const workSidebarSummary = useMemo(() => {
     const projectSummaries = state.workProjects.map((project) => {
-      const total = project.todos.length;
-      const done = project.todos.filter((todo) => Boolean(getLogValue(state.logs, todayKey, `${project.id}:${todo.id}`))).length;
+      const total = project.todayActions.length;
+      const done = project.todayActions.filter((action) => Boolean(getLogValue(state.logs, todayKey, `${project.id}:${action.id}`))).length;
       return {
         id: project.id,
         label: project.name,
         total,
         done,
-        open: Math.max(0, total - done)
+        open: Math.max(0, total - done),
+        backlog: project.backlog.length,
+        candidates: project.nextDayCandidates.length
       };
     });
 
@@ -802,13 +854,13 @@ export function LifeOSApp({ view = "dashboard" }) {
   const focusTaskOptions = useMemo(
     () => ({
       work: state.workProjects.flatMap((project) =>
-        project.todos
-          .filter((todo) => !Boolean(getLogValue(state.logs, todayKey, `${project.id}:${todo.id}`)))
-          .map((todo) => ({
-            id: `work:${project.id}:${todo.id}`,
-            logTaskId: `${project.id}:${todo.id}`,
-            taskId: todo.id,
-            label: todo.label || "Untitled task",
+        project.todayActions
+          .filter((action) => !Boolean(getLogValue(state.logs, todayKey, `${project.id}:${action.id}`)))
+          .map((action) => ({
+            id: `work:${project.id}:${action.id}`,
+            logTaskId: `${project.id}:${action.id}`,
+            taskId: action.id,
+            label: action.label || "Untitled task",
             meta: project.name,
             type: "work",
             sourceType: "work-todo",
@@ -920,41 +972,51 @@ export function LifeOSApp({ view = "dashboard" }) {
     logTask(task, !currentValue);
   };
 
-  const addTodo = (projectId) => {
+  const moveWorkActionToToday = (projectId, action, source = "backlog") => {
     commitState((current) => ({
       ...current,
       workProjects: current.workProjects.map((project) =>
         project.id === projectId
           ? {
               ...project,
-              todos: [
-                ...project.todos,
-                { id: `todo-${Date.now()}`, label: "New focus item", xp: 10 }
-              ]
+              todayActions:
+                project.todayActions.length >= 5
+                  ? project.todayActions
+                  : [...project.todayActions, action],
+              backlog: source === "backlog" ? project.backlog.filter((item) => item.id !== action.id) : project.backlog,
+              nextDayCandidates:
+                source === "candidate" ? project.nextDayCandidates.filter((item) => item.id !== action.id) : project.nextDayCandidates
             }
           : project
       )
     }));
   };
 
-  const renameProject = (projectId, name) => {
-    commitState((current) => ({
-      ...current,
-      workProjects: current.workProjects.map((project) =>
-        project.id === projectId ? { ...project, name } : project
-      )
-    }));
+  const addWorkActionFromDraft = (projectId) => {
+    const label = workActionDraft.trim();
+    if (!label) return;
+
+    moveWorkActionToToday(
+      projectId,
+      {
+        id: `work-action-${Date.now()}`,
+        label
+      },
+      "new"
+    );
+    setWorkActionDraft("");
+    setWorkActionModalProjectId("");
   };
 
-  const renameTodo = (projectId, todoId, label) => {
+  const renameTodayAction = (projectId, actionId, label) => {
     commitState((current) => ({
       ...current,
       workProjects: current.workProjects.map((project) =>
         project.id === projectId
           ? {
               ...project,
-              todos: project.todos.map((todo) =>
-                todo.id === todoId ? { ...todo, label } : todo
+              todayActions: project.todayActions.map((action) =>
+                action.id === actionId ? { ...action, label } : action
               )
             }
           : project
@@ -1122,6 +1184,22 @@ export function LifeOSApp({ view = "dashboard" }) {
     setFocusStatus("running");
     setFocusRemainingSeconds(focusDurationMinutes * 60);
     setFocusStartedAt(Date.now());
+  };
+
+  const launchWorkFocus = (project, action) => {
+    commitState((current) => ({
+      ...current,
+      focusPrefill: {
+        type: "work",
+        taskId: `work:${project.id}:${action.id}`,
+        label: action.label,
+        meta: project.name,
+        sourceType: "work-todo",
+        projectId: project.id,
+        logTaskId: `${project.id}:${action.id}`
+      }
+    }));
+    router.push("/focus");
   };
 
   const updateProfile = (key, value) => {
@@ -1342,14 +1420,14 @@ export function LifeOSApp({ view = "dashboard" }) {
 
   const dashboardTasks = useMemo(() => {
     const workTasks = state.workProjects.flatMap((project) =>
-      project.todos
-        .filter((todo) => !Boolean(getLogValue(state.logs, todayKey, `${project.id}:${todo.id}`)))
-        .map((todo) => ({
-          id: `work:${project.id}:${todo.id}`,
+      project.todayActions
+        .filter((action) => !Boolean(getLogValue(state.logs, todayKey, `${project.id}:${action.id}`)))
+        .map((action) => ({
+          id: `work:${project.id}:${action.id}`,
           sourceType: "work-todo",
-          sourceId: todo.id,
+          sourceId: action.id,
           projectId: project.id,
-          label: todo.label || "Untitled task",
+          label: action.label || "Untitled task",
           category: "Work",
           context: project.name,
           xpReward: 10,
@@ -2191,30 +2269,53 @@ export function LifeOSApp({ view = "dashboard" }) {
                       {state.workProjects.map((project) => (
                         <div key={project.id} className="project-column">
                           <div className="project-heading">
-                            <input value={project.name} onChange={(event) => renameProject(project.id, event.target.value)} />
-                            <button className="ghost-button" onClick={() => addTodo(project.id)}>
+                            <strong>{project.name}</strong>
+                            <button
+                              className="ghost-button"
+                              onClick={() => setWorkActionModalProjectId(project.id)}
+                              disabled={project.todayActions.length >= 5}
+                            >
                               <Plus size={16} />
-                              Todo
+                              Add
                             </button>
                           </div>
                           <div className="project-card">
-                            <div className="todo-list">
-                              {project.todos.map((todo) => {
-                                const done = Boolean(getLogValue(state.logs, todayKey, `${project.id}:${todo.id}`));
-                                return (
-                                  <div key={todo.id} className={`todo-row ${done ? "is-done" : ""}`}>
-                                    <button className={`todo-check ${done ? "is-done" : ""}`} onClick={() => toggleTodo(project.id, todo.id)}>
-                                      {done ? "Done" : "Mark"}
-                                    </button>
-                                    <input
-                                      className="todo-input"
-                                      value={todo.label}
-                                      onChange={(event) => renameTodo(project.id, todo.id, event.target.value)}
-                                    />
-                                    <small>+10 XP</small>
-                                  </div>
-                                );
-                              })}
+                            <div className="project-subhead">
+                              <span>Today</span>
+                              <small>{project.todayActions.length} / 5</small>
+                            </div>
+
+                            <div className="work-action-list">
+                              {project.todayActions.length ? (
+                                project.todayActions.map((action) => {
+                                  const done = Boolean(getLogValue(state.logs, todayKey, `${project.id}:${action.id}`));
+                                  return (
+                                    <article key={action.id} className={`work-action-card ${done ? "is-done" : ""}`}>
+                                      <div className="work-action-copy">
+                                        <strong>{action.label}</strong>
+                                      </div>
+                                      <div className="work-action-controls">
+                                        <button className="ghost-button" onClick={() => launchWorkFocus(project, action)}>
+                                          <Play size={16} />
+                                          Start Focus
+                                        </button>
+                                        <label className="work-action-check">
+                                          <input
+                                            type="checkbox"
+                                            checked={done}
+                                            onChange={() => toggleTodo(project.id, action.id)}
+                                          />
+                                          <span>Complete</span>
+                                        </label>
+                                      </div>
+                                    </article>
+                                  );
+                                })
+                              ) : (
+                                <div className="misc-todo-empty">
+                                  <p className="muted">Pick up to 5 actions for today. Keep each one clear and finishable.</p>
+                                </div>
+                              )}
                             </div>
                           </div>
                         </div>
@@ -2228,7 +2329,7 @@ export function LifeOSApp({ view = "dashboard" }) {
                     <Card title="Today" icon={BriefcaseBusiness} className="life-quick-card">
                       <div className="money-summary-grid">
                         <div className="money-summary-item">
-                          <span>Total Todos</span>
+                          <span>Total Actions</span>
                           <strong>{formatNumber(workSidebarSummary.total)}</strong>
                         </div>
                         <div className="money-summary-item">
@@ -2248,7 +2349,7 @@ export function LifeOSApp({ view = "dashboard" }) {
                           <div key={project.id} className="money-summary-item">
                             <span>{project.label}</span>
                             <strong>
-                              {formatNumber(project.done)} / {formatNumber(project.total)}
+                              {formatNumber(project.total)} today · {formatNumber(project.backlog)} backlog
                             </strong>
                           </div>
                         ))}
@@ -2256,6 +2357,96 @@ export function LifeOSApp({ view = "dashboard" }) {
                     </Card>
                   </div>
                 </aside>
+
+                {workActionModalProjectId ? (
+                  <div className="focus-task-modal-backdrop" onClick={() => setWorkActionModalProjectId("")}>
+                    <div className="focus-task-modal" onClick={(event) => event.stopPropagation()}>
+                      <div className="focus-task-modal-head">
+                        <div>
+                          <p className="eyebrow">Today Actions</p>
+                          <h3>
+                            {state.workProjects.find((project) => project.id === workActionModalProjectId)?.name ?? "Project"}
+                          </h3>
+                        </div>
+                        <button className="ghost-button" onClick={() => setWorkActionModalProjectId("")}>
+                          Close
+                        </button>
+                      </div>
+
+                      {(() => {
+                        const activeProject = state.workProjects.find((project) => project.id === workActionModalProjectId);
+                        if (!activeProject) return null;
+
+                        return (
+                          <div className="work-action-modal-stack">
+                            {activeProject.nextDayCandidates.length ? (
+                              <div className="work-action-modal-section">
+                                <span className="eyebrow">Next Day Candidates</span>
+                                <div className="focus-task-modal-list">
+                                  {activeProject.nextDayCandidates.map((action) => (
+                                    <button
+                                      key={action.id}
+                                      className="focus-task-option"
+                                      onClick={() => {
+                                        moveWorkActionToToday(activeProject.id, action, "candidate");
+                                        setWorkActionModalProjectId("");
+                                      }}
+                                    >
+                                      <strong>{action.label}</strong>
+                                      <span>Carry over</span>
+                                    </button>
+                                  ))}
+                                </div>
+                              </div>
+                            ) : null}
+
+                            <div className="work-action-modal-section">
+                              <span className="eyebrow">Backlog</span>
+                              <div className="focus-task-modal-list">
+                                {activeProject.backlog.length ? (
+                                  activeProject.backlog.map((action) => (
+                                    <button
+                                      key={action.id}
+                                      className="focus-task-option"
+                                      onClick={() => {
+                                        moveWorkActionToToday(activeProject.id, action, "backlog");
+                                        setWorkActionModalProjectId("");
+                                      }}
+                                    >
+                                      <strong>{action.label}</strong>
+                                      <span>Move into Today</span>
+                                    </button>
+                                  ))
+                                ) : (
+                                  <p className="muted">Backlog is empty right now.</p>
+                                )}
+                              </div>
+                            </div>
+
+                            <div className="work-action-modal-section">
+                              <span className="eyebrow">Create New</span>
+                              <div className="misc-todo-composer">
+                                <input
+                                  className="misc-todo-input"
+                                  value={workActionDraft}
+                                  placeholder="Create a new action for today"
+                                  onChange={(event) => setWorkActionDraft(event.target.value)}
+                                  onKeyDown={(event) => {
+                                    if (event.key === "Enter") addWorkActionFromDraft(activeProject.id);
+                                  }}
+                                />
+                                <button className="ghost-button" onClick={() => addWorkActionFromDraft(activeProject.id)}>
+                                  <Plus size={16} />
+                                  Add
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })()}
+                    </div>
+                  </div>
+                ) : null}
               </section>
             ) : null}
 

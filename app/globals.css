@@ -3067,6 +3067,15 @@ select {
   gap: 14px;
 }
 
+.project-subhead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  color: var(--text-sub);
+  font-size: 0.8rem;
+}
+
 .project-column {
   position: relative;
   z-index: 1;
@@ -3109,6 +3118,53 @@ select {
   position: relative;
   z-index: 6;
   pointer-events: auto;
+}
+
+.work-action-list {
+  display: grid;
+  gap: 12px;
+}
+
+.work-action-card {
+  display: grid;
+  gap: 12px;
+  padding: 14px;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: var(--surface-2);
+}
+
+.work-action-card.is-done {
+  background: var(--highlight-bg);
+  border-color: var(--highlight-border);
+}
+
+.work-action-copy strong {
+  display: block;
+  font-size: 0.98rem;
+  letter-spacing: -0.02em;
+}
+
+.work-action-controls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.work-action-check {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-sub);
+  font-size: 0.84rem;
+}
+
+.work-action-modal-stack,
+.work-action-modal-section {
+  display: grid;
+  gap: 12px;
 }
 
 .project-list-split {
