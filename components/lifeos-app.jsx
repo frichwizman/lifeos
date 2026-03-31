@@ -116,6 +116,12 @@ const ATTRIBUTE_LABELS = {
   social: "Social"
 };
 
+const WORK_PROJECT_SLOT_LABELS = {
+  "main-job": "Main",
+  "side-business": "Side",
+  optional: "Optional"
+};
+
 const LIFE_QUICK_ACTIONS = [
   {
     title: "Household",
@@ -2307,11 +2313,7 @@ export function LifeOSApp({ view = "dashboard" }) {
                       {state.workProjects.map((project) => (
                         <div key={project.id} className="project-column">
                           <div className="project-heading">
-                            <input
-                              value={project.name}
-                              onChange={(event) => renameWorkProject(project.id, event.target.value)}
-                              aria-label={`${project.name} project name`}
-                            />
+                            <strong>{WORK_PROJECT_SLOT_LABELS[project.id] ?? project.name}</strong>
                             <button
                               className="ghost-button"
                               onClick={() => setWorkActionModalProjectId(project.id)}
@@ -2324,6 +2326,12 @@ export function LifeOSApp({ view = "dashboard" }) {
                           <div className="project-card">
                             <div className="project-subhead">
                               <span>Today</span>
+                              <input
+                                className="project-name-input"
+                                value={project.name}
+                                onChange={(event) => renameWorkProject(project.id, event.target.value)}
+                                aria-label={`${project.name} project name`}
+                              />
                               <small>{(project.todayActions ?? []).length} / 5</small>
                             </div>
 
