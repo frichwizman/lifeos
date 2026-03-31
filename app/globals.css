@@ -638,6 +638,139 @@ h1 {
   gap: 20px;
 }
 
+.focus-page-shell {
+  display: flex;
+  justify-content: center;
+  padding: 12px 0 20px;
+}
+
+.focus-page-core {
+  width: min(720px, 100%);
+  display: grid;
+  gap: 18px;
+  padding: 24px;
+  border: 1px solid var(--border);
+  border-radius: 28px;
+  background: var(--surface);
+}
+
+.focus-type-selector,
+.focus-controls,
+.focus-duration-toggle {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: center;
+}
+
+.focus-type-chip,
+.focus-duration-chip {
+  min-height: 40px;
+  padding: 0 16px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--surface-2);
+  color: var(--text-main);
+}
+
+.focus-type-chip.is-active,
+.focus-duration-chip.is-active,
+.focus-task-option.is-active {
+  border-color: var(--accent);
+  background: var(--highlight-bg);
+}
+
+.focus-task-selector {
+  display: grid;
+  gap: 14px;
+  justify-items: center;
+  text-align: center;
+}
+
+.focus-task-copy {
+  display: grid;
+  gap: 4px;
+}
+
+.focus-task-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.focus-timer-shell {
+  display: grid;
+  gap: 14px;
+  justify-items: center;
+  padding: 10px 0;
+}
+
+.focus-timer-display {
+  font-size: clamp(3rem, 12vw, 6rem);
+  line-height: 1;
+  letter-spacing: -0.08em;
+  font-weight: 700;
+}
+
+.focus-status-text {
+  text-align: center;
+}
+
+.focus-primary-button {
+  min-width: 136px;
+  justify-content: center;
+}
+
+.focus-task-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: rgba(16, 20, 26, 0.28);
+}
+
+.focus-task-modal {
+  width: min(560px, 100%);
+  display: grid;
+  gap: 16px;
+  padding: 20px;
+  border: 1px solid var(--border);
+  border-radius: 24px;
+  background: var(--surface);
+}
+
+.focus-task-modal-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.focus-task-modal-list {
+  display: grid;
+  gap: 10px;
+}
+
+.focus-task-option {
+  display: grid;
+  gap: 4px;
+  padding: 14px 16px;
+  text-align: left;
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  background: var(--surface-2);
+  color: var(--text-main);
+}
+
+.focus-task-option span {
+  color: var(--text-sub);
+  font-size: 0.84rem;
+}
+
 .dashboard-support-rail {
   grid-template-columns: 1fr;
   gap: 16px;
@@ -3092,6 +3225,14 @@ select {
 
   .misc-todo-grid {
     grid-template-columns: 1fr;
+  }
+
+  .focus-page-core {
+    padding: 20px 16px;
+  }
+
+  .focus-task-modal-head {
+    flex-direction: column;
   }
 
   .history-entry-grid {

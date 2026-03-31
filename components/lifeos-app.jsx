@@ -91,6 +91,7 @@ const allDefaultTrackedTaskIds = [
 
 const navItems = [
   { href: "/dashboard", label: "Home" },
+  { href: "/focus", label: "Focus" },
   { href: "/todo", label: "Todo" },
   { href: "/work", label: "Work" },
   { href: "/study", label: "Study" },
@@ -195,6 +196,12 @@ const MONEY_DEFAULT_INPUTS = {
   "expense-tracked": 20,
   "saved-today": 20,
   "investment-return": 50
+};
+
+const FOCUS_DURATION_OPTIONS = {
+  work: [25],
+  study: [25, 45],
+  life: [15, 25]
 };
 
 const OFFICE_MAP = {
@@ -311,6 +318,13 @@ export function LifeOSApp({ view = "dashboard" }) {
   const [lifeQuickAction, setLifeQuickAction] = useState("");
   const [miscTodoInput, setMiscTodoInput] = useState("");
   const [miscTodoCategory, setMiscTodoCategory] = useState("work");
+  const [focusType, setFocusType] = useState("");
+  const [focusTask, setFocusTask] = useState(null);
+  const [focusStatus, setFocusStatus] = useState("idle");
+  const [focusDurationMinutes, setFocusDurationMinutes] = useState(25);
+  const [focusRemainingSeconds, setFocusRemainingSeconds] = useState(25 * 60);
+  const [focusStartedAt, setFocusStartedAt] = useState(null);
+  const [focusTaskModalOpen, setFocusTaskModalOpen] = useState(false);
   const [officePresence, setOfficePresence] = useState({
     x: 108,
     y: 138,
@@ -331,6 +345,7 @@ export function LifeOSApp({ view = "dashboard" }) {
   const roomsTriggerRef = useRef(null);
   const roomsDropdownRef = useRef(null);
   const [executionNow, setExecutionNow] = useState(Date.now());
+  const focusTimerRef = useRef(null);
 
   useEffect(() => {
     try {
@@ -403,6 +418,22 @@ export function LifeOSApp({ view = "dashboard" }) {
     const timer = window.setInterval(() => setExecutionNow(Date.now()), 1000);
     return () => window.clearInterval(timer);
   }, [state.execution.status]);
+
+  useEffect(() => {
+    if (focusStatus !== "running") return;
+    focusTimerRef.current = window.setInterval(() => {
+      setFocusRemainingSeconds((current) => {
+        if (current <= 1) {
+          window.clearInterval(focusTimerRef.current);
+          setFocusStatus("completed");
+          return 0;
+        }
+        return current - 1;
+      });
+    }, 1000);
+
+    return () => window.clearInterval(focusTimerRef.current);
+  }, [focusStatus]);
 
   useEffect(() => {
     if (openNavMenu !== "rooms") return;
@@ -768,6 +799,44 @@ export function LifeOSApp({ view = "dashboard" }) {
       projects: projectSummaries
     };
   }, [state.logs, state.workProjects, todayKey]);
+  const focusTaskOptions = useMemo(
+    () => ({
+      work: state.workProjects.flatMap((project) =>
+        project.todos
+          .filter((todo) => !Boolean(getLogValue(state.logs, todayKey, `${project.id}:${todo.id}`)))
+          .map((todo) => ({
+            id: `work:${project.id}:${todo.id}`,
+            taskId: todo.id,
+            label: todo.label || "Untitled task",
+            meta: project.name,
+            type: "work",
+            sourceType: "work-todo",
+            projectId: project.id
+          }))
+      ),
+      study: studyTasks.map((task) => ({
+        id: `study:${task.id}`,
+        taskId: task.id,
+        label: task.label,
+        meta: "Study",
+        type: "study",
+        sourceType: "tracked-task"
+      })),
+      life: lifePageTasks
+        .filter((task) => !["stress-level", "risky-substances"].includes(task.id))
+        .map((task) => ({
+          id: `life:${task.id}`,
+          taskId: task.id,
+          label: task.label,
+          meta: "Life",
+          type: "life",
+          sourceType: "tracked-task"
+        }))
+    }),
+    [lifePageTasks, state.logs, state.workProjects, todayKey]
+  );
+  const focusAvailableDurations = focusType ? FOCUS_DURATION_OPTIONS[focusType] ?? [] : [];
+  const formattedFocusTime = `${String(Math.floor(focusRemainingSeconds / 60)).padStart(2, "0")}:${String(focusRemainingSeconds % 60).padStart(2, "0")}`;
 
   const applyTrackedLogAtDate = (current, task, value, dateKey) => {
     const normalized =
@@ -908,6 +977,72 @@ export function LifeOSApp({ view = "dashboard" }) {
       ...current,
       miscTodos: (current.miscTodos ?? []).filter((item) => item.id !== todoId)
     }));
+  };
+
+  const setFocusTypeState = (nextType) => {
+    if (!FOCUS_DURATION_OPTIONS[nextType]) return;
+    const nextDuration = FOCUS_DURATION_OPTIONS[nextType][0];
+    setFocusType(nextType);
+    setFocusTask(null);
+    setFocusStatus("idle");
+    setFocusDurationMinutes(nextDuration);
+    setFocusRemainingSeconds(nextDuration * 60);
+    setFocusStartedAt(null);
+  };
+
+  const startFocusSession = () => {
+    if (!focusType) return;
+    setFocusStatus("running");
+    setFocusStartedAt(Date.now());
+  };
+
+  const pauseFocusSession = () => {
+    setFocusStatus("paused");
+  };
+
+  const resumeFocusSession = () => {
+    setFocusStatus("running");
+  };
+
+  const stopFocusSession = () => {
+    setFocusStatus("idle");
+    setFocusRemainingSeconds(focusDurationMinutes * 60);
+    setFocusStartedAt(null);
+  };
+
+  const recordFocusSession = () => {
+    if (!focusType) return;
+
+    commitState((current) => ({
+      ...current,
+      focusSessions: [
+        {
+          id: `focus-${Date.now()}`,
+          type: focusType,
+          duration: focusDurationMinutes,
+          taskId: focusTask?.taskId ?? "",
+          taskLabel: focusTask?.label ?? "",
+          sourceType: focusTask?.sourceType ?? "",
+          projectId: focusTask?.projectId ?? "",
+          timestamp: new Date().toISOString()
+        },
+        ...(current.focusSessions ?? [])
+      ].slice(0, 100)
+    }));
+  };
+
+  const finishFocusSession = () => {
+    recordFocusSession();
+    setFocusStatus("idle");
+    setFocusRemainingSeconds(focusDurationMinutes * 60);
+    setFocusStartedAt(null);
+  };
+
+  const startNextFocusSession = () => {
+    recordFocusSession();
+    setFocusStatus("running");
+    setFocusRemainingSeconds(focusDurationMinutes * 60);
+    setFocusStartedAt(Date.now());
   };
 
   const updateProfile = (key, value) => {
@@ -1218,6 +1353,10 @@ export function LifeOSApp({ view = "dashboard" }) {
       title: "Dashboard",
       description: "A compact operating view for your timeline, targets, streaks, and momentum."
     },
+    focus: {
+      title: "Focus",
+      description: "Choose a lane, optionally bind a task, and move straight into a calm execution session."
+    },
     work: {
       title: "Work",
       description: "Project-based execution. Keep today clear, but retain the long game."
@@ -1464,7 +1603,7 @@ export function LifeOSApp({ view = "dashboard" }) {
         })}
       </nav>
 
-      {view !== "dashboard" && state.execution.currentTaskId ? (
+      {view !== "dashboard" && view !== "focus" && state.execution.currentTaskId ? (
         <section className="execution-active-panel">
           <div className="execution-active-copy">
             <p className="eyebrow">Execution State</p>
@@ -1693,13 +1832,172 @@ export function LifeOSApp({ view = "dashboard" }) {
         </>
       ) : (
         <>
+          {view === "focus" ? (
+            <section className="focus-page-shell">
+              <div className="focus-page-core">
+                <div className="focus-type-selector">
+                  {["work", "study", "life"].map((type) => (
+                    <button
+                      key={type}
+                      className={`focus-type-chip ${focusType === type ? "is-active" : ""}`}
+                      onClick={() => setFocusTypeState(type)}
+                      disabled={focusStatus === "running" || focusStatus === "paused"}
+                    >
+                      {type === "work" ? "Work" : type === "study" ? "Study" : "Life"}
+                    </button>
+                  ))}
+                </div>
+
+                <div className="focus-task-selector">
+                  <div className="focus-task-copy">
+                    <span className="eyebrow">Task</span>
+                    <strong>{focusTask ? focusTask.label : "No task selected"}</strong>
+                    <p className="muted">
+                      {focusTask ? focusTask.meta : focusType ? "Optional. Start with a task or skip it." : "Select a type first."}
+                    </p>
+                  </div>
+                  <div className="focus-task-actions">
+                    <button
+                      className="ghost-button"
+                      onClick={() => setFocusTaskModalOpen(true)}
+                      disabled={!focusType || focusStatus === "running" || focusStatus === "paused"}
+                    >
+                      {focusTask ? "Change" : "Select Task"}
+                    </button>
+                    <button
+                      className="ghost-button"
+                      onClick={() => setFocusTask(null)}
+                      disabled={!focusTask || focusStatus === "running" || focusStatus === "paused"}
+                    >
+                      Skip
+                    </button>
+                  </div>
+                </div>
+
+                <div className="focus-timer-shell">
+                  {focusAvailableDurations.length > 1 ? (
+                    <div className="focus-duration-toggle">
+                      {focusAvailableDurations.map((duration) => (
+                        <button
+                          key={duration}
+                          className={`focus-duration-chip ${focusDurationMinutes === duration ? "is-active" : ""}`}
+                          onClick={() => {
+                            setFocusDurationMinutes(duration);
+                            setFocusRemainingSeconds(duration * 60);
+                            setFocusStatus("idle");
+                          }}
+                          disabled={focusStatus === "running" || focusStatus === "paused"}
+                        >
+                          {duration} min
+                        </button>
+                      ))}
+                    </div>
+                  ) : null}
+                  <div className="focus-timer-display">{formattedFocusTime}</div>
+                  <p className="muted focus-status-text">
+                    {focusStatus === "idle"
+                      ? "Ready to start"
+                      : focusStatus === "running"
+                        ? "In session"
+                        : focusStatus === "paused"
+                          ? "Paused"
+                          : "Session complete"}
+                  </p>
+                </div>
+
+                <div className="focus-controls">
+                  {focusStatus === "idle" ? (
+                    <button className="ghost-button focus-primary-button" onClick={startFocusSession} disabled={!focusType}>
+                      <Play size={16} />
+                      Start
+                    </button>
+                  ) : null}
+
+                  {focusStatus === "running" ? (
+                    <>
+                      <button className="ghost-button" onClick={pauseFocusSession}>
+                        <Pause size={16} />
+                        Pause
+                      </button>
+                      <button className="ghost-button" onClick={stopFocusSession}>
+                        Stop
+                      </button>
+                    </>
+                  ) : null}
+
+                  {focusStatus === "paused" ? (
+                    <>
+                      <button className="ghost-button" onClick={resumeFocusSession}>
+                        <Play size={16} />
+                        Resume
+                      </button>
+                      <button className="ghost-button" onClick={stopFocusSession}>
+                        Stop
+                      </button>
+                    </>
+                  ) : null}
+
+                  {focusStatus === "completed" ? (
+                    <>
+                      <button className="ghost-button focus-primary-button" onClick={finishFocusSession}>
+                        Done
+                      </button>
+                      <button className="ghost-button" onClick={startNextFocusSession}>
+                        <Plus size={16} />
+                        Start Next Session
+                      </button>
+                    </>
+                  ) : null}
+                </div>
+              </div>
+
+              {focusTaskModalOpen ? (
+                <div className="focus-task-modal-backdrop" onClick={() => setFocusTaskModalOpen(false)}>
+                  <div className="focus-task-modal" onClick={(event) => event.stopPropagation()}>
+                    <div className="focus-task-modal-head">
+                      <div>
+                        <p className="eyebrow">Select Task</p>
+                        <h3>{focusType ? `${focusType[0].toUpperCase()}${focusType.slice(1)} tasks` : "Pick a type first"}</h3>
+                      </div>
+                      <button className="ghost-button" onClick={() => setFocusTaskModalOpen(false)}>
+                        Close
+                      </button>
+                    </div>
+
+                    <div className="focus-task-modal-list">
+                      {(focusType ? focusTaskOptions[focusType] ?? [] : []).length ? (
+                        (focusTaskOptions[focusType] ?? []).map((item) => (
+                          <button
+                            key={item.id}
+                            className={`focus-task-option ${focusTask?.id === item.id ? "is-active" : ""}`}
+                            onClick={() => {
+                              setFocusTask(item);
+                              setFocusTaskModalOpen(false);
+                            }}
+                          >
+                            <strong>{item.label}</strong>
+                            <span>{item.meta}</span>
+                          </button>
+                        ))
+                      ) : (
+                        <p className="muted">No available tasks for this type right now.</p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ) : null}
+            </section>
+          ) : null}
+
+          {view !== "focus" ? (
           <section className="module-page-intro">
             <p className="eyebrow">{pageMeta.title}</p>
             <h2>{pageMeta.title}</h2>
             <p className="muted">{pageMeta.description}</p>
           </section>
+          ) : null}
 
-          <section className="modules-grid modules-grid-single">
+          {view !== "focus" ? <section className="modules-grid modules-grid-single">
             {view === "todo" ? (
               <section className="life-page-layout">
                 <div className="life-page-primary">
@@ -2492,7 +2790,7 @@ export function LifeOSApp({ view = "dashboard" }) {
                 </div>
               </section>
             ) : null}
-          </section>
+          </section> : null}
         </>
       )}
     </main>
