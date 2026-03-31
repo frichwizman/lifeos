@@ -605,7 +605,7 @@ export function LifeOSApp({ view = "dashboard" }) {
   const pbRatio = pbReady ? clamp(todayXP / state.profile.pbXP, 0, 1.25) : 0;
   const completedWorkCount = state.workProjects.reduce(
     (sum, project) =>
-      sum + project.todayActions.filter((action) => Boolean(getLogValue(state.logs, todayKey, `${project.id}:${action.id}`))).length,
+      sum + (project.todayActions ?? []).filter((action) => Boolean(getLogValue(state.logs, todayKey, `${project.id}:${action.id}`))).length,
     0
   );
   const todayCompletedCount = completedWorkCount + studyDoneCount + lifeDoneCount;
@@ -831,16 +831,16 @@ export function LifeOSApp({ view = "dashboard" }) {
   );
   const workSidebarSummary = useMemo(() => {
     const projectSummaries = state.workProjects.map((project) => {
-      const total = project.todayActions.length;
-      const done = project.todayActions.filter((action) => Boolean(getLogValue(state.logs, todayKey, `${project.id}:${action.id}`))).length;
+      const total = (project.todayActions ?? []).length;
+      const done = (project.todayActions ?? []).filter((action) => Boolean(getLogValue(state.logs, todayKey, `${project.id}:${action.id}`))).length;
       return {
         id: project.id,
         label: project.name,
         total,
         done,
         open: Math.max(0, total - done),
-        backlog: project.backlog.length,
-        candidates: project.nextDayCandidates.length
+        backlog: (project.backlog ?? []).length,
+        candidates: (project.nextDayCandidates ?? []).length
       };
     });
 
@@ -854,7 +854,7 @@ export function LifeOSApp({ view = "dashboard" }) {
   const focusTaskOptions = useMemo(
     () => ({
       work: state.workProjects.flatMap((project) =>
-        project.todayActions
+        (project.todayActions ?? [])
           .filter((action) => !Boolean(getLogValue(state.logs, todayKey, `${project.id}:${action.id}`)))
           .map((action) => ({
             id: `work:${project.id}:${action.id}`,
@@ -980,12 +980,14 @@ export function LifeOSApp({ view = "dashboard" }) {
           ? {
               ...project,
               todayActions:
-                project.todayActions.length >= 5
-                  ? project.todayActions
-                  : [...project.todayActions, action],
-              backlog: source === "backlog" ? project.backlog.filter((item) => item.id !== action.id) : project.backlog,
+                (project.todayActions ?? []).length >= 5
+                  ? project.todayActions ?? []
+                  : [...(project.todayActions ?? []), action],
+              backlog: source === "backlog" ? (project.backlog ?? []).filter((item) => item.id !== action.id) : project.backlog ?? [],
               nextDayCandidates:
-                source === "candidate" ? project.nextDayCandidates.filter((item) => item.id !== action.id) : project.nextDayCandidates
+                source === "candidate"
+                  ? (project.nextDayCandidates ?? []).filter((item) => item.id !== action.id)
+                  : project.nextDayCandidates ?? []
             }
           : project
       )
@@ -1015,7 +1017,7 @@ export function LifeOSApp({ view = "dashboard" }) {
         project.id === projectId
           ? {
               ...project,
-              todayActions: project.todayActions.map((action) =>
+              todayActions: (project.todayActions ?? []).map((action) =>
                 action.id === actionId ? { ...action, label } : action
               )
             }
@@ -2273,7 +2275,7 @@ export function LifeOSApp({ view = "dashboard" }) {
                             <button
                               className="ghost-button"
                               onClick={() => setWorkActionModalProjectId(project.id)}
-                              disabled={project.todayActions.length >= 5}
+                              disabled={(project.todayActions ?? []).length >= 5}
                             >
                               <Plus size={16} />
                               Add
@@ -2282,12 +2284,12 @@ export function LifeOSApp({ view = "dashboard" }) {
                           <div className="project-card">
                             <div className="project-subhead">
                               <span>Today</span>
-                              <small>{project.todayActions.length} / 5</small>
+                              <small>{(project.todayActions ?? []).length} / 5</small>
                             </div>
 
                             <div className="work-action-list">
-                              {project.todayActions.length ? (
-                                project.todayActions.map((action) => {
+                              {(project.todayActions ?? []).length ? (
+                                (project.todayActions ?? []).map((action) => {
                                   const done = Boolean(getLogValue(state.logs, todayKey, `${project.id}:${action.id}`));
                                   return (
                                     <article key={action.id} className={`work-action-card ${done ? "is-done" : ""}`}>
@@ -2379,11 +2381,11 @@ export function LifeOSApp({ view = "dashboard" }) {
 
                         return (
                           <div className="work-action-modal-stack">
-                            {activeProject.nextDayCandidates.length ? (
+                            {(activeProject.nextDayCandidates ?? []).length ? (
                               <div className="work-action-modal-section">
                                 <span className="eyebrow">Next Day Candidates</span>
                                 <div className="focus-task-modal-list">
-                                  {activeProject.nextDayCandidates.map((action) => (
+                                  {(activeProject.nextDayCandidates ?? []).map((action) => (
                                     <button
                                       key={action.id}
                                       className="focus-task-option"
@@ -2403,8 +2405,8 @@ export function LifeOSApp({ view = "dashboard" }) {
                             <div className="work-action-modal-section">
                               <span className="eyebrow">Backlog</span>
                               <div className="focus-task-modal-list">
-                                {activeProject.backlog.length ? (
-                                  activeProject.backlog.map((action) => (
+                                {(activeProject.backlog ?? []).length ? (
+                                  (activeProject.backlog ?? []).map((action) => (
                                     <button
                                       key={action.id}
                                       className="focus-task-option"
