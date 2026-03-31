@@ -316,6 +316,7 @@ const STUDY_ROOM_ZONES = [
 export function LifeOSApp({ view = "dashboard" }) {
   const [state, setState] = useState(DEFAULT_STATE);
   const [ready, setReady] = useState(false);
+  const [lifeLogDate, setLifeLogDate] = useState(getTodayKey());
   const [moneyLogDate, setMoneyLogDate] = useState(getTodayKey());
   const [syncCodeInput, setSyncCodeInput] = useState("");
   const [backupCount, setBackupCount] = useState(0);
@@ -815,9 +816,9 @@ export function LifeOSApp({ view = "dashboard" }) {
   }, [lifeTaskMap, moneyTaskMap, state.logs, state.profile.currency, state.workProjects, studyTaskMap, todayKey]);
   const featuredHistoryDay = historyDays[0];
   const previousHistoryDays = historyDays.slice(1);
-  const todayQuickActions = useMemo(
+  const selectedLifeQuickActions = useMemo(
     () =>
-      Object.entries(state.logs?.[todayKey] ?? {})
+      Object.entries(state.logs?.[lifeLogDate] ?? {})
         .filter(([taskId, record]) => {
           const action = LIFE_QUICK_ACTION_MAP[taskId];
           if (!action) return false;
@@ -829,7 +830,7 @@ export function LifeOSApp({ view = "dashboard" }) {
           ...LIFE_QUICK_ACTION_MAP[taskId]
         }))
         .sort((a, b) => a.group.localeCompare(b.group) || a.label.localeCompare(b.label)),
-    [state.logs, todayKey]
+    [lifeLogDate, state.logs]
   );
   const yesterdayKey = useMemo(() => {
     const date = new Date();
@@ -1407,12 +1408,12 @@ export function LifeOSApp({ view = "dashboard" }) {
     }
   };
 
-  const triggerLifeQuickAction = (label) => {
+  const triggerLifeQuickAction = (label, dateKey = todayKey) => {
     setLifeQuickAction(label);
     const quickActionId = `life-quick:${label.toLowerCase().replace(/\s+/g, "-")}`;
     setState((current) => {
       const next = touchState(
-        applyTrackedLog(
+        applyTrackedLogAtDate(
           current,
           {
             id: quickActionId,
@@ -1420,7 +1421,8 @@ export function LifeOSApp({ view = "dashboard" }) {
             type: "boolean",
             xpPerUnit: 0
           },
-          true
+          true,
+          dateKey
         )
       );
 
@@ -2559,15 +2561,42 @@ export function LifeOSApp({ view = "dashboard" }) {
               <section className="life-page-layout">
                 <div className="life-page-primary">
                   <ModuleCard title="Life" color={MODULE_COLORS.life} icon={HeartPulse}>
-                    <LifeTaskGrid tasks={lifePageTasks} logs={state.logs} todayKey={todayKey} onLog={logTask} />
+                    <div className="money-log-stack">
+                      <div className="money-log-toolbar">
+                        <label className="money-log-date">
+                          <span>Log Date</span>
+                          <input
+                            type="date"
+                            value={lifeLogDate}
+                            max={todayKey}
+                            onChange={(event) => setLifeLogDate(event.target.value || todayKey)}
+                          />
+                        </label>
+                        <div className="money-log-toolbar-actions">
+                          <span className="muted money-log-helper">Cards below reflect the selected date.</span>
+                          {lifeLogDate !== todayKey ? (
+                            <button className="ghost-button" onClick={() => setLifeLogDate(todayKey)}>
+                              Today
+                            </button>
+                          ) : null}
+                        </div>
+                      </div>
+
+                      <LifeTaskGrid
+                        tasks={lifePageTasks}
+                        logs={state.logs}
+                        todayKey={lifeLogDate}
+                        onLog={(task, value) => logTaskAtDate(task, value, lifeLogDate)}
+                      />
+                    </div>
                   </ModuleCard>
                 </div>
 
                 <aside className="life-page-secondary">
-                  <Card title="Today Actions" icon={History} className="life-quick-card">
-                    {todayQuickActions.length ? (
+                  <Card title={lifeLogDate === todayKey ? "Today Actions" : "Logged Actions"} icon={History} className="life-quick-card">
+                    {selectedLifeQuickActions.length ? (
                       <div className="life-today-actions">
-                        {todayQuickActions.map((item) => (
+                        {selectedLifeQuickActions.map((item) => (
                           <div key={item.id} className="life-today-action-pill">
                             <span className="life-today-action-group">{item.group}</span>
                             <strong>{item.label}</strong>
@@ -2575,7 +2604,7 @@ export function LifeOSApp({ view = "dashboard" }) {
                         ))}
                       </div>
                     ) : (
-                      <p className="muted">No quick actions logged today yet.</p>
+                      <p className="muted">No quick actions logged for this date yet.</p>
                     )}
                   </Card>
 
@@ -2588,7 +2617,7 @@ export function LifeOSApp({ view = "dashboard" }) {
                             <button
                               key={item.label}
                               className={`life-quick-action ${lifeQuickAction === item.label ? "is-active" : ""}`}
-                              onClick={() => triggerLifeQuickAction(item.label)}
+                              onClick={() => triggerLifeQuickAction(item.label, lifeLogDate)}
                             >
                               <Icon size={15} />
                               <span>{item.label}</span>
