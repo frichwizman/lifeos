@@ -1683,9 +1683,14 @@ select {
   width: 100%;
 }
 
-.misc-todo-card-actions {
+.misc-todo-card-main {
   display: flex;
-  justify-content: flex-end;
+  align-items: center;
+  gap: 10px;
+}
+
+.misc-todo-card-main .ghost-button {
+  flex: 0 0 auto;
 }
 
 .misc-todo-empty {

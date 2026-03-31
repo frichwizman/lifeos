@@ -2245,12 +2245,12 @@ export function LifeOSApp({ view = "dashboard" }) {
                                   <Trash2 size={15} />
                                 </button>
                               </div>
-                              <input
-                                className="misc-todo-card-input"
-                                value={item.label}
-                                onChange={(event) => updateMiscTodo(item.id, { label: event.target.value })}
-                              />
-                              <div className="misc-todo-card-actions">
+                              <div className="misc-todo-card-main">
+                                <input
+                                  className="misc-todo-card-input"
+                                  value={item.label}
+                                  onChange={(event) => updateMiscTodo(item.id, { label: event.target.value })}
+                                />
                                 <button className={`ghost-button ${item.done ? "is-active" : ""}`} onClick={() => toggleMiscTodo(item.id)}>
                                   {item.done ? "Done" : "Mark"}
                                 </button>
