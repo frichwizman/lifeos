@@ -717,6 +717,23 @@ h1 {
   text-align: center;
 }
 
+.focus-completion-feedback {
+  display: grid;
+  gap: 4px;
+  justify-items: center;
+  text-align: center;
+}
+
+.focus-completion-feedback strong {
+  font-size: 1.4rem;
+  letter-spacing: -0.04em;
+}
+
+.focus-completion-feedback span,
+.focus-completion-feedback small {
+  color: var(--text-sub);
+}
+
 .focus-primary-button {
   min-width: 136px;
   justify-content: center;

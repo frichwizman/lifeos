@@ -806,6 +806,7 @@ export function LifeOSApp({ view = "dashboard" }) {
           .filter((todo) => !Boolean(getLogValue(state.logs, todayKey, `${project.id}:${todo.id}`)))
           .map((todo) => ({
             id: `work:${project.id}:${todo.id}`,
+            logTaskId: `${project.id}:${todo.id}`,
             taskId: todo.id,
             label: todo.label || "Untitled task",
             meta: project.name,
@@ -816,6 +817,7 @@ export function LifeOSApp({ view = "dashboard" }) {
       ),
       study: studyTasks.map((task) => ({
         id: `study:${task.id}`,
+        logTaskId: task.id,
         taskId: task.id,
         label: task.label,
         meta: "Study",
@@ -826,6 +828,7 @@ export function LifeOSApp({ view = "dashboard" }) {
         .filter((task) => !["stress-level", "risky-substances"].includes(task.id))
         .map((task) => ({
           id: `life:${task.id}`,
+          logTaskId: task.id,
           taskId: task.id,
           label: task.label,
           meta: "Life",
@@ -837,6 +840,34 @@ export function LifeOSApp({ view = "dashboard" }) {
   );
   const focusAvailableDurations = focusType ? FOCUS_DURATION_OPTIONS[focusType] ?? [] : [];
   const formattedFocusTime = `${String(Math.floor(focusRemainingSeconds / 60)).padStart(2, "0")}:${String(focusRemainingSeconds % 60).padStart(2, "0")}`;
+  const focusRewardPreview = useMemo(() => {
+    if (!focusType) {
+      return {
+        xpEarned: 0,
+        streakCount: 0,
+        streakBonusPct: 0,
+        breakBonus: 0,
+        typeLabel: ""
+      };
+    }
+
+    const sessionsToday = (state.focusSessions ?? []).filter((session) => formatDateKey(new Date(session.timestamp)) === todayKey).length;
+    const streakCount = sessionsToday + 1;
+    const streakBonusPct = streakCount >= 4 ? 30 : streakCount === 3 ? 20 : streakCount === 2 ? 10 : 0;
+    const typeMultiplier = focusType === "work" ? 1.2 : focusType === "study" ? 1 : 0.8;
+    const taskMultiplier = focusTask ? 1.2 : 1;
+    const streakMultiplier = 1 + streakBonusPct / 100;
+    const breakBonus = focusType === "life" && !focusTask ? 2 : 0;
+    const xpEarned = Math.round(10 * typeMultiplier * taskMultiplier * streakMultiplier) + breakBonus;
+
+    return {
+      xpEarned,
+      streakCount,
+      streakBonusPct,
+      breakBonus,
+      typeLabel: focusType === "work" ? "Work" : focusType === "study" ? "Study" : "Life"
+    };
+  }, [focusTask, focusType, state.focusSessions, todayKey]);
 
   const applyTrackedLogAtDate = (current, task, value, dateKey) => {
     const normalized =
@@ -1013,22 +1044,70 @@ export function LifeOSApp({ view = "dashboard" }) {
   const recordFocusSession = () => {
     if (!focusType) return;
 
-    commitState((current) => ({
-      ...current,
-      focusSessions: [
-        {
-          id: `focus-${Date.now()}`,
-          type: focusType,
-          duration: focusDurationMinutes,
-          taskId: focusTask?.taskId ?? "",
-          taskLabel: focusTask?.label ?? "",
-          sourceType: focusTask?.sourceType ?? "",
-          projectId: focusTask?.projectId ?? "",
-          timestamp: new Date().toISOString()
+    commitState((current) => {
+      const dateKey = todayKey;
+      const focusLogId = `focus-session:${Date.now()}`;
+      const sessionsToday = (current.focusSessions ?? []).filter((session) => formatDateKey(new Date(session.timestamp)) === dateKey).length;
+      const streakCount = sessionsToday + 1;
+      const streakBonusPct = streakCount >= 4 ? 30 : streakCount === 3 ? 20 : streakCount === 2 ? 10 : 0;
+      const typeMultiplier = focusType === "work" ? 1.2 : focusType === "study" ? 1 : 0.8;
+      const taskMultiplier = focusTask ? 1.2 : 1;
+      const streakMultiplier = 1 + streakBonusPct / 100;
+      const breakBonus = focusType === "life" && !focusTask ? 2 : 0;
+      const xpEarned = Math.round(10 * typeMultiplier * taskMultiplier * streakMultiplier) + breakBonus;
+      const dayWithoutCurrent = getTodayXP(current.logs, dateKey);
+      const nextDayXP = dayWithoutCurrent + xpEarned;
+      const linkedTaskId = focusTask?.logTaskId ?? "";
+      const linkedTaskRecord = linkedTaskId ? current.logs?.[dateKey]?.[linkedTaskId] ?? null : null;
+
+      return {
+        ...current,
+        profile: {
+          ...current.profile,
+          totalXP: Number(current.profile.totalXP ?? 0) + xpEarned,
+          pbXP: Math.max(current.profile.pbXP, nextDayXP)
         },
-        ...(current.focusSessions ?? [])
-      ].slice(0, 100)
-    }));
+        logs: {
+          ...current.logs,
+          [dateKey]: {
+            ...(current.logs?.[dateKey] ?? {}),
+            ...(linkedTaskId
+              ? {
+                  [linkedTaskId]: {
+                    ...(linkedTaskRecord ?? {}),
+                    value: linkedTaskRecord?.value ?? 0,
+                    xp: linkedTaskRecord?.xp ?? 0,
+                    ts: linkedTaskRecord?.ts ?? Date.now(),
+                    focusXp: Number(linkedTaskRecord?.focusXp ?? 0) + xpEarned
+                  }
+                }
+              : {}),
+            [focusLogId]: {
+              value: xpEarned,
+              xp: xpEarned,
+              ts: Date.now(),
+              type: "focus-session"
+            }
+          }
+        },
+        focusSessions: [
+          {
+            id: `focus-${Date.now()}`,
+            type: focusType,
+            duration: focusDurationMinutes,
+            taskId: focusTask?.taskId ?? "",
+            taskLabel: focusTask?.label ?? "",
+            sourceType: focusTask?.sourceType ?? "",
+            projectId: focusTask?.projectId ?? "",
+            xpEarned,
+            streakBonusPct,
+            breakBonus,
+            timestamp: new Date().toISOString()
+          },
+          ...(current.focusSessions ?? [])
+        ].slice(0, 100)
+      };
+    });
   };
 
   const finishFocusSession = () => {
@@ -1841,7 +1920,7 @@ export function LifeOSApp({ view = "dashboard" }) {
                       key={type}
                       className={`focus-type-chip ${focusType === type ? "is-active" : ""}`}
                       onClick={() => setFocusTypeState(type)}
-                      disabled={focusStatus === "running" || focusStatus === "paused"}
+                      disabled={focusStatus !== "idle"}
                     >
                       {type === "work" ? "Work" : type === "study" ? "Study" : "Life"}
                     </button>
@@ -1860,14 +1939,14 @@ export function LifeOSApp({ view = "dashboard" }) {
                     <button
                       className="ghost-button"
                       onClick={() => setFocusTaskModalOpen(true)}
-                      disabled={!focusType || focusStatus === "running" || focusStatus === "paused"}
+                      disabled={!focusType || focusStatus !== "idle"}
                     >
                       {focusTask ? "Change" : "Select Task"}
                     </button>
                     <button
                       className="ghost-button"
                       onClick={() => setFocusTask(null)}
-                      disabled={!focusTask || focusStatus === "running" || focusStatus === "paused"}
+                      disabled={!focusTask || focusStatus !== "idle"}
                     >
                       Skip
                     </button>
@@ -1886,7 +1965,7 @@ export function LifeOSApp({ view = "dashboard" }) {
                             setFocusRemainingSeconds(duration * 60);
                             setFocusStatus("idle");
                           }}
-                          disabled={focusStatus === "running" || focusStatus === "paused"}
+                          disabled={focusStatus !== "idle"}
                         >
                           {duration} min
                         </button>
@@ -1901,8 +1980,16 @@ export function LifeOSApp({ view = "dashboard" }) {
                         ? "In session"
                         : focusStatus === "paused"
                           ? "Paused"
-                          : "Session complete"}
+                        : "Session complete"}
                   </p>
+                  {focusStatus === "completed" ? (
+                    <div className="focus-completion-feedback">
+                      <strong>+{focusRewardPreview.xpEarned} XP</strong>
+                      <span>{focusRewardPreview.typeLabel} Focus Completed</span>
+                      {focusRewardPreview.streakBonusPct > 0 ? <small>Streak +{focusRewardPreview.streakBonusPct}%</small> : null}
+                      {focusRewardPreview.breakBonus > 0 ? <small>Break +{focusRewardPreview.breakBonus} XP</small> : null}
+                    </div>
+                  ) : null}
                 </div>
 
                 <div className="focus-controls">
