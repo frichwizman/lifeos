@@ -2501,6 +2501,7 @@ function LifeTaskGrid({ tasks, logs, todayKey, onLog, currency, showStreaks = fa
         const isRating = task.type === "rating" || task.type === "ratingReverse";
         const allowsNegative = Boolean(task.allowNegative);
         const allowsZero = Boolean(task.allowZero);
+        const shouldShowStreak = showStreaks || task.id === "exercise" || task.id === "meditation";
         const defaultInput = defaultInputs[task.id];
         const dropdownPresets = (task.presets ?? []).filter((preset) => preset !== defaultInput);
         const customValue = customValues[task.id] ?? "";
@@ -2610,7 +2611,7 @@ function LifeTaskGrid({ tasks, logs, todayKey, onLog, currency, showStreaks = fa
               </button>
             ) : null}
 
-            {showStreaks ? (
+            {shouldShowStreak ? (
               <div className="streak-row">
                 {getTaskHistory(logs, task.id).map((entry) => (
                   <span key={entry.key} className={entry.done ? "is-on" : ""} />
