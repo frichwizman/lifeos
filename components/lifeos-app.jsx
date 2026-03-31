@@ -748,6 +748,26 @@ export function LifeOSApp({ view = "dashboard" }) {
     }),
     [miscTodoItems]
   );
+  const workSidebarSummary = useMemo(() => {
+    const projectSummaries = state.workProjects.map((project) => {
+      const total = project.todos.length;
+      const done = project.todos.filter((todo) => Boolean(getLogValue(state.logs, todayKey, `${project.id}:${todo.id}`))).length;
+      return {
+        id: project.id,
+        label: project.name,
+        total,
+        done,
+        open: Math.max(0, total - done)
+      };
+    });
+
+    return {
+      total: projectSummaries.reduce((sum, project) => sum + project.total, 0),
+      done: projectSummaries.reduce((sum, project) => sum + project.done, 0),
+      open: projectSummaries.reduce((sum, project) => sum + project.open, 0),
+      projects: projectSummaries
+    };
+  }, [state.logs, state.workProjects, todayKey]);
 
   const applyTrackedLogAtDate = (current, task, value, dateKey) => {
     const normalized =
@@ -1779,41 +1799,79 @@ export function LifeOSApp({ view = "dashboard" }) {
             ) : null}
 
             {view === "work" ? (
-              <ModuleCard title="Work" color={MODULE_COLORS.work} icon={BriefcaseBusiness}>
-                <div className="project-list project-list-split">
-                  {state.workProjects.map((project) => (
-                    <div key={project.id} className="project-column">
-                      <div className="project-heading">
-                        <input value={project.name} onChange={(event) => renameProject(project.id, event.target.value)} />
-                        <button className="ghost-button" onClick={() => addTodo(project.id)}>
-                          <Plus size={16} />
-                          Todo
-                        </button>
-                      </div>
-                      <div className="project-card">
-                        <div className="todo-list">
-                          {project.todos.map((todo) => {
-                            const done = Boolean(getLogValue(state.logs, todayKey, `${project.id}:${todo.id}`));
-                          return (
-                            <div key={todo.id} className={`todo-row ${done ? "is-done" : ""}`}>
-                              <button className={`todo-check ${done ? "is-done" : ""}`} onClick={() => toggleTodo(project.id, todo.id)}>
-                                {done ? "Done" : "Mark"}
-                              </button>
-                              <input
-                                className="todo-input"
-                                value={todo.label}
-                                onChange={(event) => renameTodo(project.id, todo.id, event.target.value)}
-                              />
-                              <small>+10 XP</small>
+              <section className="life-page-layout">
+                <div className="life-page-primary">
+                  <ModuleCard title="Work" color={MODULE_COLORS.work} icon={BriefcaseBusiness}>
+                    <div className="project-list project-list-split">
+                      {state.workProjects.map((project) => (
+                        <div key={project.id} className="project-column">
+                          <div className="project-heading">
+                            <input value={project.name} onChange={(event) => renameProject(project.id, event.target.value)} />
+                            <button className="ghost-button" onClick={() => addTodo(project.id)}>
+                              <Plus size={16} />
+                              Todo
+                            </button>
+                          </div>
+                          <div className="project-card">
+                            <div className="todo-list">
+                              {project.todos.map((todo) => {
+                                const done = Boolean(getLogValue(state.logs, todayKey, `${project.id}:${todo.id}`));
+                                return (
+                                  <div key={todo.id} className={`todo-row ${done ? "is-done" : ""}`}>
+                                    <button className={`todo-check ${done ? "is-done" : ""}`} onClick={() => toggleTodo(project.id, todo.id)}>
+                                      {done ? "Done" : "Mark"}
+                                    </button>
+                                    <input
+                                      className="todo-input"
+                                      value={todo.label}
+                                      onChange={(event) => renameTodo(project.id, todo.id, event.target.value)}
+                                    />
+                                    <small>+10 XP</small>
+                                  </div>
+                                );
+                              })}
                             </div>
-                          );
-                        })}
-                      </div>
-                      </div>
+                          </div>
+                        </div>
+                      ))}
                     </div>
-                  ))}
+                  </ModuleCard>
                 </div>
-              </ModuleCard>
+
+                <aside className="life-page-secondary">
+                  <div className="money-sidebar-stack">
+                    <Card title="Today" icon={BriefcaseBusiness} className="life-quick-card">
+                      <div className="money-summary-grid">
+                        <div className="money-summary-item">
+                          <span>Total Todos</span>
+                          <strong>{formatNumber(workSidebarSummary.total)}</strong>
+                        </div>
+                        <div className="money-summary-item">
+                          <span>Open</span>
+                          <strong>{formatNumber(workSidebarSummary.open)}</strong>
+                        </div>
+                        <div className="money-summary-item">
+                          <span>Done</span>
+                          <strong>{formatNumber(workSidebarSummary.done)}</strong>
+                        </div>
+                      </div>
+                    </Card>
+
+                    <Card title="Projects" icon={Command} className="life-quick-card">
+                      <div className="money-summary-grid">
+                        {workSidebarSummary.projects.map((project) => (
+                          <div key={project.id} className="money-summary-item">
+                            <span>{project.label}</span>
+                            <strong>
+                              {formatNumber(project.done)} / {formatNumber(project.total)}
+                            </strong>
+                          </div>
+                        ))}
+                      </div>
+                    </Card>
+                  </div>
+                </aside>
+              </section>
             ) : null}
 
             {view === "study" ? (
