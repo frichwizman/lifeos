@@ -1398,6 +1398,108 @@ select {
   letter-spacing: -0.02em;
 }
 
+.misc-todo-stack {
+  display: grid;
+  gap: 14px;
+}
+
+.misc-todo-composer {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: center;
+}
+
+.misc-todo-composer select,
+.misc-todo-input,
+.misc-todo-card-input {
+  min-height: 38px;
+  border-radius: 12px;
+}
+
+.misc-todo-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.misc-todo-card {
+  display: grid;
+  gap: 12px;
+  padding: 16px;
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  background: var(--surface-2);
+}
+
+.misc-todo-card.is-done {
+  background: var(--highlight-bg);
+  border-color: var(--highlight-border);
+}
+
+.misc-todo-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.misc-todo-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 28px;
+  padding: 0 10px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  color: var(--text-sub);
+  font-size: 0.78rem;
+  font-weight: 600;
+  text-transform: capitalize;
+  background: var(--surface);
+}
+
+.misc-todo-badge.is-work {
+  border-color: rgba(232, 184, 75, 0.35);
+}
+
+.misc-todo-badge.is-study {
+  border-color: rgba(88, 180, 209, 0.35);
+}
+
+.misc-todo-badge.is-life {
+  border-color: rgba(107, 201, 138, 0.35);
+}
+
+.misc-todo-delete {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--text-sub);
+  cursor: pointer;
+}
+
+.misc-todo-card-input {
+  width: 100%;
+}
+
+.misc-todo-card-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.misc-todo-empty {
+  padding: 18px;
+  border: 1px dashed var(--border);
+  border-radius: 18px;
+  background: var(--surface-2);
+}
+
 .life-quick-card {
   gap: 12px;
 }
@@ -2929,6 +3031,10 @@ select {
     grid-template-columns: 1fr;
   }
 
+  .misc-todo-grid {
+    grid-template-columns: 1fr;
+  }
+
   .office-mvp-layout {
     grid-template-columns: 1fr;
   }
@@ -2977,6 +3083,14 @@ select {
   }
 
   .life-task-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .misc-todo-composer {
+    grid-template-columns: 1fr;
+  }
+
+  .misc-todo-grid {
     grid-template-columns: 1fr;
   }
 

@@ -22,6 +22,7 @@ import {
   History,
   Home,
   Link2,
+  ListTodo,
   MessageCircle,
   MonitorPlay,
   MoonStar,
@@ -90,6 +91,7 @@ const allDefaultTrackedTaskIds = [
 
 const navItems = [
   { href: "/dashboard", label: "Home" },
+  { href: "/todo", label: "Todo" },
   { href: "/work", label: "Work" },
   { href: "/study", label: "Study" },
   { href: "/life", label: "Life" },
@@ -307,6 +309,8 @@ export function LifeOSApp({ view = "dashboard" }) {
   const [openNavMenu, setOpenNavMenu] = useState("");
   const [roomsMenuPosition, setRoomsMenuPosition] = useState({ top: 0, left: 12 });
   const [lifeQuickAction, setLifeQuickAction] = useState("");
+  const [miscTodoInput, setMiscTodoInput] = useState("");
+  const [miscTodoCategory, setMiscTodoCategory] = useState("work");
   const [officePresence, setOfficePresence] = useState({
     x: 108,
     y: 138,
@@ -732,6 +736,18 @@ export function LifeOSApp({ view = "dashboard" }) {
     () => buildStudySummary(yesterdayKey),
     [state.logs, yesterdayKey, state.profile.currency]
   );
+  const miscTodoItems = state.miscTodos ?? [];
+  const miscTodoCounts = useMemo(
+    () => ({
+      total: miscTodoItems.length,
+      open: miscTodoItems.filter((item) => !item.done).length,
+      done: miscTodoItems.filter((item) => item.done).length,
+      work: miscTodoItems.filter((item) => item.category === "work").length,
+      study: miscTodoItems.filter((item) => item.category === "study").length,
+      life: miscTodoItems.filter((item) => item.category === "life").length
+    }),
+    [miscTodoItems]
+  );
 
   const applyTrackedLogAtDate = (current, task, value, dateKey) => {
     const normalized =
@@ -823,6 +839,54 @@ export function LifeOSApp({ view = "dashboard" }) {
             }
           : project
       )
+    }));
+  };
+
+  const addMiscTodo = () => {
+    const label = miscTodoInput.trim();
+    if (!label) return;
+
+    commitState((current) => ({
+      ...current,
+      miscTodos: [
+        {
+          id: `misc-${Date.now()}`,
+          label,
+          category: miscTodoCategory,
+          done: false,
+          createdAt: Date.now(),
+          completedAt: null
+        },
+        ...(current.miscTodos ?? [])
+      ]
+    }));
+
+    setMiscTodoInput("");
+  };
+
+  const updateMiscTodo = (todoId, updates) => {
+    commitState((current) => ({
+      ...current,
+      miscTodos: (current.miscTodos ?? []).map((item) =>
+        item.id === todoId ? { ...item, ...updates } : item
+      )
+    }));
+  };
+
+  const toggleMiscTodo = (todoId) => {
+    const currentTodo = miscTodoItems.find((item) => item.id === todoId);
+    if (!currentTodo) return;
+
+    updateMiscTodo(todoId, {
+      done: !currentTodo.done,
+      completedAt: currentTodo.done ? null : Date.now()
+    });
+  };
+
+  const deleteMiscTodo = (todoId) => {
+    commitState((current) => ({
+      ...current,
+      miscTodos: (current.miscTodos ?? []).filter((item) => item.id !== todoId)
     }));
   };
 
@@ -1137,6 +1201,10 @@ export function LifeOSApp({ view = "dashboard" }) {
     work: {
       title: "Work",
       description: "Project-based execution. Keep today clear, but retain the long game."
+    },
+    todo: {
+      title: "Todo",
+      description: "Capture loose tasks, tag them to Work, Study, or Life, and clear them without cluttering your fixed systems."
     },
     study: {
       title: "Study",
@@ -1612,6 +1680,104 @@ export function LifeOSApp({ view = "dashboard" }) {
           </section>
 
           <section className="modules-grid modules-grid-single">
+            {view === "todo" ? (
+              <section className="life-page-layout">
+                <div className="life-page-primary">
+                  <ModuleCard title="Todo" color="#8892a0" icon={ListTodo}>
+                    <div className="misc-todo-stack">
+                      <div className="misc-todo-composer">
+                        <select value={miscTodoCategory} onChange={(event) => setMiscTodoCategory(event.target.value)}>
+                          <option value="work">Work</option>
+                          <option value="study">Study</option>
+                          <option value="life">Life</option>
+                        </select>
+                        <input
+                          className="misc-todo-input"
+                          value={miscTodoInput}
+                          placeholder="Add a small loose task"
+                          onChange={(event) => setMiscTodoInput(event.target.value)}
+                          onKeyDown={(event) => {
+                            if (event.key === "Enter") addMiscTodo();
+                          }}
+                        />
+                        <button className="ghost-button" onClick={addMiscTodo}>
+                          <Plus size={16} />
+                          Add
+                        </button>
+                      </div>
+
+                      <div className="misc-todo-grid">
+                        {miscTodoItems.length ? (
+                          miscTodoItems.map((item) => (
+                            <article key={item.id} className={`misc-todo-card ${item.done ? "is-done" : ""}`}>
+                              <div className="misc-todo-card-head">
+                                <span className={`misc-todo-badge is-${item.category}`}>{item.category}</span>
+                                <button className="misc-todo-delete" onClick={() => deleteMiscTodo(item.id)} aria-label="Delete todo">
+                                  <Trash2 size={15} />
+                                </button>
+                              </div>
+                              <input
+                                className="misc-todo-card-input"
+                                value={item.label}
+                                onChange={(event) => updateMiscTodo(item.id, { label: event.target.value })}
+                              />
+                              <div className="misc-todo-card-actions">
+                                <button className={`ghost-button ${item.done ? "is-active" : ""}`} onClick={() => toggleMiscTodo(item.id)}>
+                                  {item.done ? "Done" : "Mark"}
+                                </button>
+                              </div>
+                            </article>
+                          ))
+                        ) : (
+                          <div className="misc-todo-empty">
+                            <p className="muted">Add a loose task, tag it to Work, Study, or Life, and clear it here.</p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </ModuleCard>
+                </div>
+
+                <aside className="life-page-secondary">
+                  <div className="money-sidebar-stack">
+                    <Card title="Today" icon={ListTodo} className="life-quick-card">
+                      <div className="money-summary-grid">
+                        <div className="money-summary-item">
+                          <span>Total</span>
+                          <strong>{formatNumber(miscTodoCounts.total)}</strong>
+                        </div>
+                        <div className="money-summary-item">
+                          <span>Open</span>
+                          <strong>{formatNumber(miscTodoCounts.open)}</strong>
+                        </div>
+                        <div className="money-summary-item">
+                          <span>Done</span>
+                          <strong>{formatNumber(miscTodoCounts.done)}</strong>
+                        </div>
+                      </div>
+                    </Card>
+
+                    <Card title="Categories" icon={Command} className="life-quick-card">
+                      <div className="money-summary-grid">
+                        <div className="money-summary-item">
+                          <span>Work</span>
+                          <strong>{formatNumber(miscTodoCounts.work)}</strong>
+                        </div>
+                        <div className="money-summary-item">
+                          <span>Study</span>
+                          <strong>{formatNumber(miscTodoCounts.study)}</strong>
+                        </div>
+                        <div className="money-summary-item">
+                          <span>Life</span>
+                          <strong>{formatNumber(miscTodoCounts.life)}</strong>
+                        </div>
+                      </div>
+                    </Card>
+                  </div>
+                </aside>
+              </section>
+            ) : null}
+
             {view === "work" ? (
               <ModuleCard title="Work" color={MODULE_COLORS.work} icon={BriefcaseBusiness}>
                 <div className="project-list project-list-split">
