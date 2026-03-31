@@ -1048,6 +1048,20 @@ export function LifeOSApp({ view = "dashboard" }) {
     }));
   };
 
+  const renameWorkProject = (projectId, name) => {
+    commitState((current) => ({
+      ...current,
+      workProjects: current.workProjects.map((project) =>
+        project.id === projectId
+          ? {
+              ...project,
+              name
+            }
+          : project
+      )
+    }));
+  };
+
   const addMiscTodo = () => {
     const label = miscTodoInput.trim();
     if (!label) return;
@@ -2293,7 +2307,11 @@ export function LifeOSApp({ view = "dashboard" }) {
                       {state.workProjects.map((project) => (
                         <div key={project.id} className="project-column">
                           <div className="project-heading">
-                            <strong>{project.name}</strong>
+                            <input
+                              value={project.name}
+                              onChange={(event) => renameWorkProject(project.id, event.target.value)}
+                              aria-label={`${project.name} project name`}
+                            />
                             <button
                               className="ghost-button"
                               onClick={() => setWorkActionModalProjectId(project.id)}
@@ -2305,7 +2323,7 @@ export function LifeOSApp({ view = "dashboard" }) {
                           </div>
                           <div className="project-card">
                             <div className="project-subhead">
-                              <span>{project.name}</span>
+                              <span>Today</span>
                               <small>{(project.todayActions ?? []).length} / 5</small>
                             </div>
 
