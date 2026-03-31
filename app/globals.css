@@ -3051,6 +3051,39 @@ select {
   font-size: 0.85rem;
 }
 
+.sleep-score-history {
+  display: grid;
+  grid-template-columns: repeat(14, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.sleep-score-dot {
+  width: 100%;
+  height: 10px;
+  border-radius: 999px;
+  background: var(--track-bg);
+}
+
+.sleep-score-dot.is-empty {
+  background: var(--track-bg);
+}
+
+.sleep-score-dot.is-low {
+  background: #f08a6c;
+}
+
+.sleep-score-dot.is-mid {
+  background: #e8b84b;
+}
+
+.sleep-score-dot.is-good {
+  background: #7ab7ff;
+}
+
+.sleep-score-dot.is-great {
+  background: #6bc98a;
+}
+
 .streak-inline {
   display: flex;
   align-items: center;

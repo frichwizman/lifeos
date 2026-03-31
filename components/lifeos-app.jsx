@@ -3394,6 +3394,7 @@ function LifeTaskGrid({ tasks, logs, todayKey, onLog, currency, showStreaks = fa
         const allowsNegative = Boolean(task.allowNegative);
         const allowsZero = Boolean(task.allowZero);
         const shouldShowStreak = showStreaks || task.id === "exercise" || task.id === "meditation";
+        const shouldShowSleepHistory = task.id === "sleep-quality";
         const defaultInput = defaultInputs[task.id];
         const dropdownPresets = (task.presets ?? []).filter((preset) => preset !== defaultInput);
         const customValue = customValues[task.id] ?? "";
@@ -3511,11 +3512,40 @@ function LifeTaskGrid({ tasks, logs, todayKey, onLog, currency, showStreaks = fa
                 {getStreak(logs, task.id) >= 2 ? <em>🔥 {getStreak(logs, task.id)}</em> : null}
               </div>
             ) : null}
+
+            {shouldShowSleepHistory ? (
+              <div className="sleep-score-history" aria-label="Sleep score history for the last 14 days">
+                {getSleepScoreHistory(logs, task.id, 14).map((entry) => (
+                  <span key={entry.key} className={`sleep-score-dot ${entry.tone}`} title={`${entry.key}: ${entry.value ?? "No score"}`} />
+                ))}
+              </div>
+            ) : null}
           </article>
         );
       })}
     </div>
   );
+}
+
+function getSleepScoreHistory(logs, taskId, days = 14) {
+  return Array.from({ length: days }).map((_, index) => {
+    const date = new Date();
+    date.setDate(date.getDate() - (days - index - 1));
+    const key = formatDateKey(date);
+    const value = Number(logs?.[key]?.[taskId]?.value ?? 0);
+
+    let tone = "is-empty";
+    if (value > 0 && value <= 59) tone = "is-low";
+    else if (value >= 60 && value <= 74) tone = "is-mid";
+    else if (value >= 75 && value <= 84) tone = "is-good";
+    else if (value >= 85) tone = "is-great";
+
+    return {
+      key,
+      value: value > 0 ? value : null,
+      tone
+    };
+  });
 }
 
 function formatTaskValue(task, value, currency) {
