@@ -3080,6 +3080,7 @@ select {
   color: var(--accent);
   font-style: normal;
   font-size: 0.85rem;
+  white-space: nowrap;
 }
 
 .sleep-score-history {
@@ -3411,6 +3412,20 @@ select {
 
   .history-content-grid {
     grid-template-columns: 1fr;
+  }
+
+  .life-task-card .streak-row {
+    flex-wrap: nowrap;
+    gap: 6px;
+  }
+
+  .life-task-card .streak-row span {
+    flex: 0 0 12px;
+  }
+
+  .life-task-card .streak-row em {
+    flex: 0 0 auto;
+    margin-left: auto;
   }
 
   .life-task-grid {
