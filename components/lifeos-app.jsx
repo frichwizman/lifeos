@@ -177,6 +177,7 @@ const LIFE_QUICK_ACTION_MAP = Object.fromEntries(
 
 const LIFE_DEFAULT_INPUTS = {
   exercise: 5,
+  "sleep-quality": 75,
   meditation: 5,
   "water-intake": 250
 };
@@ -1695,7 +1696,7 @@ export function LifeOSApp({ view = "dashboard" }) {
               <section className="life-page-layout">
                 <div className="life-page-primary">
                   <ModuleCard title="Life" color={MODULE_COLORS.life} icon={HeartPulse}>
-                    <LifeTaskGrid tasks={lifePageTasks} logs={state.logs} todayKey={todayKey} onLog={logTask} showStreaks />
+                    <LifeTaskGrid tasks={lifePageTasks} logs={state.logs} todayKey={todayKey} onLog={logTask} />
                   </ModuleCard>
                 </div>
 
