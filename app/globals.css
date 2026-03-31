@@ -682,14 +682,32 @@ h1 {
 
 .focus-task-selector {
   display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
   gap: 14px;
-  justify-items: center;
-  text-align: center;
+  align-items: center;
 }
 
 .focus-task-copy {
-  display: grid;
-  gap: 4px;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  min-width: 0;
+}
+
+.focus-task-copy .eyebrow,
+.focus-task-copy .muted,
+.focus-task-copy strong,
+.focus-task-copy p {
+  margin: 0;
+}
+
+.focus-task-copy strong {
+  white-space: nowrap;
+}
+
+.focus-task-copy .muted {
+  min-width: 0;
 }
 
 .focus-task-actions {
@@ -3246,6 +3264,16 @@ select {
 
   .focus-page-core {
     padding: 20px 16px;
+  }
+
+  .focus-task-selector {
+    grid-template-columns: 1fr;
+    justify-items: center;
+    text-align: center;
+  }
+
+  .focus-task-copy {
+    justify-content: center;
   }
 
   .focus-task-modal-head {
