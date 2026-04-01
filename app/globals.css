@@ -3523,6 +3523,10 @@ select {
     grid-template-columns: 1fr;
   }
 
+  .dashboard-support-rail .compact-stat-grid.compact-stat-grid-keep-mobile {
+    grid-template-columns: repeat(var(--compact-columns, 3), minmax(0, 1fr));
+  }
+
   .execution-task-card {
     min-height: 0;
     padding: 18px;
