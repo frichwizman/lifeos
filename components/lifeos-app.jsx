@@ -1948,24 +1948,6 @@ export function LifeOSApp({ view = "dashboard" }) {
                 </div>
               </Card>
 
-              <Card title="Life Pillars" icon={Sparkles} className="card-pillars dashboard-rail-card">
-                <div className="pillars-grid">
-                  {pillarCompletion.map((pillar) => {
-                    const Icon = pillarIcons[pillar.id];
-                    return (
-                      <div
-                        key={pillar.id}
-                        className={`pillar-hex ${pillar.done ? "is-done" : ""}`}
-                        style={{ "--pillar-color": pillar.color }}
-                      >
-                        <Icon size={18} className="pillar-icon" />
-                        <span>{pillar.short}</span>
-                      </div>
-                    );
-                  })}
-                </div>
-              </Card>
-
               <div className="dashboard-feedback-rail">
                 <Card title="Current Task" icon={Play} className="dashboard-rail-card dashboard-feedback-card-frame">
                   {activeExecutionTask ? (
