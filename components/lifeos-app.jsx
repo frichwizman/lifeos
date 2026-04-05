@@ -90,11 +90,12 @@ const allDefaultTrackedTaskIds = [
 
 const navItems = [
   { href: "/dashboard", label: "Home" },
+  { href: "/work", label: "Work" },
+  { href: "/life", label: "Life" },
+  { href: "/study", label: "Study" },
+  { href: "/money", label: "Money" },
   { href: "/focus", label: "Focus" },
   { href: "/todo", label: "Todo" },
-  { href: "/work", label: "Work" },
-  { href: "/study", label: "Study" },
-  { href: "/life", label: "Life" },
   {
     href: "/rooms",
     label: "Rooms",
@@ -103,7 +104,6 @@ const navItems = [
       { href: "/rooms/study", label: "Study Room" }
     ]
   },
-  { href: "/money", label: "Money" },
   { href: "/history", label: "History" },
   { href: "/settings", label: "Settings" }
 ];
