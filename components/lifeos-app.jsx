@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
   Activity,
+  Archive,
   Armchair,
   BriefcaseBusiness,
   CalendarDays,
@@ -15,6 +16,7 @@ import {
   Droplets,
   Download,
   Flame,
+  FileText,
   Footprints,
   Gamepad2,
   GraduationCap,
@@ -36,6 +38,7 @@ import {
   Plus,
   Play,
   Phone,
+  Pin,
   Pause,
   CheckCircle2,
   Sparkles,
@@ -95,6 +98,7 @@ const navItems = [
   { href: "/life", label: "Life" },
   { href: "/study", label: "Study" },
   { href: "/money", label: "Money" },
+  { href: "/notes", label: "Notes" },
   { href: "/focus", label: "Focus" },
   { href: "/todo", label: "Todo" },
   {
@@ -205,6 +209,12 @@ const MONEY_DEFAULT_INPUTS = {
   "saved-today": 20,
   "investment-return": 50
 };
+
+const NOTE_CARD_COLORS = ["#fdf2f2", "#fef6e8", "#fff9db", "#eefbea", "#eaf7f2", "#eaf6fb", "#eef4ff", "#f3f0ff", "#f8efff", "#f5f5f5"];
+const NOTE_TEXT_COLOR = "#1f2937";
+const NOTE_SUBTEXT_COLOR = "#6b7280";
+const NOTE_FILTERS = ["All", "Pinned", "Recent", "Archived"];
+const NOTE_TYPES = ["Idea", "Temporary", "Draft", "Reference"];
 
 const FOCUS_DURATION_OPTIONS = {
   work: [25],
@@ -326,6 +336,11 @@ export function LifeOSApp({ view = "dashboard" }) {
   const [lifeQuickAction, setLifeQuickAction] = useState("");
   const [miscTodoInput, setMiscTodoInput] = useState("");
   const [miscTodoCategory, setMiscTodoCategory] = useState("work");
+  const [noteDraftTitle, setNoteDraftTitle] = useState("");
+  const [noteDraftContent, setNoteDraftContent] = useState("");
+  const [noteDraftType, setNoteDraftType] = useState("Draft");
+  const [noteFilter, setNoteFilter] = useState("All");
+  const [selectedNoteId, setSelectedNoteId] = useState("");
   const [focusType, setFocusType] = useState("");
   const [focusTask, setFocusTask] = useState(null);
   const [focusStatus, setFocusStatus] = useState("idle");
@@ -355,6 +370,7 @@ export function LifeOSApp({ view = "dashboard" }) {
   const officeMapRef = useRef(null);
   const roomsTriggerRef = useRef(null);
   const roomsDropdownRef = useRef(null);
+  const noteContentRef = useRef(null);
   const [executionNow, setExecutionNow] = useState(Date.now());
   const focusTimerRef = useRef(null);
 
@@ -874,6 +890,33 @@ export function LifeOSApp({ view = "dashboard" }) {
     }),
     [miscTodoItems]
   );
+  const noteItems = state.noteItems ?? [];
+  const sortedNoteItems = useMemo(
+    () =>
+      [...noteItems].sort((a, b) => {
+        if (a.archived !== b.archived) return Number(a.archived) - Number(b.archived);
+        if (a.pinned !== b.pinned) return Number(b.pinned) - Number(a.pinned);
+        return new Date(b.updatedAt || b.createdAt || 0).getTime() - new Date(a.updatedAt || a.createdAt || 0).getTime();
+      }),
+    [noteItems]
+  );
+  const filteredNoteItems = useMemo(() => {
+    const activeNotes = sortedNoteItems.filter((note) => !note.archived);
+    if (noteFilter === "Pinned") return activeNotes.filter((note) => note.pinned);
+    if (noteFilter === "Recent") return activeNotes.slice(0, 8);
+    if (noteFilter === "Archived") return sortedNoteItems.filter((note) => note.archived);
+    return activeNotes;
+  }, [noteFilter, sortedNoteItems]);
+  const selectedNote = noteItems.find((item) => item.id === selectedNoteId) ?? null;
+  const noteCounts = useMemo(
+    () => ({
+      all: sortedNoteItems.filter((note) => !note.archived).length,
+      pinned: sortedNoteItems.filter((note) => !note.archived && note.pinned).length,
+      recent: sortedNoteItems.filter((note) => !note.archived).slice(0, 8).length,
+      archived: noteItems.filter((note) => note.archived).length
+    }),
+    [noteItems, sortedNoteItems]
+  );
   const workSidebarSummary = useMemo(() => {
     const projectSummaries = state.workProjects.map((project) => {
       const total = (project.todayActions ?? []).length;
@@ -1122,6 +1165,169 @@ export function LifeOSApp({ view = "dashboard" }) {
       ...current,
       miscTodos: (current.miscTodos ?? []).filter((item) => item.id !== todoId)
     }));
+  };
+
+  const saveNote = (overrides = {}) => {
+    const title = (overrides.title ?? noteDraftTitle).trim();
+    const content = (overrides.content ?? noteDraftContent).trim();
+    const type = overrides.type ?? noteDraftType;
+    if (!title && !content) return;
+
+    const now = new Date().toISOString();
+    commitState((current) => {
+      const nextCursor = ((Number(current.noteCursor ?? 0) % NOTE_CARD_COLORS.length) + 1) % NOTE_CARD_COLORS.length;
+      return {
+        ...current,
+        noteCursor: nextCursor,
+        noteItems: [
+          {
+            id: `note-${Date.now()}`,
+            title,
+            content,
+            type,
+            pinned: false,
+            archived: false,
+            createdAt: now,
+            updatedAt: now,
+            colorIndex: Number(current.noteCursor ?? 0) % NOTE_CARD_COLORS.length
+          },
+          ...(current.noteItems ?? [])
+        ]
+      };
+    });
+
+    setNoteDraftTitle("");
+    setNoteDraftContent("");
+    setSelectedNoteId("");
+    setNoteFilter("All");
+  };
+
+  const focusNoteComposer = (nextType = "Draft") => {
+    setNoteDraftType(nextType);
+    setTimeout(() => {
+      noteContentRef.current?.focus();
+    }, 0);
+  };
+
+  const updateNoteItem = (noteId, updater) => {
+    commitState((current) => ({
+      ...current,
+      noteItems: (current.noteItems ?? []).map((note) =>
+        note.id === noteId
+          ? {
+              ...note,
+              ...(typeof updater === "function" ? updater(note) : updater),
+              updatedAt: new Date().toISOString()
+            }
+          : note
+      )
+    }));
+  };
+
+  const toggleNotePin = (noteId) => {
+    updateNoteItem(noteId, (note) => ({ pinned: !note.pinned }));
+  };
+
+  const toggleNoteArchive = (noteId) => {
+    updateNoteItem(noteId, (note) => ({ archived: !note.archived, pinned: note.archived ? note.pinned : false }));
+    if (selectedNoteId === noteId) setSelectedNoteId("");
+  };
+
+  const noteToActionLabel = (note) => {
+    const title = note?.title?.trim();
+    const content = note?.content?.trim();
+    return title || content || "Untitled note";
+  };
+
+  const moveNoteToTodo = (category) => {
+    if (!selectedNote) return;
+    const label = noteToActionLabel(selectedNote);
+    commitState((current) => ({
+      ...current,
+      miscTodos: [
+        {
+          id: `misc-${Date.now()}`,
+          label,
+          category,
+          done: false,
+          createdAt: Date.now(),
+          completedAt: null
+        },
+        ...(current.miscTodos ?? [])
+      ],
+      noteItems: (current.noteItems ?? []).map((note) =>
+        note.id === selectedNote.id
+          ? {
+              ...note,
+              archived: true,
+              pinned: false,
+              updatedAt: new Date().toISOString()
+            }
+          : note
+      )
+    }));
+    setSelectedNoteId("");
+  };
+
+  const convertNoteToProject = () => {
+    if (!selectedNote) return;
+    const label = noteToActionLabel(selectedNote);
+    commitState((current) => ({
+      ...current,
+      workProjects: (current.workProjects ?? []).map((project) =>
+        project.id === "optional"
+          ? {
+              ...project,
+              backlog: [{ id: `note-backlog-${Date.now()}`, label }, ...(project.backlog ?? [])]
+            }
+          : project
+      ),
+      noteItems: (current.noteItems ?? []).map((note) =>
+        note.id === selectedNote.id
+          ? {
+              ...note,
+              archived: true,
+              pinned: false,
+              updatedAt: new Date().toISOString()
+            }
+          : note
+      )
+    }));
+    setSelectedNoteId("");
+  };
+
+  const convertNoteToDailyAction = () => {
+    if (!selectedNote) return;
+    const label = noteToActionLabel(selectedNote);
+    commitState((current) => ({
+      ...current,
+      workProjects: (current.workProjects ?? []).map((project) =>
+        project.id === "optional"
+          ? {
+              ...project,
+              todayActions:
+                (project.todayActions ?? []).length >= 5
+                  ? project.todayActions ?? []
+                  : [...(project.todayActions ?? []), { id: `note-action-${Date.now()}`, label }],
+              backlog:
+                (project.todayActions ?? []).length >= 5
+                  ? [{ id: `note-backlog-${Date.now()}`, label }, ...(project.backlog ?? [])]
+                  : project.backlog ?? []
+            }
+          : project
+      ),
+      noteItems: (current.noteItems ?? []).map((note) =>
+        note.id === selectedNote.id
+          ? {
+              ...note,
+              archived: true,
+              pinned: false,
+              updatedAt: new Date().toISOString()
+            }
+          : note
+      )
+    }));
+    setSelectedNoteId("");
   };
 
   const setFocusTypeState = (nextType) => {
@@ -1586,6 +1792,10 @@ export function LifeOSApp({ view = "dashboard" }) {
     money: {
       title: "Money",
       description: "Record income, expenses, and savings without leaving the operating system."
+    },
+    notes: {
+      title: "Notes",
+      description: "Capture ideas, drafts, and temporary thoughts quickly, then move them into action when needed."
     },
     history: {
       title: "History",
@@ -2117,6 +2327,179 @@ export function LifeOSApp({ view = "dashboard" }) {
           ) : null}
 
           {view !== "focus" ? <section className="modules-grid modules-grid-single">
+            {view === "notes" ? (
+              <section className="life-page-layout">
+                <div className="life-page-primary">
+                  <ModuleCard title="Notes" color="#8892a0" icon={FileText}>
+                    <div className="notes-stack">
+                      <section className="note-composer">
+                        <div className="note-composer-head">
+                          <div>
+                            <p className="eyebrow">Quick Add</p>
+                            <strong>Notes</strong>
+                          </div>
+                          <span className="note-type-pill">{noteDraftType}</span>
+                        </div>
+
+                        <input
+                          className="note-title-input"
+                          value={noteDraftTitle}
+                          placeholder="Optional title"
+                          onChange={(event) => setNoteDraftTitle(event.target.value)}
+                        />
+                        <textarea
+                          ref={noteContentRef}
+                          className="note-content-input"
+                          value={noteDraftContent}
+                          placeholder="Capture a thought, draft, or temporary note"
+                          onChange={(event) => setNoteDraftContent(event.target.value)}
+                        />
+                        <div className="note-composer-actions">
+                          <span className="muted">Type · {noteDraftType}</span>
+                          <button className="ghost-button" onClick={() => saveNote()} disabled={!noteDraftTitle.trim() && !noteDraftContent.trim()}>
+                            <Save size={16} />
+                            Save
+                          </button>
+                        </div>
+                      </section>
+
+                      <div className="notes-grid">
+                        {filteredNoteItems.length ? (
+                          filteredNoteItems.map((note) => (
+                            <article
+                              key={note.id}
+                              className={`note-card ${selectedNoteId === note.id ? "is-selected" : ""}`}
+                              style={{
+                                "--note-bg": NOTE_CARD_COLORS[note.colorIndex % NOTE_CARD_COLORS.length],
+                                "--note-text": NOTE_TEXT_COLOR,
+                                "--note-subtext": NOTE_SUBTEXT_COLOR
+                              }}
+                              onClick={() => setSelectedNoteId(note.id)}
+                            >
+                              <div className="note-card-head">
+                                <span className="note-type-badge">{note.type}</span>
+                                <div className="note-card-actions">
+                                  <button
+                                    className={`icon-button ${note.pinned ? "is-active" : ""}`}
+                                    aria-label="Pin note"
+                                    onClick={(event) => {
+                                      event.stopPropagation();
+                                      toggleNotePin(note.id);
+                                    }}
+                                  >
+                                    <Pin size={15} />
+                                  </button>
+                                  <button
+                                    className="icon-button"
+                                    aria-label={note.archived ? "Restore note" : "Archive note"}
+                                    onClick={(event) => {
+                                      event.stopPropagation();
+                                      toggleNoteArchive(note.id);
+                                    }}
+                                  >
+                                    <Archive size={15} />
+                                  </button>
+                                </div>
+                              </div>
+                              {note.title ? <h3>{note.title}</h3> : null}
+                              <p className="note-card-preview">{note.content || "Untitled note"}</p>
+                              <div className="note-card-meta">
+                                <span>Created {formatNoteDate(note.createdAt)}</span>
+                                <span>Updated {formatNoteDate(note.updatedAt)}</span>
+                              </div>
+                            </article>
+                          ))
+                        ) : (
+                          <div className="note-empty-card">
+                            <strong>No notes yet</strong>
+                            <p className="muted">Capture quick ideas here before moving them into Work, Study, or Life.</p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </ModuleCard>
+                </div>
+
+                <aside className="life-page-secondary">
+                  <div className="money-sidebar-stack notes-sidebar-stack">
+                    <Card title="Quick Capture" icon={Plus} className="notes-sidebar-card">
+                      <div className="notes-sidebar-actions">
+                        <button className="ghost-button notes-sidebar-button" onClick={() => focusNoteComposer("Draft")}>
+                          New Note
+                        </button>
+                        <button className="ghost-button notes-sidebar-button" onClick={() => focusNoteComposer("Idea")}>
+                          Quick Idea
+                        </button>
+                        <button className="ghost-button notes-sidebar-button" onClick={() => focusNoteComposer("Temporary")}>
+                          Temporary Note
+                        </button>
+                      </div>
+                    </Card>
+
+                    <Card title="Filters" icon={Command} className="notes-sidebar-card">
+                      <div className="notes-sidebar-actions">
+                        {NOTE_FILTERS.map((filterLabel) => (
+                          <button
+                            key={filterLabel}
+                            className={`ghost-button notes-sidebar-button ${noteFilter === filterLabel ? "is-active" : ""}`}
+                            onClick={() => setNoteFilter(filterLabel)}
+                          >
+                            <span>{filterLabel}</span>
+                            <strong>
+                              {filterLabel === "All"
+                                ? noteCounts.all
+                                : filterLabel === "Pinned"
+                                  ? noteCounts.pinned
+                                  : filterLabel === "Recent"
+                                    ? noteCounts.recent
+                                    : noteCounts.archived}
+                            </strong>
+                          </button>
+                        ))}
+                      </div>
+                    </Card>
+
+                    <Card title="Note Types" icon={FileText} className="notes-sidebar-card">
+                      <div className="notes-sidebar-actions">
+                        {NOTE_TYPES.map((type) => (
+                          <button
+                            key={type}
+                            className={`ghost-button notes-sidebar-button ${noteDraftType === type ? "is-active" : ""}`}
+                            onClick={() => setNoteDraftType(type)}
+                          >
+                            {type}
+                          </button>
+                        ))}
+                      </div>
+                    </Card>
+
+                    <Card title="Convert / Move" icon={RefreshCw} className="notes-sidebar-card">
+                      <div className="notes-sidebar-actions">
+                        <button className="ghost-button notes-sidebar-button" disabled={!selectedNote} onClick={() => moveNoteToTodo("work")}>
+                          Move to Work
+                        </button>
+                        <button className="ghost-button notes-sidebar-button" disabled={!selectedNote} onClick={() => moveNoteToTodo("study")}>
+                          Move to Study
+                        </button>
+                        <button className="ghost-button notes-sidebar-button" disabled={!selectedNote} onClick={() => moveNoteToTodo("life")}>
+                          Move to Life
+                        </button>
+                        <button className="ghost-button notes-sidebar-button" disabled={!selectedNote} onClick={convertNoteToProject}>
+                          Turn into Project
+                        </button>
+                        <button className="ghost-button notes-sidebar-button" disabled={!selectedNote} onClick={convertNoteToDailyAction}>
+                          Turn into Daily Action
+                        </button>
+                      </div>
+                      <p className="muted notes-sidebar-helper">
+                        {selectedNote ? `Selected: ${noteToActionLabel(selectedNote)}` : "Select a note first to convert or move it."}
+                      </p>
+                    </Card>
+                  </div>
+                </aside>
+              </section>
+            ) : null}
+
             {view === "todo" ? (
               <section className="life-page-layout">
                 <div className="life-page-primary">
@@ -3564,6 +3947,14 @@ function formatMonthLabel(date) {
 }
 
 function formatShortDate(date) {
+  return new Intl.DateTimeFormat("en-US", {
+    month: "short",
+    day: "numeric"
+  }).format(date);
+}
+
+function formatNoteDate(timestamp) {
+  const date = timestamp ? new Date(timestamp) : new Date();
   return new Intl.DateTimeFormat("en-US", {
     month: "short",
     day: "numeric"
