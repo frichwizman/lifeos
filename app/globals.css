@@ -1590,7 +1590,7 @@ select {
 }
 
 .life-task-input-stack.is-simple {
-  grid-template-columns: 1fr;
+  grid-template-columns: auto minmax(0, 1fr) auto;
 }
 
 .life-task-default-chip {
@@ -1601,20 +1601,6 @@ select {
 .life-task-default-display {
   display: inline-flex;
   align-items: center;
-}
-
-.life-task-simple-log {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  align-items: center;
-  gap: 8px;
-  min-width: 0;
-}
-
-.life-task-log-button {
-  min-width: 72px;
-  justify-content: center;
-  flex: 0 0 auto;
 }
 
 .life-task-select,
@@ -1630,13 +1616,6 @@ select {
 
 .life-task-custom-row {
   display: contents;
-}
-
-.life-task-input-stack.is-simple .life-task-custom-row {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  gap: 8px;
-  align-items: center;
 }
 
 .life-task-custom-button {
@@ -3630,12 +3609,8 @@ select {
     grid-template-columns: auto auto minmax(0, 1fr) auto;
   }
 
-  .life-task-simple-log {
-    justify-content: space-between;
-  }
-
-  .life-task-input-stack.is-simple .life-task-custom-row {
-    grid-template-columns: minmax(0, 1fr) auto;
+  .life-task-input-stack.is-simple {
+    grid-template-columns: auto minmax(0, 1fr) auto;
   }
 
   .card-timeline,
