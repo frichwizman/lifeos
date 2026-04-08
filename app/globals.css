@@ -1443,6 +1443,7 @@ select {
   border: 1px solid var(--border);
   border-radius: 18px;
   background: var(--surface-2);
+  position: relative;
 }
 
 .life-task-head {
@@ -1486,8 +1487,13 @@ select {
 }
 
 .life-task-calendar-popover {
+  position: absolute;
+  top: 56px;
+  right: 16px;
+  z-index: 20;
   display: grid;
   gap: 10px;
+  width: min(320px, calc(100% - 32px));
   padding: 12px;
   border: 1px solid var(--border);
   border-radius: 16px;
@@ -1534,11 +1540,12 @@ select {
 .life-task-calendar-day {
   display: grid;
   gap: 4px;
-  align-content: flex-start;
+  align-content: center;
+  justify-items: center;
   padding: 6px;
   border: 1px solid var(--border);
   background: var(--surface-2);
-  text-align: left;
+  text-align: center;
 }
 
 .life-task-calendar-day.is-selected {
@@ -1554,6 +1561,7 @@ select {
 .life-task-calendar-date {
   color: var(--text-sub);
   font-size: 0.66rem;
+  text-align: center;
 }
 
 .life-task-calendar-value {
@@ -1561,6 +1569,7 @@ select {
   font-size: 0.82rem;
   line-height: 1.1;
   font-weight: 600;
+  text-align: center;
 }
 
 .life-task-calendar-value.has-value {
