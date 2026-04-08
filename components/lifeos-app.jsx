@@ -2423,7 +2423,7 @@ export function LifeOSApp({ view = "dashboard" }) {
                 <aside className="life-page-secondary">
                   <div className="money-sidebar-stack notes-sidebar-stack">
                     <Card title="Quick Capture" icon={Plus} className="notes-sidebar-card">
-                      <div className="notes-sidebar-actions">
+                      <div className="notes-sidebar-actions is-inline-row">
                         <button className="ghost-button notes-sidebar-button" onClick={() => focusNoteComposer("Draft")}>
                           New Note
                         </button>
@@ -2437,7 +2437,7 @@ export function LifeOSApp({ view = "dashboard" }) {
                     </Card>
 
                     <Card title="Filters" icon={Command} className="notes-sidebar-card">
-                      <div className="notes-sidebar-actions">
+                      <div className="notes-sidebar-actions is-inline-row">
                         {NOTE_FILTERS.map((filterLabel) => (
                           <button
                             key={filterLabel}
@@ -2460,7 +2460,7 @@ export function LifeOSApp({ view = "dashboard" }) {
                     </Card>
 
                     <Card title="Note Types" icon={FileText} className="notes-sidebar-card">
-                      <div className="notes-sidebar-actions">
+                      <div className="notes-sidebar-actions is-inline-row">
                         {NOTE_TYPES.map((type) => (
                           <button
                             key={type}

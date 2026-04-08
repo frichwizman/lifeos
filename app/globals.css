@@ -1964,9 +1964,27 @@ select {
   gap: 8px;
 }
 
+.notes-sidebar-actions.is-inline-row {
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+  align-items: stretch;
+}
+
 .notes-sidebar-button {
   justify-content: space-between;
   min-height: 36px;
+}
+
+.notes-sidebar-actions.is-inline-row .notes-sidebar-button {
+  min-width: 0;
+  padding: 0 10px;
+  justify-content: center;
+  text-align: center;
+  font-size: 0.78rem;
+}
+
+.notes-sidebar-actions.is-inline-row .notes-sidebar-button strong {
+  font-size: 0.78rem;
 }
 
 .notes-sidebar-helper {
