@@ -3376,14 +3376,60 @@ function LifeTaskGrid({ tasks, logs, todayKey, onLog, currency, showStreaks = fa
             ) : null}
 
             {defaultInput && usesSimpleLog ? (
-              <div className="life-task-simple-log">
-                <span className="chip life-task-default-chip life-task-default-display">
-                  {defaultInput}
-                  {task.unit !== "$" ? task.unit : ""}
-                </span>
-                <button className="ghost-button life-task-log-button" onClick={() => handleTaskLog(defaultInput, { accumulate: true })}>
-                  Log
-                </button>
+              <div className="life-task-input-stack">
+                <div className="life-task-simple-log">
+                  <span className="chip life-task-default-chip life-task-default-display">
+                    {defaultInput}
+                    {task.unit !== "$" ? task.unit : ""}
+                  </span>
+                  <button className="ghost-button life-task-log-button" onClick={() => handleTaskLog(defaultInput, { accumulate: true })}>
+                    Log
+                  </button>
+                </div>
+                <div className="life-task-custom-row">
+                  <input
+                    className="life-task-input"
+                    inputMode="numeric"
+                    type="number"
+                    min={allowsNegative || allowsZero ? undefined : "0"}
+                    placeholder="Custom"
+                    value={customValue}
+                    onChange={(event) =>
+                      setCustomValues((current) => ({
+                        ...current,
+                        [task.id]: event.target.value
+                      }))
+                    }
+                    onKeyDown={(event) => {
+                      if (event.key !== "Enter") return;
+                      if (customValue === "") return;
+                      const nextValue = Number(customValue);
+                      const canLog = allowsNegative ? (allowsZero ? !Number.isNaN(nextValue) : nextValue !== 0) : allowsZero ? nextValue >= 0 : nextValue > 0;
+                      if (!canLog) return;
+                      handleTaskLog(nextValue, { accumulate: true });
+                      setCustomValues((current) => ({
+                        ...current,
+                        [task.id]: ""
+                      }));
+                    }}
+                  />
+                  <button
+                    className="ghost-button life-task-custom-button"
+                    onClick={() => {
+                      if (customValue === "") return;
+                      const nextValue = Number(customValue);
+                      const canLog = allowsNegative ? (allowsZero ? !Number.isNaN(nextValue) : nextValue !== 0) : allowsZero ? nextValue >= 0 : nextValue > 0;
+                      if (!canLog) return;
+                      handleTaskLog(nextValue, { accumulate: true });
+                      setCustomValues((current) => ({
+                        ...current,
+                        [task.id]: ""
+                      }));
+                    }}
+                  >
+                    Log
+                  </button>
+                </div>
               </div>
             ) : defaultInput ? (
               <div className="life-task-input-stack">
