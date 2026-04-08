@@ -2380,24 +2380,24 @@ export function LifeOSApp({ view = "dashboard" }) {
                                 <span className="note-type-badge">{note.type}</span>
                                 <div className="note-card-actions">
                                   <button
-                                    className={`icon-button ${note.pinned ? "is-active" : ""}`}
+                                    className={`note-card-action-button ${note.pinned ? "is-active" : ""}`}
                                     aria-label="Pin note"
                                     onClick={(event) => {
                                       event.stopPropagation();
                                       toggleNotePin(note.id);
                                     }}
                                   >
-                                    <Pin size={15} />
+                                    <Pin size={13} strokeWidth={1.9} />
                                   </button>
                                   <button
-                                    className="icon-button"
+                                    className="note-card-action-button"
                                     aria-label={note.archived ? "Restore note" : "Archive note"}
                                     onClick={(event) => {
                                       event.stopPropagation();
                                       toggleNoteArchive(note.id);
                                     }}
                                   >
-                                    <Archive size={15} />
+                                    <Archive size={13} strokeWidth={1.9} />
                                   </button>
                                 </div>
                               </div>
