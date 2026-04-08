@@ -1589,6 +1589,10 @@ select {
   align-items: center;
 }
 
+.life-task-input-stack.is-simple {
+  grid-template-columns: 1fr;
+}
+
 .life-task-default-chip {
   justify-content: center;
   white-space: nowrap;
@@ -1600,14 +1604,17 @@ select {
 }
 
 .life-task-simple-log {
-  display: flex;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
   gap: 8px;
+  min-width: 0;
 }
 
 .life-task-log-button {
   min-width: 72px;
   justify-content: center;
+  flex: 0 0 auto;
 }
 
 .life-task-select,
@@ -1616,13 +1623,26 @@ select {
   border-radius: 12px;
 }
 
+.life-task-input {
+  min-width: 0;
+  width: 100%;
+}
+
 .life-task-custom-row {
   display: contents;
+}
+
+.life-task-input-stack.is-simple .life-task-custom-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+  align-items: center;
 }
 
 .life-task-custom-button {
   min-width: 74px;
   justify-content: center;
+  flex: 0 0 auto;
 }
 
 .life-task-actions.is-rating {
@@ -3612,6 +3632,10 @@ select {
 
   .life-task-simple-log {
     justify-content: space-between;
+  }
+
+  .life-task-input-stack.is-simple .life-task-custom-row {
+    grid-template-columns: minmax(0, 1fr) auto;
   }
 
   .card-timeline,

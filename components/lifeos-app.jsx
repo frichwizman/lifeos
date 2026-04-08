@@ -3376,7 +3376,7 @@ function LifeTaskGrid({ tasks, logs, todayKey, onLog, currency, showStreaks = fa
             ) : null}
 
             {defaultInput && usesSimpleLog ? (
-              <div className="life-task-input-stack">
+              <div className="life-task-input-stack is-simple">
                 <div className="life-task-simple-log">
                   <span className="chip life-task-default-chip life-task-default-display">
                     {defaultInput}
