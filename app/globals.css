@@ -1447,9 +1447,14 @@ select {
 
 .life-task-head {
   display: flex;
-  align-items: baseline;
+  align-items: flex-start;
   justify-content: space-between;
   gap: 12px;
+}
+
+.life-task-head-copy {
+  display: grid;
+  gap: 3px;
 }
 
 .life-task-head strong {
@@ -1457,8 +1462,109 @@ select {
   letter-spacing: -0.03em;
 }
 
+.life-task-head-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
 .life-task-head .task-value {
   white-space: nowrap;
+}
+
+.life-task-date-label {
+  color: var(--text-sub);
+  font-size: 0.72rem;
+}
+
+.life-task-calendar-trigger {
+  width: 32px;
+  height: 32px;
+  min-height: 32px;
+  padding: 0;
+  flex: 0 0 auto;
+}
+
+.life-task-calendar-popover {
+  display: grid;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: var(--surface);
+}
+
+.life-task-calendar-head {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+}
+
+.life-task-calendar-head strong {
+  text-align: center;
+  font-size: 0.9rem;
+  letter-spacing: -0.02em;
+}
+
+.life-task-calendar-nav {
+  min-height: 30px;
+  padding: 0 10px;
+}
+
+.life-task-calendar-weekdays,
+.life-task-calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.life-task-calendar-weekdays span {
+  color: var(--text-sub);
+  font-size: 0.68rem;
+  text-align: center;
+}
+
+.life-task-calendar-day,
+.life-task-calendar-empty {
+  min-height: 48px;
+  border-radius: 12px;
+}
+
+.life-task-calendar-day {
+  display: grid;
+  gap: 4px;
+  align-content: flex-start;
+  padding: 6px;
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  text-align: left;
+}
+
+.life-task-calendar-day.is-selected {
+  border-color: var(--accent);
+  background: var(--highlight-bg);
+}
+
+.life-task-calendar-empty {
+  border: 1px dashed rgba(0, 0, 0, 0.04);
+  background: rgba(255, 255, 255, 0.24);
+}
+
+.life-task-calendar-date {
+  color: var(--text-sub);
+  font-size: 0.66rem;
+}
+
+.life-task-calendar-value {
+  min-height: 1em;
+  font-size: 0.82rem;
+  line-height: 1.1;
+  font-weight: 600;
+}
+
+.life-task-calendar-value.has-value {
+  color: var(--text-main);
 }
 
 .life-task-actions {
@@ -1477,6 +1583,22 @@ select {
 .life-task-default-chip {
   justify-content: center;
   white-space: nowrap;
+}
+
+.life-task-default-display {
+  display: inline-flex;
+  align-items: center;
+}
+
+.life-task-simple-log {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.life-task-log-button {
+  min-width: 72px;
+  justify-content: center;
 }
 
 .life-task-select,
@@ -3428,6 +3550,11 @@ select {
     margin-left: auto;
   }
 
+  .life-task-calendar-day,
+  .life-task-calendar-empty {
+    min-height: 44px;
+  }
+
   .life-task-grid {
     grid-template-columns: 1fr;
   }
@@ -3472,6 +3599,10 @@ select {
 
   .life-task-input-stack {
     grid-template-columns: auto auto minmax(0, 1fr) auto;
+  }
+
+  .life-task-simple-log {
+    justify-content: space-between;
   }
 
   .card-timeline,

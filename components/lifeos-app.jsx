@@ -7,6 +7,7 @@ import {
   Activity,
   Armchair,
   BriefcaseBusiness,
+  CalendarDays,
   CircleDollarSign,
   ChevronDown,
   Command,
@@ -190,6 +191,8 @@ const LIFE_DEFAULT_INPUTS = {
   "water-intake": 250
 };
 
+const SIMPLE_LIFE_LOG_TASK_IDS = new Set(["exercise", "meditation", "sleep-quality", "water-intake"]);
+
 const STUDY_DEFAULT_INPUTS = {
   "language-skills": 25,
   "ai-skills": 25,
@@ -315,7 +318,6 @@ const STUDY_ROOM_ZONES = [
 export function LifeOSApp({ view = "dashboard" }) {
   const [state, setState] = useState(DEFAULT_STATE);
   const [ready, setReady] = useState(false);
-  const [lifeLogDate, setLifeLogDate] = useState(getTodayKey());
   const [moneyLogDate, setMoneyLogDate] = useState(getTodayKey());
   const [syncCodeInput, setSyncCodeInput] = useState("");
   const [backupCount, setBackupCount] = useState(0);
@@ -813,7 +815,7 @@ export function LifeOSApp({ view = "dashboard" }) {
   const previousHistoryDays = historyDays.slice(1);
   const selectedLifeQuickActions = useMemo(
     () =>
-      Object.entries(state.logs?.[lifeLogDate] ?? {})
+      Object.entries(state.logs?.[todayKey] ?? {})
         .filter(([taskId, record]) => {
           const action = LIFE_QUICK_ACTION_MAP[taskId];
           if (!action) return false;
@@ -825,7 +827,7 @@ export function LifeOSApp({ view = "dashboard" }) {
           ...LIFE_QUICK_ACTION_MAP[taskId]
         }))
         .sort((a, b) => a.group.localeCompare(b.group) || a.label.localeCompare(b.label)),
-    [lifeLogDate, state.logs]
+    [state.logs, todayKey]
   );
   const yesterdayKey = useMemo(() => {
     const date = new Date();
@@ -968,6 +970,16 @@ export function LifeOSApp({ view = "dashboard" }) {
 
   const logTaskAtDate = (task, value, dateKey) => {
     commitState((current) => applyTrackedLogAtDate(current, task, value, dateKey));
+  };
+
+  const logLifeTaskAtDate = (task, value, dateKey = todayKey, options = {}) => {
+    commitState((current) => {
+      const targetDateKey = dateKey || todayKey;
+      const shouldAccumulate = Boolean(options?.accumulate) && task.type !== "boolean";
+      const previousValue = Number(getLogValue(current.logs, targetDateKey, task.id) ?? 0);
+      const nextValue = shouldAccumulate ? previousValue + Number(value || 0) : value;
+      return applyTrackedLogAtDate(current, task, nextValue, targetDateKey);
+    });
   };
 
   const toggleTodo = (projectId, todoId) => {
@@ -2457,39 +2469,17 @@ export function LifeOSApp({ view = "dashboard" }) {
               <section className="life-page-layout">
                 <div className="life-page-primary">
                   <ModuleCard title="Life" color={MODULE_COLORS.life} icon={HeartPulse}>
-                    <div className="money-log-stack">
-                      <div className="money-log-toolbar">
-                        <label className="money-log-date">
-                          <span>Log Date</span>
-                          <input
-                            type="date"
-                            value={lifeLogDate}
-                            max={todayKey}
-                            onChange={(event) => setLifeLogDate(event.target.value || todayKey)}
-                          />
-                        </label>
-                        <div className="money-log-toolbar-actions">
-                          <span className="muted money-log-helper">Cards below reflect the selected date.</span>
-                          {lifeLogDate !== todayKey ? (
-                            <button className="ghost-button" onClick={() => setLifeLogDate(todayKey)}>
-                              Today
-                            </button>
-                          ) : null}
-                        </div>
-                      </div>
-
-                      <LifeTaskGrid
-                        tasks={lifePageTasks}
-                        logs={state.logs}
-                        todayKey={lifeLogDate}
-                        onLog={(task, value) => logTaskAtDate(task, value, lifeLogDate)}
-                      />
-                    </div>
+                    <LifeTaskGrid
+                      tasks={lifePageTasks}
+                      logs={state.logs}
+                      todayKey={todayKey}
+                      onLog={logLifeTaskAtDate}
+                    />
                   </ModuleCard>
                 </div>
 
                 <aside className="life-page-secondary">
-                  <Card title={lifeLogDate === todayKey ? "Today Actions" : "Logged Actions"} icon={History} className="life-quick-card">
+                  <Card title="Today Actions" icon={History} className="life-quick-card">
                     {selectedLifeQuickActions.length ? (
                       <div className="life-today-actions">
                         {selectedLifeQuickActions.map((item) => (
@@ -2500,7 +2490,7 @@ export function LifeOSApp({ view = "dashboard" }) {
                         ))}
                       </div>
                     ) : (
-                      <p className="muted">No quick actions logged for this date yet.</p>
+                      <p className="muted">No quick actions logged today yet.</p>
                     )}
                   </Card>
 
@@ -2513,7 +2503,7 @@ export function LifeOSApp({ view = "dashboard" }) {
                             <button
                               key={item.label}
                               className={`life-quick-action ${lifeQuickAction === item.label ? "is-active" : ""}`}
-                              onClick={() => triggerLifeQuickAction(item.label, lifeLogDate)}
+                              onClick={() => triggerLifeQuickAction(item.label)}
                             >
                               <Icon size={15} />
                               <span>{item.label}</span>
@@ -3281,30 +3271,123 @@ function TaskList({ tasks, logs, todayKey, notes, onLog, currency, showStreaks =
 
 function LifeTaskGrid({ tasks, logs, todayKey, onLog, currency, showStreaks = false, defaultInputs = LIFE_DEFAULT_INPUTS }) {
   const [customValues, setCustomValues] = useState({});
+  const [selectedDates, setSelectedDates] = useState({});
+  const [openCalendarTaskId, setOpenCalendarTaskId] = useState("");
+  const [calendarMonths, setCalendarMonths] = useState({});
 
   return (
     <div className="life-task-grid">
       {tasks.map((task) => {
-        const value = getLogValue(logs, todayKey, task.id);
+        const selectedDateKey = selectedDates[task.id] ?? todayKey;
+        const value = getLogValue(logs, selectedDateKey, task.id);
         const isRating = task.type === "rating" || task.type === "ratingReverse";
         const allowsNegative = Boolean(task.allowNegative);
         const allowsZero = Boolean(task.allowZero);
         const shouldShowStreak = showStreaks || task.id === "exercise" || task.id === "meditation";
         const shouldShowSleepHistory = task.id === "sleep-quality";
+        const usesSimpleLog = SIMPLE_LIFE_LOG_TASK_IDS.has(task.id);
         const defaultInput = defaultInputs[task.id];
         const dropdownPresets = (task.presets ?? []).filter((preset) => preset !== defaultInput);
         const customValue = customValues[task.id] ?? "";
+        const calendarMonth = calendarMonths[task.id] ?? parseDateKey(selectedDateKey);
+        const calendarDays = buildTaskCalendarDays(logs, task, calendarMonth);
+        const handleTaskLog = (nextValue, options = {}) => onLog(task, nextValue, selectedDateKey, options);
 
         return (
           <article key={task.id} className="life-task-card">
             <div className="life-task-head">
-              <strong>{task.label}</strong>
-              <span className="task-value">{formatTaskValue(task, value, currency)}</span>
+              <div className="life-task-head-copy">
+                <strong>{task.label}</strong>
+                <small className="life-task-date-label">{formatShortDate(parseDateKey(selectedDateKey))}</small>
+              </div>
+              <div className="life-task-head-actions">
+                <span className="task-value">{formatTaskValue(task, value, currency)}</span>
+                <button
+                  className="icon-button life-task-calendar-trigger"
+                  aria-label={`Open ${task.label} calendar`}
+                  onClick={() => {
+                    setOpenCalendarTaskId((current) => (current === task.id ? "" : task.id));
+                    setCalendarMonths((current) => ({
+                      ...current,
+                      [task.id]: current[task.id] ?? parseDateKey(selectedDateKey)
+                    }));
+                  }}
+                >
+                  <CalendarDays size={15} />
+                </button>
+              </div>
             </div>
 
-            {defaultInput ? (
+            {openCalendarTaskId === task.id ? (
+              <div className="life-task-calendar-popover">
+                <div className="life-task-calendar-head">
+                  <button
+                    className="ghost-button life-task-calendar-nav"
+                    onClick={() =>
+                      setCalendarMonths((current) => ({
+                        ...current,
+                        [task.id]: shiftMonth(calendarMonth, -1)
+                      }))
+                    }
+                  >
+                    ‹
+                  </button>
+                  <strong>{formatMonthLabel(calendarMonth)}</strong>
+                  <button
+                    className="ghost-button life-task-calendar-nav"
+                    onClick={() =>
+                      setCalendarMonths((current) => ({
+                        ...current,
+                        [task.id]: shiftMonth(calendarMonth, 1)
+                      }))
+                    }
+                  >
+                    ›
+                  </button>
+                </div>
+                <div className="life-task-calendar-weekdays">
+                  {["S", "M", "T", "W", "T", "F", "S"].map((day) => (
+                    <span key={day}>{day}</span>
+                  ))}
+                </div>
+                <div className="life-task-calendar-grid">
+                  {calendarDays.map((day, index) =>
+                    day ? (
+                      <button
+                        key={day.key}
+                        className={`life-task-calendar-day ${selectedDateKey === day.key ? "is-selected" : ""}`}
+                        onClick={() => {
+                          setSelectedDates((current) => ({
+                            ...current,
+                            [task.id]: day.key
+                          }));
+                          setOpenCalendarTaskId("");
+                        }}
+                      >
+                        <span className="life-task-calendar-date">{day.day}</span>
+                        <strong className={`life-task-calendar-value ${day.hasValue ? "has-value" : ""}`}>{day.displayValue}</strong>
+                      </button>
+                    ) : (
+                      <span key={`empty-${task.id}-${index}`} className="life-task-calendar-empty" />
+                    )
+                  )}
+                </div>
+              </div>
+            ) : null}
+
+            {defaultInput && usesSimpleLog ? (
+              <div className="life-task-simple-log">
+                <span className="chip life-task-default-chip life-task-default-display">
+                  {defaultInput}
+                  {task.unit !== "$" ? task.unit : ""}
+                </span>
+                <button className="ghost-button life-task-log-button" onClick={() => handleTaskLog(defaultInput, { accumulate: true })}>
+                  Log
+                </button>
+              </div>
+            ) : defaultInput ? (
               <div className="life-task-input-stack">
-                <button className="chip life-task-default-chip" onClick={() => onLog(task, defaultInput)}>
+                <button className="chip life-task-default-chip" onClick={() => handleTaskLog(defaultInput)}>
                   {defaultInput}
                   {task.unit !== "$" ? task.unit : ""}
                 </button>
@@ -3316,7 +3399,7 @@ function LifeTaskGrid({ tasks, logs, todayKey, onLog, currency, showStreaks = fa
                     if (rawValue === "") return;
                     const nextValue = Number(rawValue);
                     const canLog = allowsNegative ? (allowsZero ? !Number.isNaN(nextValue) : nextValue !== 0) : allowsZero ? nextValue >= 0 : nextValue > 0;
-                    if (canLog) onLog(task, nextValue);
+                    if (canLog) handleTaskLog(nextValue);
                   }}
                 >
                   <option value="">More</option>
@@ -3347,7 +3430,7 @@ function LifeTaskGrid({ tasks, logs, todayKey, onLog, currency, showStreaks = fa
                       const nextValue = Number(customValue);
                       const canLog = allowsNegative ? (allowsZero ? !Number.isNaN(nextValue) : nextValue !== 0) : allowsZero ? nextValue >= 0 : nextValue > 0;
                       if (!canLog) return;
-                      onLog(task, nextValue);
+                      handleTaskLog(nextValue);
                       setCustomValues((current) => ({
                         ...current,
                         [task.id]: ""
@@ -3361,7 +3444,7 @@ function LifeTaskGrid({ tasks, logs, todayKey, onLog, currency, showStreaks = fa
                       const nextValue = Number(customValue);
                       const canLog = allowsNegative ? (allowsZero ? !Number.isNaN(nextValue) : nextValue !== 0) : allowsZero ? nextValue >= 0 : nextValue > 0;
                       if (!canLog) return;
-                      onLog(task, nextValue);
+                      handleTaskLog(nextValue);
                       setCustomValues((current) => ({
                         ...current,
                         [task.id]: ""
@@ -3375,7 +3458,7 @@ function LifeTaskGrid({ tasks, logs, todayKey, onLog, currency, showStreaks = fa
             ) : task.type !== "boolean" ? (
               <div className={`life-task-actions ${isRating ? "is-rating" : ""}`}>
                 {task.presets?.map((preset) => (
-                  <button key={preset} className="chip" onClick={() => onLog(task, preset)}>
+                  <button key={preset} className="chip" onClick={() => handleTaskLog(preset)}>
                     {currency && task.unit === "$" ? currency : ""}
                     {preset}
                     {task.unit !== "$" ? task.unit : ""}
@@ -3387,7 +3470,7 @@ function LifeTaskGrid({ tasks, logs, todayKey, onLog, currency, showStreaks = fa
             {isRating ? (
               <div className="life-task-actions is-rating">
                 {[1, 2, 3, 4, 5].map((rating) => (
-                  <button key={rating} className={`chip ${value === rating ? "is-active" : ""}`} onClick={() => onLog(task, rating)}>
+                  <button key={rating} className={`chip ${value === rating ? "is-active" : ""}`} onClick={() => handleTaskLog(rating)}>
                     {rating}★
                   </button>
                 ))}
@@ -3395,7 +3478,7 @@ function LifeTaskGrid({ tasks, logs, todayKey, onLog, currency, showStreaks = fa
             ) : null}
 
             {task.type === "boolean" ? (
-              <button className={`boolean-log life-task-boolean ${value ? "is-active" : ""}`} onClick={() => onLog(task, !value)}>
+              <button className={`boolean-log life-task-boolean ${value ? "is-active" : ""}`} onClick={() => handleTaskLog(!value)}>
                 {value ? "✓ Clean" : "Log Clean Day"}
               </button>
             ) : null}
@@ -3421,6 +3504,62 @@ function LifeTaskGrid({ tasks, logs, todayKey, onLog, currency, showStreaks = fa
       })}
     </div>
   );
+}
+
+function parseDateKey(dateKey) {
+  const [year, month, day] = String(dateKey || formatDateKey(new Date()))
+    .split("-")
+    .map((value) => Number(value));
+  return new Date(year, Math.max(0, (month || 1) - 1), day || 1);
+}
+
+function shiftMonth(date, delta) {
+  return new Date(date.getFullYear(), date.getMonth() + delta, 1);
+}
+
+function formatMonthLabel(date) {
+  return new Intl.DateTimeFormat("en-US", {
+    month: "long",
+    year: "numeric"
+  }).format(date);
+}
+
+function formatShortDate(date) {
+  return new Intl.DateTimeFormat("en-US", {
+    month: "short",
+    day: "numeric"
+  }).format(date);
+}
+
+function buildTaskCalendarDays(logs, task, monthDate) {
+  const year = monthDate.getFullYear();
+  const month = monthDate.getMonth();
+  const firstDay = new Date(year, month, 1);
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const leadingEmptyCount = firstDay.getDay();
+  const cells = Array.from({ length: leadingEmptyCount }).fill(null);
+
+  for (let day = 1; day <= daysInMonth; day += 1) {
+    const date = new Date(year, month, day);
+    const key = formatDateKey(date);
+    const rawValue = logs?.[key]?.[task.id]?.value;
+    const hasValue = typeof rawValue === "boolean" ? rawValue : Number(rawValue) > 0 || Number(rawValue) < 0;
+    const displayValue =
+      typeof rawValue === "boolean"
+        ? rawValue
+          ? "1"
+          : ""
+        : rawValue ?? "";
+
+    cells.push({
+      key,
+      day,
+      hasValue,
+      displayValue: hasValue ? String(displayValue) : ""
+    });
+  }
+
+  return cells;
 }
 
 function getSleepScoreHistory(logs, taskId, days = 14) {
