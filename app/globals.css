@@ -1490,6 +1490,11 @@ select {
   font-size: 0.72rem;
 }
 
+.life-task-month-total {
+  color: var(--text-sub);
+  font-size: 0.72rem;
+}
+
 .life-task-calendar-trigger {
   width: 32px;
   height: 32px;

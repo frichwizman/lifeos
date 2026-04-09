@@ -2910,6 +2910,7 @@ export function LifeOSApp({ view = "dashboard" }) {
                       onLog={logTaskAtDate}
                       currency={state.profile.currency}
                       defaultInputs={MONEY_DEFAULT_INPUTS}
+                      showMonthTotals
                     />
                   </ModuleCard>
                 </div>
@@ -3629,7 +3630,7 @@ function TaskList({ tasks, logs, todayKey, notes, onLog, currency, showStreaks =
   );
 }
 
-function LifeTaskGrid({ tasks, logs, todayKey, onLog, currency, showStreaks = false, defaultInputs = LIFE_DEFAULT_INPUTS }) {
+function LifeTaskGrid({ tasks, logs, todayKey, onLog, currency, showStreaks = false, defaultInputs = LIFE_DEFAULT_INPUTS, showMonthTotals = false }) {
   const [customValues, setCustomValues] = useState({});
   const [selectedDates, setSelectedDates] = useState({});
   const [openCalendarTaskId, setOpenCalendarTaskId] = useState("");
@@ -3651,6 +3652,7 @@ function LifeTaskGrid({ tasks, logs, todayKey, onLog, currency, showStreaks = fa
         const customValue = customValues[task.id] ?? "";
         const calendarMonth = calendarMonths[task.id] ?? parseDateKey(selectedDateKey);
         const calendarDays = buildTaskCalendarDays(logs, task, calendarMonth);
+        const monthTotal = showMonthTotals ? getTaskMonthTotal(logs, task.id, selectedDateKey) : 0;
         const handleTaskLog = (nextValue, options = {}) => onLog(task, nextValue, selectedDateKey, options);
 
         return (
@@ -3659,6 +3661,7 @@ function LifeTaskGrid({ tasks, logs, todayKey, onLog, currency, showStreaks = fa
               <div className="life-task-head-copy">
                 <strong>{task.label}</strong>
                 <small className="life-task-date-label">{formatShortDate(parseDateKey(selectedDateKey))}</small>
+                {showMonthTotals ? <small className="life-task-month-total">Month Total {formatCurrencyValue(monthTotal, currency)}</small> : null}
               </div>
               <div className="life-task-head-actions">
                 <span className="task-value">{formatTaskValue(task, value, currency)}</span>
@@ -3967,6 +3970,21 @@ function buildTaskCalendarDays(logs, task, monthDate) {
   }
 
   return cells;
+}
+
+function getTaskMonthTotal(logs, taskId, dateKey) {
+  const monthDate = parseDateKey(dateKey);
+  const year = monthDate.getFullYear();
+  const month = monthDate.getMonth();
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+  let total = 0;
+  for (let day = 1; day <= daysInMonth; day += 1) {
+    const key = formatDateKey(new Date(year, month, day));
+    total += Number(logs?.[key]?.[taskId]?.value ?? 0);
+  }
+
+  return total;
 }
 
 function getSleepScoreHistory(logs, taskId, days = 14) {
