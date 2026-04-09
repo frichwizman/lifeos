@@ -3661,7 +3661,6 @@ function LifeTaskGrid({ tasks, logs, todayKey, onLog, currency, showStreaks = fa
               <div className="life-task-head-copy">
                 <strong>{task.label}</strong>
                 <small className="life-task-date-label">{formatShortDate(parseDateKey(selectedDateKey))}</small>
-                {showMonthTotals ? <small className="life-task-month-total">Month Total {formatCurrencyValue(monthTotal, currency)}</small> : null}
               </div>
               <div className="life-task-head-actions">
                 <span className="task-value">{formatTaskValue(task, value, currency)}</span>
@@ -3680,6 +3679,13 @@ function LifeTaskGrid({ tasks, logs, todayKey, onLog, currency, showStreaks = fa
                 </button>
               </div>
             </div>
+
+            {showMonthTotals ? (
+              <div className="life-task-month-row">
+                <span>Month Total</span>
+                <strong>{formatCurrencyValue(monthTotal, currency)}</strong>
+              </div>
+            ) : null}
 
             {openCalendarTaskId === task.id ? (
               <div className="life-task-calendar-popover">
