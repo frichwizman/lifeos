@@ -328,7 +328,6 @@ const STUDY_ROOM_ZONES = [
 export function LifeOSApp({ view = "dashboard" }) {
   const [state, setState] = useState(DEFAULT_STATE);
   const [ready, setReady] = useState(false);
-  const [moneyLogDate, setMoneyLogDate] = useState(getTodayKey());
   const [syncCodeInput, setSyncCodeInput] = useState("");
   const [backupCount, setBackupCount] = useState(0);
   const [openNavMenu, setOpenNavMenu] = useState("");
@@ -2904,36 +2903,14 @@ export function LifeOSApp({ view = "dashboard" }) {
               <section className="life-page-layout">
                 <div className="life-page-primary">
                   <ModuleCard title="Money" color={MODULE_COLORS.money} icon={CircleDollarSign}>
-                    <div className="money-log-stack">
-                      <div className="money-log-toolbar">
-                        <label className="money-log-date">
-                          <span>Log Date</span>
-                          <input
-                            type="date"
-                            value={moneyLogDate}
-                            max={todayKey}
-                            onChange={(event) => setMoneyLogDate(event.target.value || todayKey)}
-                          />
-                        </label>
-                        <div className="money-log-toolbar-actions">
-                          <span className="muted money-log-helper">Cards below reflect the selected date.</span>
-                          {moneyLogDate !== todayKey ? (
-                            <button className="ghost-button" onClick={() => setMoneyLogDate(todayKey)}>
-                              Today
-                            </button>
-                          ) : null}
-                        </div>
-                      </div>
-
-                      <LifeTaskGrid
-                        tasks={moneyTasks}
-                        logs={state.logs}
-                        todayKey={moneyLogDate}
-                        onLog={(task, value) => logTaskAtDate(task, value, moneyLogDate)}
-                        currency={state.profile.currency}
-                        defaultInputs={MONEY_DEFAULT_INPUTS}
-                      />
-                    </div>
+                    <LifeTaskGrid
+                      tasks={moneyTasks}
+                      logs={state.logs}
+                      todayKey={todayKey}
+                      onLog={logTaskAtDate}
+                      currency={state.profile.currency}
+                      defaultInputs={MONEY_DEFAULT_INPUTS}
+                    />
                   </ModuleCard>
                 </div>
 
