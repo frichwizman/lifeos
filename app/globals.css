@@ -1,24 +1,36 @@
 :root {
-  --bg: #f4f6f9;
-  --surface: #ffffff;
-  --surface-2: #f7f9fc;
-  --surface-3: #eef3f8;
-  --border: #dde4ec;
-  --border-2: #c9d4e0;
-  --text: #18212b;
-  --text-sub: #5f6b7a;
-  --text-dim: #8f99a8;
-  --accent: #2f6fe4;
-  --accent-soft: #eaf1ff;
-  --success: #2f8f67;
-  --success-soft: #e8f5ef;
-  --highlight-bg: #eef4ff;
-  --highlight-border: #bfd2ff;
+  --bg-main: #f6f7f9;
+  --bg-card: #ffffff;
+  --border: #e5e7eb;
+  --text-main: #111111;
+  --text-secondary: #6b7280;
+  --primary: #213f95;
+  --success-bg: #e8f7ef;
+  --success-text: #2f9e64;
+  --info-bg: #eef4ff;
+  --info-text: #3b82f6;
+  --warning-bg: #fff4e8;
+  --warning-text: #d97706;
+
+  --bg: var(--bg-main);
+  --surface: var(--bg-card);
+  --surface-2: #fafbfc;
+  --surface-3: #f2f4f7;
+  --border-2: #d8dde4;
+  --text: var(--text-main);
+  --text-sub: var(--text-secondary);
+  --text-dim: #9ca3af;
+  --accent: var(--primary);
+  --accent-soft: var(--info-bg);
+  --success: var(--success-text);
+  --success-soft: var(--success-bg);
+  --highlight-bg: var(--info-bg);
+  --highlight-border: #d8e3ff;
   --button-bg: #ffffff;
-  --button-bg-active: #edf3fb;
-  --button-text: #24303d;
-  --track-bg: #e7edf4;
-  --shadow: 0 24px 60px rgba(0, 0, 0, 0.35);
+  --button-bg-active: #f2f5fb;
+  --button-text: var(--text-main);
+  --track-bg: #eceff3;
+  --shadow: 0 8px 24px rgba(17, 17, 17, 0.06);
 }
 
 * {
