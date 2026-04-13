@@ -1829,6 +1829,12 @@ select {
   border-color: rgba(107, 201, 138, 0.35);
 }
 
+.misc-todo-badge.is-daily {
+  border-color: rgba(33, 63, 149, 0.24);
+  background: rgba(238, 244, 255, 0.9);
+  color: var(--primary);
+}
+
 .misc-todo-delete {
   display: inline-flex;
   align-items: center;

@@ -878,16 +878,24 @@ export function LifeOSApp({ view = "dashboard" }) {
     [state.logs, yesterdayKey, state.profile.currency]
   );
   const miscTodoItems = state.miscTodos ?? [];
+  const isMiscTodoDone = (item, dateKey = todayKey) => {
+    if (!item) return false;
+    if (item.category === "daily") {
+      return item.completedDayKey === dateKey;
+    }
+    return Boolean(item.done);
+  };
   const miscTodoCounts = useMemo(
     () => ({
       total: miscTodoItems.length,
-      open: miscTodoItems.filter((item) => !item.done).length,
-      done: miscTodoItems.filter((item) => item.done).length,
+      open: miscTodoItems.filter((item) => !isMiscTodoDone(item, todayKey)).length,
+      done: miscTodoItems.filter((item) => isMiscTodoDone(item, todayKey)).length,
       work: miscTodoItems.filter((item) => item.category === "work").length,
       study: miscTodoItems.filter((item) => item.category === "study").length,
-      life: miscTodoItems.filter((item) => item.category === "life").length
+      life: miscTodoItems.filter((item) => item.category === "life").length,
+      daily: miscTodoItems.filter((item) => item.category === "daily").length
     }),
-    [miscTodoItems]
+    [miscTodoItems, todayKey]
   );
   const noteItems = state.noteItems ?? [];
   const sortedNoteItems = useMemo(
@@ -1131,7 +1139,8 @@ export function LifeOSApp({ view = "dashboard" }) {
           category: miscTodoCategory,
           done: false,
           createdAt: Date.now(),
-          completedAt: null
+          completedAt: null,
+          completedDayKey: null
         },
         ...(current.miscTodos ?? [])
       ]
@@ -1152,6 +1161,16 @@ export function LifeOSApp({ view = "dashboard" }) {
   const toggleMiscTodo = (todoId) => {
     const currentTodo = miscTodoItems.find((item) => item.id === todoId);
     if (!currentTodo) return;
+
+    if (currentTodo.category === "daily") {
+      const doneToday = isMiscTodoDone(currentTodo, todayKey);
+      updateMiscTodo(todoId, {
+        done: !doneToday,
+        completedAt: doneToday ? null : Date.now(),
+        completedDayKey: doneToday ? null : todayKey
+      });
+      return;
+    }
 
     updateMiscTodo(todoId, {
       done: !currentTodo.done,
@@ -1250,7 +1269,8 @@ export function LifeOSApp({ view = "dashboard" }) {
           category,
           done: false,
           createdAt: Date.now(),
-          completedAt: null
+          completedAt: null,
+          completedDayKey: null
         },
         ...(current.miscTodos ?? [])
       ],
@@ -2509,6 +2529,7 @@ export function LifeOSApp({ view = "dashboard" }) {
                           <option value="work">Work</option>
                           <option value="study">Study</option>
                           <option value="life">Life</option>
+                          <option value="daily">Daily</option>
                         </select>
                         <input
                           className="misc-todo-input"
@@ -2527,29 +2548,32 @@ export function LifeOSApp({ view = "dashboard" }) {
 
                       <div className="misc-todo-grid">
                         {miscTodoItems.length ? (
-                          miscTodoItems.map((item) => (
-                            <article key={item.id} className={`misc-todo-card ${item.done ? "is-done" : ""}`}>
-                              <div className="misc-todo-card-head">
-                                <span className={`misc-todo-badge is-${item.category}`}>{item.category}</span>
-                                <button className="misc-todo-delete" onClick={() => deleteMiscTodo(item.id)} aria-label="Delete todo">
-                                  <Trash2 size={15} />
-                                </button>
-                              </div>
-                              <div className="misc-todo-card-main">
-                                <input
-                                  className="misc-todo-card-input"
-                                  value={item.label}
-                                  onChange={(event) => updateMiscTodo(item.id, { label: event.target.value })}
-                                />
-                                <button className={`ghost-button ${item.done ? "is-active" : ""}`} onClick={() => toggleMiscTodo(item.id)}>
-                                  {item.done ? "Done" : "Mark"}
-                                </button>
-                              </div>
-                            </article>
-                          ))
+                          miscTodoItems.map((item) => {
+                            const isDone = isMiscTodoDone(item, todayKey);
+                            return (
+                              <article key={item.id} className={`misc-todo-card ${isDone ? "is-done" : ""}`}>
+                                <div className="misc-todo-card-head">
+                                  <span className={`misc-todo-badge is-${item.category}`}>{item.category}</span>
+                                  <button className="misc-todo-delete" onClick={() => deleteMiscTodo(item.id)} aria-label="Delete todo">
+                                    <Trash2 size={15} />
+                                  </button>
+                                </div>
+                                <div className="misc-todo-card-main">
+                                  <input
+                                    className="misc-todo-card-input"
+                                    value={item.label}
+                                    onChange={(event) => updateMiscTodo(item.id, { label: event.target.value })}
+                                  />
+                                  <button className={`ghost-button ${isDone ? "is-active" : ""}`} onClick={() => toggleMiscTodo(item.id)}>
+                                    {isDone ? "Done" : "Mark"}
+                                  </button>
+                                </div>
+                              </article>
+                            );
+                          })
                         ) : (
                           <div className="misc-todo-empty">
-                            <p className="muted">Add a loose task, tag it to Work, Study, or Life, and clear it here.</p>
+                            <p className="muted">Add a loose task, tag it to Work, Study, Life, or Daily, and clear it here.</p>
                           </div>
                         )}
                       </div>
@@ -2589,6 +2613,10 @@ export function LifeOSApp({ view = "dashboard" }) {
                         <div className="money-summary-item">
                           <span>Life</span>
                           <strong>{formatNumber(miscTodoCounts.life)}</strong>
+                        </div>
+                        <div className="money-summary-item">
+                          <span>Daily</span>
+                          <strong>{formatNumber(miscTodoCounts.daily)}</strong>
                         </div>
                       </div>
                     </Card>
