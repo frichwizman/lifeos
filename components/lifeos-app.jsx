@@ -603,7 +603,6 @@ export function LifeOSApp({ view = "dashboard" }) {
     if (!ready || state.sync.mode !== "anonymous" || !state.sync.syncCode) return;
 
     window.clearTimeout(pushTimeoutRef.current);
-    const pushedUpdatedAt = state.sync.updatedAt;
     pushTimeoutRef.current = window.setTimeout(async () => {
       try {
         const remoteState = await pushSyncState(state.sync.syncCode, createSyncPayload(state));
@@ -612,7 +611,6 @@ export function LifeOSApp({ view = "dashboard" }) {
           sync: {
             ...current.sync,
             status: "synced",
-            updatedAt: current.sync.updatedAt === pushedUpdatedAt ? remoteState?.sync?.updatedAt ?? current.sync.updatedAt : current.sync.updatedAt,
             lastSyncedAt: remoteState?.sync?.updatedAt ?? new Date().toISOString(),
             error: ""
           }
@@ -1559,7 +1557,6 @@ export function LifeOSApp({ view = "dashboard" }) {
             sync: {
               ...nextState.sync,
               status: "synced",
-              updatedAt: pushedState?.sync?.updatedAt ?? nextState.sync.updatedAt,
               lastSyncedAt: pushedState?.sync?.updatedAt ?? new Date().toISOString(),
               error: ""
             }
@@ -1585,7 +1582,6 @@ export function LifeOSApp({ view = "dashboard" }) {
           sync: {
             ...current.sync,
             status: "synced",
-            updatedAt: pushedState?.sync?.updatedAt ?? current.sync.updatedAt,
             lastSyncedAt: pushedState?.sync?.updatedAt ?? new Date().toISOString(),
             error: ""
           }
@@ -1668,7 +1664,6 @@ export function LifeOSApp({ view = "dashboard" }) {
         sync: {
           ...current.sync,
           status: "synced",
-          updatedAt: remoteState?.sync?.updatedAt ?? current.sync.updatedAt,
           lastSyncedAt: remoteState?.sync?.updatedAt ?? new Date().toISOString(),
           error: ""
         }
