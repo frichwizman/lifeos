@@ -5,6 +5,8 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
+    "typecheck": "next typegen && tsc -p tsconfig.json --noEmit",
+    "verify": "npm run typecheck && npm run build",
     "start": "next start",
     "lint": "next lint"
   },
@@ -14,5 +16,11 @@
     "next": "^15.5.2",
     "react": "^19.1.1",
     "react-dom": "^19.1.1"
+  },
+  "devDependencies": {
+    "@types/node": "^25.6.0",
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
+    "typescript": "^6.0.3"
   }
 }

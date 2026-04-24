@@ -1,6 +1,15 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type CSSProperties,
+  type ChangeEvent,
+  type KeyboardEvent as ReactKeyboardEvent,
+  type ReactNode
+} from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
@@ -10,11 +19,9 @@ import {
   BriefcaseBusiness,
   CalendarDays,
   CircleDollarSign,
-  ChevronDown,
   Command,
   CookingPot,
   Droplets,
-  Download,
   Flame,
   FileText,
   Footprints,
@@ -23,7 +30,6 @@ import {
   HeartPulse,
   History,
   Home,
-  Link2,
   ListTodo,
   MessageCircle,
   MonitorPlay,
@@ -50,32 +56,182 @@ import {
 import {
   CURRENCIES,
   DEFAULT_STATE,
-  LIFE_PILLARS,
+  FOCUS_XP_V1,
   MODULE_COLORS,
   STORAGE_KEY,
-  clamp,
-  computeIncomeStats,
+  STRESS_LEVEL_OPTIONS,
   formatDateKey,
   formatNumber,
-  getCompletedCount,
-  getLevel,
+  formatStressLevelShortValue,
+  formatStressLevelValue,
+  getStressLevelOption,
   getLogValue,
   getStreak,
   getTaskHistory,
   getTodayKey,
-  getTodayXP,
   lifeGroups,
   generateSyncCode,
+  mergeLifeOSLogs,
   migrateState,
   moneyTasks,
+  pickMoneyLogs,
   studyTasks,
   touchState,
   createSyncPayload,
   writeBackupSnapshot,
   readBackups
 } from "@/lib/lifeos-data";
+import {
+  addMiscTodo as addMiscTodoState,
+  addNote,
+  applyLifeTaskLogAtDate,
+  applyTrackedLogAtDate,
+  completeExecution as completeExecutionState,
+  deleteMiscTodo as deleteMiscTodoState,
+  deleteTodayAction as deleteTodayActionState,
+  markSyncError,
+  moveNoteToTodo as moveNoteToTodoState,
+  moveWorkActionToToday as moveWorkActionToTodayState,
+  recordFocusSession as recordFocusSessionState,
+  renameTodayAction as renameTodayActionState,
+  renameWorkProject as renameWorkProjectState,
+  resetFocusPrefill,
+  rolloverWorkProjectsForNewDay,
+  setWorkFocusPrefill,
+  startExecution as startExecutionState,
+  toggleExecutionPause as toggleExecutionPauseState,
+  toggleMiscTodo as toggleMiscTodoState,
+  toggleWorkTodoLog,
+  updateMiscTodo as updateMiscTodoState,
+  updateNoteItem as updateNoteItemState,
+  updateProfileField,
+  convertNoteToDailyAction as convertNoteToDailyActionState,
+  convertNoteToProject as convertNoteToProjectState
+} from "@/lib/lifeos-actions";
+import {
+  applyLifeQuickActionWithPersistence,
+  buildOfficeKeyboardMovePatch,
+  buildOfficeSeatPatch,
+  buildOfficeStatusPatch,
+  buildOfficeZoneSyncPatch,
+  buildBackupSaveResult,
+  buildBackupCountPatch,
+  buildExecutionNowPatch,
+  buildLifeQuickActionPatch,
+  buildNoteArchivePatch,
+  buildNoteDraftPatch,
+  buildNoteDraftTypePatch,
+  buildNoteFilterPatch,
+  buildNoteSelectionPatch,
+  buildRoomsMenuClosePatch,
+  buildRoomsMenuPositionPatch,
+  buildRoomsMenuTogglePatch,
+  buildSelectedNoteConsumedPatch,
+  buildStudyModePatch,
+  buildStudySeatPatch,
+  buildSyncCodeInputPatch,
+  buildSyncSuccessState,
+  buildFocusCompletionPatch,
+  buildFocusDurationSelectionPatch,
+  buildFocusPausePatch,
+  buildFocusPrefillPatch,
+  buildFocusResetPatch,
+  buildFocusStartPatch,
+  buildFocusTypeSelectionPatch,
+  buildTodoComposerCategoryPatch,
+  buildTodoComposerInputPatch,
+  buildTodoComposerResetPatch,
+  buildWorkComposerClosePatch,
+  buildWorkComposerControllers,
+  buildWorkComposerDraftPatch,
+  buildWorkComposerModalPatch,
+  buildWorkPageControllers,
+  buildWorkProjectActionControllers,
+  getFocusTaskOptionsForType,
+  prepareMiscTodoInput,
+  prepareAnonymousSyncStart,
+  prepareNoteSave,
+  prepareProfileFieldUpdate,
+  prepareSelectedNoteConversion,
+  prepareWorkComposerSubmission,
+  resolveAnonymousSyncRemoteState,
+  resolveManualPullState,
+  resolveOutboundSyncState,
+  resolveRemoteRefreshState,
+  shouldKeepRoomsMenuOpen
+} from "@/lib/lifeos-local-helpers";
+import {
+  buildDashboardTasks,
+  buildDashboardOverview,
+  buildFocusTaskOptions,
+  buildFocusViewModel,
+  buildHistoryDays,
+  buildLifePageTasks,
+  buildMiscTodoCounts,
+  buildMoneySummary,
+  buildNoteCollections,
+  buildSelectedLifeQuickActions,
+  buildStudySummary,
+  buildTaskMap,
+  buildWorkPageViewModel,
+  formatExecutionElapsedTime,
+  getActiveExecutionTask,
+  getMainDashboardTask,
+  isMiscTodoDone
+} from "@/lib/lifeos-selectors";
+import { fetchMoneyLifeLogs, pushMoneyLifeLogs } from "@/lib/life-logs-client";
 import { fetchSyncState, pushSyncState } from "@/lib/sync-client";
-import { choosePreferredSyncState } from "@/lib/lifeos-data";
+import { RoomsNavGroup } from "@/components/lifeos/rooms-nav-group";
+import { NotesPageSection } from "@/components/lifeos/notes-page-section";
+import type { CardShellProps, ModuleCardShellProps } from "@/components/lifeos/section-shell-types";
+import {
+  SettingsProfileSection,
+  SettingsSyncSection,
+  SettingsTargetsSection,
+  SettingsTimelineSection
+} from "@/components/lifeos/settings-sections";
+import { WorkPageSection } from "@/components/lifeos/work-page-section";
+import type {
+  AuthStatus,
+  AuthUser,
+  DashboardTask,
+  EditableProfileField,
+  ExecutionLocalPatch,
+  FocusLocalPatch,
+  FocusSessionCompletion,
+  FocusTaskOption,
+  FocusTimerStatus,
+  FocusType,
+  LifeOSState,
+  LifeOSLogs,
+  LifeQuickActionLocalPatch,
+  LogValue,
+  MiscTodoCategory,
+  MoneyLogSyncStatus,
+  MiscTodoItem,
+  NavMenuKey,
+  NavMenuPosition,
+  NavLocalPatch,
+  NoteItem,
+  NotesByTaskId,
+  NoteLocalPatch,
+  OfficePresenceState,
+  OfficePresencePatch,
+  StudyPresenceState,
+  StudyPresencePatch,
+  SyncLocalPatch,
+  TaskHistoryEntry,
+  TaskDefaultInputMap,
+  TaskDraftInputMap,
+  TodoComposerPatch,
+  TrackedTaskDefinition,
+  WorkAction,
+  WorkPageControllers,
+  WorkActionSource,
+  WorkComposerPatch,
+  WorkProject,
+  WorkProjectSlotLabels
+} from "@/lib/lifeos-types";
 
 const pillarIcons = {
   exercise: Activity,
@@ -120,7 +276,7 @@ const ATTRIBUTE_LABELS = {
   social: "Social"
 };
 
-const WORK_PROJECT_SLOT_LABELS = {
+const WORK_PROJECT_SLOT_LABELS: WorkProjectSlotLabels = {
   "main-job": "Main",
   "side-business": "Side",
   optional: "Optional"
@@ -210,9 +366,10 @@ const MONEY_DEFAULT_INPUTS = {
   "investment-return": 50
 };
 
-const NOTE_CARD_COLORS = ["#fdf2f2", "#fef6e8", "#fff9db", "#eefbea", "#eaf7f2", "#eaf6fb", "#eef4ff", "#f3f0ff", "#f8efff", "#f5f5f5"];
-const NOTE_TEXT_COLOR = "#1f2937";
+const NOTE_CARD_COLORS = ["#fdf3f3", "#fef5ea", "#fff8dc", "#f4f9e9", "#edf7ef", "#ebf7f6", "#edf5fb", "#eef2ff", "#f5efff", "#f3f5f7"];
+const NOTE_TEXT_COLOR = "#111111";
 const NOTE_SUBTEXT_COLOR = "#6b7280";
+const UTILITY_MODULE_COLOR = "#213f95";
 const NOTE_FILTERS = ["All", "Pinned", "Recent", "Archived"];
 const NOTE_TYPES = ["Idea", "Temporary", "Draft", "Reference"];
 
@@ -221,6 +378,59 @@ const FOCUS_DURATION_OPTIONS = {
   study: [25, 45],
   life: [15, 25]
 };
+
+const PAGE_META = {
+  dashboard: {
+    title: "Dashboard",
+    description: "A compact operating view for your timeline, targets, streaks, and momentum."
+  },
+  focus: {
+    title: "Focus",
+    description: "Choose Work, Study, or Life, optionally bind a task, and earn most of your XP by finishing focused sessions."
+  },
+  work: {
+    title: "Work",
+    description: "Each project should carry 3-5 concrete executable actions for today, then hand off cleanly into Focus."
+  },
+  todo: {
+    title: "Todo",
+    description: "Capture loose tasks, tag them to Work, Study, or Life, and clear them without cluttering your fixed systems."
+  },
+  study: {
+    title: "Study",
+    description: "Log focused learning with presets, notes, and streak visibility."
+  },
+  life: {
+    title: "Life",
+    description: "Seven daily pillars that keep energy, clarity, and resilience on track."
+  },
+  money: {
+    title: "Money",
+    description: "Record income, expenses, and savings without leaving the operating system."
+  },
+  notes: {
+    title: "Notes",
+    description: "Capture ideas, drafts, and temporary thoughts quickly, then move them into action when needed."
+  },
+  history: {
+    title: "History",
+    description: "Review today’s full record first, then scan the previous six days of logged execution."
+  },
+  settings: {
+    title: "Settings",
+    description: "Adjust your profile, timeline assumptions, and annual target without cluttering the dashboard."
+  },
+  "study-room": {
+    title: "Study Room",
+    description: "A calmer floorplan for picking a seat, settling in, and starting focused study."
+  },
+  "office-room": {
+    title: "Office",
+    description: "A focused room mockup for deep work, project momentum, and daily execution."
+  }
+};
+
+type LifeOSView = keyof typeof PAGE_META;
 
 const OFFICE_MAP = {
   width: 980,
@@ -325,38 +535,48 @@ const STUDY_ROOM_ZONES = [
   }
 ];
 
-export function LifeOSApp({ view = "dashboard" }) {
+interface LifeOSAppProps {
+  view?: LifeOSView;
+}
+
+export function LifeOSApp({ view = "dashboard" }: LifeOSAppProps) {
   const [state, setState] = useState(DEFAULT_STATE);
   const [ready, setReady] = useState(false);
   const [syncCodeInput, setSyncCodeInput] = useState("");
   const [backupCount, setBackupCount] = useState(0);
-  const [openNavMenu, setOpenNavMenu] = useState("");
-  const [roomsMenuPosition, setRoomsMenuPosition] = useState({ top: 0, left: 12 });
+  const [authUser, setAuthUser] = useState<AuthUser | null>(null);
+  const [authStatus, setAuthStatus] = useState<AuthStatus>("checking");
+  const [authEmailInput, setAuthEmailInput] = useState("");
+  const [moneyLogSyncStatus, setMoneyLogSyncStatus] = useState<MoneyLogSyncStatus>("idle");
+  const [openNavMenu, setOpenNavMenu] = useState<NavMenuKey>("");
+  const [roomsMenuPosition, setRoomsMenuPosition] = useState<NavMenuPosition>({ top: 0, left: 12 });
   const [lifeQuickAction, setLifeQuickAction] = useState("");
   const [miscTodoInput, setMiscTodoInput] = useState("");
-  const [miscTodoCategory, setMiscTodoCategory] = useState("work");
+  const [miscTodoCategory, setMiscTodoCategory] = useState<MiscTodoCategory>("work");
   const [noteDraftTitle, setNoteDraftTitle] = useState("");
   const [noteDraftContent, setNoteDraftContent] = useState("");
   const [noteDraftType, setNoteDraftType] = useState("Draft");
   const [noteFilter, setNoteFilter] = useState("All");
   const [selectedNoteId, setSelectedNoteId] = useState("");
-  const [focusType, setFocusType] = useState("");
-  const [focusTask, setFocusTask] = useState(null);
-  const [focusStatus, setFocusStatus] = useState("idle");
+  const [focusType, setFocusType] = useState<FocusType>("");
+  const [focusTask, setFocusTask] = useState<FocusTaskOption | null>(null);
+  const [focusStatus, setFocusStatus] = useState<FocusTimerStatus>("idle");
   const [focusDurationMinutes, setFocusDurationMinutes] = useState(25);
   const [focusRemainingSeconds, setFocusRemainingSeconds] = useState(25 * 60);
-  const [focusStartedAt, setFocusStartedAt] = useState(null);
+  const [focusStartedAt, setFocusStartedAt] = useState<number | null>(null);
+  const [focusEndsAt, setFocusEndsAt] = useState<number | null>(null);
+  const [focusCompletion, setFocusCompletion] = useState<FocusSessionCompletion | null>(null);
   const [focusTaskModalOpen, setFocusTaskModalOpen] = useState(false);
   const [workActionModalProjectId, setWorkActionModalProjectId] = useState("");
   const [workActionDraft, setWorkActionDraft] = useState("");
-  const [officePresence, setOfficePresence] = useState({
+  const [officePresence, setOfficePresence] = useState<OfficePresenceState>({
     x: 108,
     y: 138,
     zoneId: "open-desks",
     seatId: "open-1",
     status: "Working"
   });
-  const [studyPresence, setStudyPresence] = useState({
+  const [studyPresence, setStudyPresence] = useState<StudyPresenceState>({
     zoneId: "quiet-zone",
     seatId: "A3",
     mode: "Deep Focus"
@@ -364,14 +584,17 @@ export function LifeOSApp({ view = "dashboard" }) {
   const todayKey = getTodayKey();
   const pathname = usePathname();
   const router = useRouter();
-  const pollingRef = useRef(null);
-  const pushTimeoutRef = useRef(null);
-  const officeMapRef = useRef(null);
-  const roomsTriggerRef = useRef(null);
-  const roomsDropdownRef = useRef(null);
-  const noteContentRef = useRef(null);
+  const pollingRef = useRef<number | undefined>(undefined);
+  const pushTimeoutRef = useRef<number | undefined>(undefined);
+  const moneyPushTimeoutRef = useRef<number | undefined>(undefined);
+  const moneyPullUserRef = useRef<string>("");
+  const officeMapRef = useRef<HTMLDivElement | null>(null);
+  const roomsTriggerRef = useRef<HTMLButtonElement | null>(null);
+  const roomsDropdownRef = useRef<HTMLDivElement | null>(null);
+  const noteContentRef = useRef<HTMLTextAreaElement | null>(null);
   const [executionNow, setExecutionNow] = useState(Date.now());
-  const focusTimerRef = useRef(null);
+  const focusTimerRef = useRef<number | undefined>(undefined);
+  const focusCompletionPendingRef = useRef(false);
 
   useEffect(() => {
     try {
@@ -379,10 +602,10 @@ export function LifeOSApp({ view = "dashboard" }) {
       if (raw) {
         const migrated = migrateState(JSON.parse(raw));
         setState(migrated);
-        setSyncCodeInput(migrated.sync.syncCode || "");
+        applySyncLocalPatch(buildSyncCodeInputPatch(migrated.sync.syncCode || ""));
       }
     } catch {}
-    setBackupCount(readBackups().length);
+    applySyncLocalPatch(buildBackupCountPatch(readBackups().length));
     setReady(true);
   }, []);
 
@@ -392,155 +615,186 @@ export function LifeOSApp({ view = "dashboard" }) {
   }, [ready, state]);
 
   useEffect(() => {
+    let cancelled = false;
+
+    const loadAuthSession = async () => {
+      try {
+        const response = await fetch("/api/auth/session", {
+          cache: "no-store"
+        });
+        const payload = await response.json();
+        if (cancelled) return;
+        setAuthUser(payload.user ?? null);
+        setAuthStatus(payload.user ? "signed-in" : "signed-out");
+      } catch {
+        if (cancelled) return;
+        setAuthUser(null);
+        setAuthStatus("error");
+      }
+    };
+
+    loadAuthSession();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!authUser?.id) return;
+    setState((current) =>
+      current.sync.userId === authUser.id
+        ? current
+        : {
+            ...current,
+            sync: {
+              ...current.sync,
+              userId: authUser.id
+            }
+          }
+    );
+  }, [authUser?.id]);
+
+  useEffect(() => {
+    if (!ready || !authUser?.id) return;
+    if (moneyPullUserRef.current === authUser.id) return;
+    moneyPullUserRef.current = authUser.id;
+
+    let cancelled = false;
+
+    const pullMoneyLogs = async () => {
+      setMoneyLogSyncStatus("pulling");
+      try {
+        const remoteLogs = await fetchMoneyLifeLogs();
+        if (cancelled) return;
+        setState((current) => {
+          const mergedLogs = mergeLifeOSLogs(current.logs, remoteLogs);
+          if (JSON.stringify(mergedLogs) === JSON.stringify(current.logs)) return current;
+          saveSafetyBackupSnapshot(current);
+          return {
+            ...current,
+            logs: mergedLogs
+          };
+        });
+        setMoneyLogSyncStatus("synced");
+      } catch {
+        if (!cancelled) setMoneyLogSyncStatus("error");
+      }
+    };
+
+    pullMoneyLogs();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [authUser?.id, ready]);
+
+  useEffect(() => {
+    if (!ready || !authUser?.id) return;
+    const moneyLogs = pickMoneyLogs(state.logs);
+    if (!Object.keys(moneyLogs).length) return;
+
+    window.clearTimeout(moneyPushTimeoutRef.current);
+    moneyPushTimeoutRef.current = window.setTimeout(async () => {
+      setMoneyLogSyncStatus("pushing");
+      try {
+        await pushMoneyLifeLogs(moneyLogs);
+        setMoneyLogSyncStatus("synced");
+      } catch {
+        setMoneyLogSyncStatus("error");
+      }
+    }, 800);
+
+    return () => window.clearTimeout(moneyPushTimeoutRef.current);
+  }, [authUser?.id, ready, state.logs]);
+
+  useEffect(() => {
     if (view !== "office-room") return;
 
-    const onKeyDown = (event) => {
+    const onKeyDown = (event: KeyboardEvent) => {
       const key = event.key.toLowerCase();
       if (!["arrowup", "arrowdown", "arrowleft", "arrowright", "w", "a", "s", "d"].includes(key)) return;
       event.preventDefault();
       const step = event.shiftKey ? 24 : 16;
-      setOfficePresence((current) => {
-        let x = current.x;
-        let y = current.y;
-        if (key === "arrowup" || key === "w") y -= step;
-        if (key === "arrowdown" || key === "s") y += step;
-        if (key === "arrowleft" || key === "a") x -= step;
-        if (key === "arrowright" || key === "d") x += step;
-        return {
-          ...current,
-          x: Math.max(24, Math.min(OFFICE_MAP.width - 24, x)),
-          y: Math.max(24, Math.min(OFFICE_MAP.height - 24, y)),
-          seatId: ""
-        };
-      });
+      applyOfficePresencePatch(
+        buildOfficeKeyboardMovePatch({
+          current: officePresence,
+          key,
+          step,
+          width: OFFICE_MAP.width,
+          height: OFFICE_MAP.height
+        })
+      );
     };
 
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [view]);
+  }, [officePresence, view]);
 
   useEffect(() => {
-    if (view !== "office-room" || officePresence.seatId) return;
-
-    const zone =
-      OFFICE_ZONES.find(
-        (item) =>
-          officePresence.x >= item.x &&
-          officePresence.x <= item.x + item.width &&
-          officePresence.y >= item.y &&
-          officePresence.y <= item.y + item.height
-      ) ?? OFFICE_ZONES[0];
-
-    if (zone.id !== officePresence.zoneId) {
-      setOfficePresence((current) => ({
-        ...current,
-        zoneId: zone.id
-      }));
-    }
+    if (view !== "office-room") return;
+    applyOfficePresencePatch(buildOfficeZoneSyncPatch(officePresence, OFFICE_ZONES));
   }, [view, officePresence.x, officePresence.y, officePresence.zoneId, officePresence.seatId]);
 
   useEffect(() => {
     if (state.execution.status !== "active") return;
-    const timer = window.setInterval(() => setExecutionNow(Date.now()), 1000);
+    const timer = window.setInterval(() => applyExecutionLocalPatch(buildExecutionNowPatch(Date.now())), 1000);
     return () => window.clearInterval(timer);
   }, [state.execution.status]);
 
   useEffect(() => {
-    if (focusStatus !== "running") return;
-    focusTimerRef.current = window.setInterval(() => {
-      setFocusRemainingSeconds((current) => {
-        if (current <= 1) {
-          window.clearInterval(focusTimerRef.current);
-          setFocusStatus("completed");
-          return 0;
-        }
-        return current - 1;
-      });
-    }, 1000);
+    if (focusStatus !== "running" || !focusEndsAt) return;
 
-    return () => window.clearInterval(focusTimerRef.current);
-  }, [focusStatus]);
+    // Use an absolute deadline so backgrounded mobile tabs can catch up instantly.
+    const syncFocusTimer = () => {
+      const nextRemaining = Math.max(0, Math.ceil((focusEndsAt - Date.now()) / 1000));
+      setFocusRemainingSeconds(nextRemaining);
 
-  const lifeTaskMap = useMemo(
-    () =>
-      Object.fromEntries(
-        lifeGroups.flatMap((group) => group.items).map((task) => [task.id, task])
-      ),
-    []
-  );
-  const studyTaskMap = useMemo(() => Object.fromEntries(studyTasks.map((task) => [task.id, task])), []);
-  const moneyTaskMap = useMemo(() => Object.fromEntries(moneyTasks.map((task) => [task.id, task])), []);
-  const lifePageTasks = [
-    "exercise",
-    "meditation",
-    "sleep-quality",
-    "water-intake",
-    "stress-level",
-    "social-connection",
-    "risky-substances"
-  ]
-    .map((taskId) => lifeTaskMap[taskId])
-    .filter(Boolean);
+      if (nextRemaining > 0 || focusCompletionPendingRef.current) return;
+
+      focusCompletionPendingRef.current = true;
+      window.clearInterval(focusTimerRef.current);
+      window.setTimeout(() => {
+        completeFocusSession();
+      }, 0);
+    };
+
+    syncFocusTimer();
+    focusTimerRef.current = window.setInterval(syncFocusTimer, 1000);
+    document.addEventListener("visibilitychange", syncFocusTimer);
+    window.addEventListener("focus", syncFocusTimer);
+
+    return () => {
+      window.clearInterval(focusTimerRef.current);
+      document.removeEventListener("visibilitychange", syncFocusTimer);
+      window.removeEventListener("focus", syncFocusTimer);
+    };
+  }, [focusEndsAt, focusStatus]);
+
+  const lifeTaskMap = useMemo(() => buildTaskMap(lifeGroups.flatMap((group) => group.items)), []);
+  const studyTaskMap = useMemo(() => buildTaskMap(studyTasks), []);
+  const moneyTaskMap = useMemo(() => buildTaskMap(moneyTasks), []);
+  const lifePageTasks = useMemo(() => buildLifePageTasks(lifeTaskMap), [lifeTaskMap]);
 
   const focusTaskOptions = useMemo(
-    () => ({
-      work: state.workProjects.flatMap((project) =>
-        (project.todayActions ?? [])
-          .filter((action) => !Boolean(getLogValue(state.logs, todayKey, `${project.id}:${action.id}`)))
-          .map((action) => ({
-            id: `work:${project.id}:${action.id}`,
-            logTaskId: `${project.id}:${action.id}`,
-            taskId: action.id,
-            label: action.label || "Untitled task",
-            meta: project.name,
-            type: "work",
-            sourceType: "work-todo",
-            projectId: project.id
-          }))
-      ),
-      study: studyTasks.map((task) => ({
-        id: `study:${task.id}`,
-        logTaskId: task.id,
-        taskId: task.id,
-        label: task.label,
-        meta: "Study",
-        type: "study",
-        sourceType: "tracked-task"
-      })),
-      life: lifePageTasks
-        .filter((task) => !["stress-level", "risky-substances"].includes(task.id))
-        .map((task) => ({
-          id: `life:${task.id}`,
-          logTaskId: task.id,
-          taskId: task.id,
-          label: task.label,
-          meta: "Life",
-          type: "life",
-          sourceType: "tracked-task"
-        }))
-    }),
-    [lifePageTasks, state.logs, state.workProjects, todayKey]
+    () => buildFocusTaskOptions(state, todayKey, lifePageTasks, studyTasks),
+    [lifePageTasks, state, todayKey]
   );
 
   useEffect(() => {
     if (view !== "focus") return;
     if (!state.focusPrefill?.type) return;
 
-    const prefillType = state.focusPrefill.type;
-    const nextDuration = FOCUS_DURATION_OPTIONS[prefillType]?.[0] ?? 25;
-    const matchingTask = (focusTaskOptions[prefillType] ?? []).find((item) => item.id === state.focusPrefill.taskId);
+    applyFocusLocalPatch(
+      buildFocusPrefillPatch({
+        prefillType: state.focusPrefill.type,
+        prefillTaskId: state.focusPrefill.taskId,
+        focusTaskOptions,
+        durationOptions: FOCUS_DURATION_OPTIONS
+      })
+    );
 
-    setFocusType(prefillType);
-    setFocusTask(matchingTask ?? null);
-    setFocusDurationMinutes(nextDuration);
-    setFocusRemainingSeconds(nextDuration * 60);
-
-    commitState((current) => ({
-      ...current,
-      focusPrefill: {
-        ...DEFAULT_STATE.focusPrefill
-      }
-    }));
+    commitState((current) => resetFocusPrefill(current));
   }, [view, state.focusPrefill, focusTaskOptions]);
 
   useEffect(() => {
@@ -549,19 +803,14 @@ export function LifeOSApp({ view = "dashboard" }) {
     const updatePosition = () => {
       const trigger = roomsTriggerRef.current;
       if (!trigger) return;
-      const rect = trigger.getBoundingClientRect();
-      const maxLeft = Math.max(12, window.innerWidth - 196);
-      setRoomsMenuPosition({
-        top: rect.bottom + 8,
-        left: Math.max(12, Math.min(rect.left, maxLeft))
-      });
+      applyNavLocalPatch(buildRoomsMenuPositionPatch(trigger.getBoundingClientRect(), window.innerWidth));
     };
 
-    const onPointerDown = (event) => {
+    const onPointerDown = (event: PointerEvent) => {
       const trigger = roomsTriggerRef.current;
       const dropdown = roomsDropdownRef.current;
-      if (trigger?.contains(event.target) || dropdown?.contains(event.target)) return;
-      setOpenNavMenu("");
+      if (shouldKeepRoomsMenuOpen({ trigger, dropdown, target: event.target })) return;
+      applyNavLocalPatch(buildRoomsMenuClosePatch());
     };
 
     updatePosition();
@@ -579,51 +828,28 @@ export function LifeOSApp({ view = "dashboard" }) {
   useEffect(() => {
     if (!ready || state.workDayKey === todayKey) return;
 
-    commitState((current) => ({
-      ...current,
-      workDayKey: todayKey,
-      workProjects: current.workProjects.map((project) => {
-        const unfinished = (project.todayActions ?? []).filter(
-          (action) => !Boolean(getLogValue(current.logs, current.workDayKey, `${project.id}:${action.id}`))
-        );
-        const nextDayCandidates = [...unfinished, ...(project.nextDayCandidates ?? [])]
-          .filter((item, index, array) => array.findIndex((candidate) => candidate.id === item.id) === index)
-          .slice(0, 5);
-
-        return {
-          ...project,
-          todayActions: [],
-          nextDayCandidates
-        };
-      })
-    }));
+    commitState((current) => rolloverWorkProjectsForNewDay(current, todayKey));
   }, [ready, state.workDayKey, todayKey]);
 
   useEffect(() => {
     if (!ready || state.sync.mode !== "anonymous" || !state.sync.syncCode) return;
+    const hasUnsyncedChanges = state.sync.updatedAt > (state.sync.lastSyncedAt ?? "");
+    if (!hasUnsyncedChanges) return;
 
     window.clearTimeout(pushTimeoutRef.current);
     pushTimeoutRef.current = window.setTimeout(async () => {
       try {
-        const remoteState = await pushSyncState(state.sync.syncCode, createSyncPayload(state));
-        setState((current) => ({
-          ...current,
-          sync: {
-            ...current.sync,
-            status: "synced",
-            lastSyncedAt: remoteState?.sync?.updatedAt ?? new Date().toISOString(),
-            error: ""
-          }
-        }));
+        const remoteSnapshot = await fetchSyncState(state.sync.syncCode);
+        const outboundState = resolveOutboundSyncState(state, remoteSnapshot);
+        const remoteState = await pushSyncState(state.sync.syncCode, createSyncPayload(outboundState));
+        setState((current) =>
+          buildSyncSuccessState(
+            resolveOutboundSyncState(current, remoteState, state.sync.syncCode),
+            remoteState?.sync?.lastSyncedAt ?? new Date().toISOString()
+          )
+        );
       } catch {
-        setState((current) => ({
-          ...current,
-          sync: {
-            ...current.sync,
-            status: "error",
-            error: "Sync push failed."
-          }
-        }));
+        setState((current) => markSyncError(current, "Sync push failed."));
       }
     }, 600);
 
@@ -637,28 +863,13 @@ export function LifeOSApp({ view = "dashboard" }) {
       try {
         const remoteState = await fetchSyncState(state.sync.syncCode);
         if (!remoteState) return;
-        const preferred = choosePreferredSyncState(state, remoteState);
-        if (preferred.sync.updatedAt === remoteState.sync?.updatedAt && preferred.sync.syncCode === remoteState.sync?.syncCode) {
-          setState(
-            migrateState({
-              ...preferred,
-              sync: {
-                ...preferred.sync,
-                status: "synced",
-                error: ""
-              }
-            })
-          );
+        const nextState = resolveRemoteRefreshState(state, remoteState);
+        if (nextState) {
+          saveSafetyBackupSnapshot(state);
+          setState(nextState);
         }
       } catch {
-        setState((current) => ({
-          ...current,
-          sync: {
-            ...current.sync,
-            status: "error",
-            error: "Sync pull failed."
-          }
-        }));
+        setState((current) => markSyncError(current, "Sync pull failed."));
       }
     };
 
@@ -674,18 +885,10 @@ export function LifeOSApp({ view = "dashboard" }) {
       try {
         const remoteState = await fetchSyncState(state.sync.syncCode);
         if (!remoteState) return;
-        const preferred = choosePreferredSyncState(state, remoteState);
-        if (preferred.sync.updatedAt === remoteState.sync?.updatedAt && preferred.sync.syncCode === remoteState.sync?.syncCode) {
-          setState(
-            migrateState({
-              ...preferred,
-              sync: {
-                ...preferred.sync,
-                status: "synced",
-                error: ""
-              }
-            })
-          );
+        const nextState = resolveRemoteRefreshState(state, remoteState);
+        if (nextState) {
+          saveSafetyBackupSnapshot(state);
+          setState(nextState);
         }
       } catch {}
     };
@@ -707,181 +910,29 @@ export function LifeOSApp({ view = "dashboard" }) {
     };
   }, [ready, state.sync.mode, state.sync.syncCode, state.sync.updatedAt]);
 
-  const commitState = (updater) => {
+  const commitState = (updater: (current: LifeOSState) => LifeOSState) => {
     setState((current) => touchState(updater(current)));
   };
 
-  const todayXP = getTodayXP(state.logs, todayKey);
-  const level = getLevel(state.profile.totalXP);
-  const income = computeIncomeStats(state.profile.yearGoal);
-  const lifeDoneCount = getCompletedCount(
-    state.logs,
-    todayKey,
-    lifeGroups.flatMap((group) => group.items.map((item) => item.id))
+  const dashboardOverview = useMemo(() => buildDashboardOverview(state), [state]);
+  const historyDays = useMemo(
+    () =>
+      buildHistoryDays({
+        logs: state.logs,
+        todayKey,
+        workProjects: state.workProjects,
+        studyTaskMap,
+        lifeTaskMap,
+        moneyTaskMap,
+        currency: state.profile.currency,
+        lifeQuickActionMap: LIFE_QUICK_ACTION_MAP
+      }),
+    [lifeTaskMap, moneyTaskMap, state.logs, state.profile.currency, state.workProjects, studyTaskMap, todayKey]
   );
-  const studyDoneCount = getCompletedCount(
-    state.logs,
-    todayKey,
-    studyTasks.map((task) => task.id)
-  );
-  const completedWorkCount = state.workProjects.reduce(
-    (sum, project) =>
-      sum + (project.todayActions ?? []).filter((action) => Boolean(getLogValue(state.logs, todayKey, `${project.id}:${action.id}`))).length,
-    0
-  );
-  const lifeUsedRatio = clamp(state.profile.age / state.profile.lifeExpectancy, 0, 1);
-  const daysLeft = Math.max(0, Math.round((state.profile.lifeExpectancy - state.profile.age) * 365));
-  const yearsToRetirement = Math.max(0, state.profile.retirementAge - state.profile.age);
-  const pillarCompletion = LIFE_PILLARS.map((pillar) => {
-    const value = getLogValue(state.logs, todayKey, pillar.id);
-    const done = typeof value === "boolean" ? value : Number(value) > 0;
-    return {
-      ...pillar,
-      done
-    };
-  });
-  const coreStreaks = [
-    {
-      label: "Language Skills",
-      history: getTaskHistory(state.logs, "language-skills", 7),
-      streak: getStreak(state.logs, "language-skills")
-    },
-    {
-      label: "Exercise",
-      history: getTaskHistory(state.logs, "exercise", 7),
-      streak: getStreak(state.logs, "exercise")
-    },
-    {
-      label: "Meditation",
-      history: getTaskHistory(state.logs, "meditation", 7),
-      streak: getStreak(state.logs, "meditation")
-    }
-  ];
-  const historyDays = useMemo(() => {
-    const formatDateLabel = (date, isToday) => {
-      if (isToday) return "Today";
-      return new Intl.DateTimeFormat("en-US", {
-        weekday: "short",
-        month: "short",
-        day: "numeric"
-      }).format(date);
-    };
-
-    const formatHistoryValue = (task, rawValue) => {
-      if (task?.type === "boolean") return rawValue ? "Done" : "Not done";
-      if (task?.unit === "$") return `${state.profile.currency}${formatNumber(Number(rawValue || 0))}`;
-      if (task?.unit === "★") return `${rawValue}★`;
-      return `${rawValue}${task?.compactUnit ? "" : " "}${task?.unit ?? ""}`.trim();
-    };
-
-    return Array.from({ length: 7 }).map((_, index) => {
-      const date = new Date();
-      date.setDate(date.getDate() - index);
-      const dateKey = formatDateKey(date);
-      const dayLogs = state.logs?.[dateKey] ?? {};
-      const entries = Object.entries(dayLogs)
-        .map(([taskId, record]) => {
-          const rawValue = record?.value;
-          const isDone = typeof rawValue === "boolean" ? rawValue : Number(rawValue) > 0;
-          if (!isDone) return null;
-
-          if (taskId.includes(":")) {
-            const [projectId, todoId] = taskId.split(":");
-            const project = state.workProjects.find((item) => item.id === projectId);
-            const todo =
-              project?.todayActions.find((item) => item.id === todoId) ??
-              project?.backlog.find((item) => item.id === todoId) ??
-              project?.nextDayCandidates.find((item) => item.id === todoId);
-            return {
-              key: taskId,
-              category: "Work",
-              label: todo?.label ?? "Completed work item",
-              value: "Done",
-              meta: project?.name ?? "Work",
-              xp: record?.xp ?? 0
-            };
-          }
-
-          const studyTask = studyTaskMap[taskId];
-          if (studyTask) {
-            return {
-              key: taskId,
-              category: "Study",
-              label: studyTask.label,
-              value: formatHistoryValue(studyTask, rawValue),
-              meta: "",
-              xp: record?.xp ?? 0
-            };
-          }
-
-          const lifeTask = lifeTaskMap[taskId];
-          if (lifeTask) {
-            return {
-              key: taskId,
-              category: "Life",
-              label: lifeTask.label,
-              value: formatHistoryValue(lifeTask, rawValue),
-              meta: "",
-              xp: record?.xp ?? 0
-            };
-          }
-
-          const moneyTask = moneyTaskMap[taskId];
-          if (moneyTask) {
-            return {
-              key: taskId,
-              category: "Money",
-              label: moneyTask.label,
-              value: formatHistoryValue(moneyTask, rawValue),
-              meta: "",
-              xp: record?.xp ?? 0
-            };
-          }
-
-          const quickAction = LIFE_QUICK_ACTION_MAP[taskId];
-          if (quickAction) {
-            return {
-              key: taskId,
-              category: "Life",
-              label: quickAction.label,
-              value: "Done",
-              meta: quickAction.group,
-              xp: record?.xp ?? 0
-            };
-          }
-
-          return null;
-        })
-        .filter(Boolean)
-        .sort((a, b) => a.category.localeCompare(b.category) || a.label.localeCompare(b.label));
-
-      return {
-        key: dateKey,
-        label: formatDateLabel(date, dateKey === todayKey),
-        dateKey,
-        isToday: dateKey === todayKey,
-        xp: getTodayXP(state.logs, dateKey),
-        count: entries.length,
-        entries
-      };
-    });
-  }, [lifeTaskMap, moneyTaskMap, state.logs, state.profile.currency, state.workProjects, studyTaskMap, todayKey]);
   const featuredHistoryDay = historyDays[0];
   const previousHistoryDays = historyDays.slice(1);
   const selectedLifeQuickActions = useMemo(
-    () =>
-      Object.entries(state.logs?.[todayKey] ?? {})
-        .filter(([taskId, record]) => {
-          const action = LIFE_QUICK_ACTION_MAP[taskId];
-          if (!action) return false;
-          const rawValue = record?.value;
-          return typeof rawValue === "boolean" ? rawValue : Number(rawValue) > 0;
-        })
-        .map(([taskId]) => ({
-          id: taskId,
-          ...LIFE_QUICK_ACTION_MAP[taskId]
-        }))
-        .sort((a, b) => a.group.localeCompare(b.group) || a.label.localeCompare(b.label)),
+    () => buildSelectedLifeQuickActions(state.logs, todayKey, LIFE_QUICK_ACTION_MAP),
     [state.logs, todayKey]
   );
   const yesterdayKey = useMemo(() => {
@@ -889,727 +940,446 @@ export function LifeOSApp({ view = "dashboard" }) {
     date.setDate(date.getDate() - 1);
     return formatDateKey(date);
   }, []);
-  const buildMoneySummary = (dateKey) => ({
-    income: Number(getLogValue(state.logs, dateKey, "income-logged") ?? 0),
-    expense: Number(getLogValue(state.logs, dateKey, "expense-tracked") ?? 0),
-    savings: Number(getLogValue(state.logs, dateKey, "saved-today") ?? 0),
-    investment: Number(getLogValue(state.logs, dateKey, "investment-return") ?? 0)
-  });
   const todayMoneySummary = useMemo(
-    () => buildMoneySummary(todayKey),
+    () => buildMoneySummary(state.logs, todayKey),
     [state.logs, todayKey]
   );
   const yesterdayMoneySummary = useMemo(
-    () => buildMoneySummary(yesterdayKey),
+    () => buildMoneySummary(state.logs, yesterdayKey),
     [state.logs, yesterdayKey]
   );
-  const buildStudySummary = (dateKey) =>
-    studyTasks.map((task) => ({
-      id: task.id,
-      label: task.label,
-      value: formatTaskValue(task, getLogValue(state.logs, dateKey, task.id), state.profile.currency)
-    }));
   const todayStudySummary = useMemo(
-    () => buildStudySummary(todayKey),
+    () => buildStudySummary(state.logs, todayKey, studyTasks, (task, value) => formatTaskValue(task, value, state.profile.currency)),
     [state.logs, todayKey, state.profile.currency]
   );
   const yesterdayStudySummary = useMemo(
-    () => buildStudySummary(yesterdayKey),
+    () => buildStudySummary(state.logs, yesterdayKey, studyTasks, (task, value) => formatTaskValue(task, value, state.profile.currency)),
     [state.logs, yesterdayKey, state.profile.currency]
   );
   const miscTodoItems = state.miscTodos ?? [];
-  const isMiscTodoDone = (item, dateKey = todayKey) => {
-    if (!item) return false;
-    if (item.category === "daily") {
-      return item.completedDayKey === dateKey;
-    }
-    return Boolean(item.done);
-  };
   const miscTodoCounts = useMemo(
-    () => ({
-      total: miscTodoItems.length,
-      open: miscTodoItems.filter((item) => !isMiscTodoDone(item, todayKey)).length,
-      done: miscTodoItems.filter((item) => isMiscTodoDone(item, todayKey)).length,
-      work: miscTodoItems.filter((item) => item.category === "work").length,
-      study: miscTodoItems.filter((item) => item.category === "study").length,
-      life: miscTodoItems.filter((item) => item.category === "life").length,
-      daily: miscTodoItems.filter((item) => item.category === "daily").length
-    }),
+    () => buildMiscTodoCounts(miscTodoItems, todayKey),
     [miscTodoItems, todayKey]
   );
   const noteItems = state.noteItems ?? [];
-  const sortedNoteItems = useMemo(
-    () =>
-      [...noteItems].sort((a, b) => {
-        if (a.archived !== b.archived) return Number(a.archived) - Number(b.archived);
-        if (a.pinned !== b.pinned) return Number(b.pinned) - Number(a.pinned);
-        return new Date(b.updatedAt || b.createdAt || 0).getTime() - new Date(a.updatedAt || a.createdAt || 0).getTime();
-      }),
-    [noteItems]
-  );
-  const filteredNoteItems = useMemo(() => {
-    const activeNotes = sortedNoteItems.filter((note) => !note.archived);
-    if (noteFilter === "Pinned") return activeNotes.filter((note) => note.pinned);
-    if (noteFilter === "Recent") return activeNotes.slice(0, 8);
-    if (noteFilter === "Archived") return sortedNoteItems.filter((note) => note.archived);
-    return activeNotes;
-  }, [noteFilter, sortedNoteItems]);
+  const noteCollections = useMemo(() => buildNoteCollections(noteItems, noteFilter), [noteItems, noteFilter]);
+  const sortedNoteItems = noteCollections.sorted;
+  const filteredNoteItems = noteCollections.filtered;
   const selectedNote = noteItems.find((item) => item.id === selectedNoteId) ?? null;
-  const noteCounts = useMemo(
-    () => ({
-      all: sortedNoteItems.filter((note) => !note.archived).length,
-      pinned: sortedNoteItems.filter((note) => !note.archived && note.pinned).length,
-      recent: sortedNoteItems.filter((note) => !note.archived).slice(0, 8).length,
-      archived: noteItems.filter((note) => note.archived).length
-    }),
-    [noteItems, sortedNoteItems]
+  const selectedNoteConversion = useMemo(() => prepareSelectedNoteConversion(selectedNote), [selectedNote]);
+  const noteCounts = noteCollections.counts;
+  const workPageViewModel = useMemo(
+    () =>
+      buildWorkPageViewModel({
+        state,
+        todayKey,
+        slotLabels: WORK_PROJECT_SLOT_LABELS,
+        modalProjectId: workActionModalProjectId,
+        draft: workActionDraft
+      }),
+    [state, todayKey, workActionDraft, workActionModalProjectId]
   );
-  const workSidebarSummary = useMemo(() => {
-    const projectSummaries = state.workProjects.map((project) => {
-      const total = (project.todayActions ?? []).length;
-      const done = (project.todayActions ?? []).filter((action) => Boolean(getLogValue(state.logs, todayKey, `${project.id}:${action.id}`))).length;
-      return {
-        id: project.id,
-        label: project.name,
-        total,
-        done,
-        open: Math.max(0, total - done),
-        backlog: (project.backlog ?? []).length,
-        candidates: (project.nextDayCandidates ?? []).length
-      };
-    });
-
-    return {
-      total: projectSummaries.reduce((sum, project) => sum + project.total, 0),
-      done: projectSummaries.reduce((sum, project) => sum + project.done, 0),
-      open: projectSummaries.reduce((sum, project) => sum + project.open, 0),
-      projects: projectSummaries
-    };
-  }, [state.logs, state.workProjects, todayKey]);
   const focusAvailableDurations = focusType ? FOCUS_DURATION_OPTIONS[focusType] ?? [] : [];
-  const formattedFocusTime = `${String(Math.floor(focusRemainingSeconds / 60)).padStart(2, "0")}:${String(focusRemainingSeconds % 60).padStart(2, "0")}`;
-  const focusRewardPreview = useMemo(() => {
-    if (!focusType) {
-      return {
-        xpEarned: 0,
-        streakCount: 0,
-        streakBonusPct: 0,
-        breakBonus: 0,
-        typeLabel: ""
-      };
+  const focusSessionLocked = focusStatus === "running" || focusStatus === "paused";
+  const activeFocusTaskOptions = useMemo(
+    () => getFocusTaskOptionsForType(focusType, focusTaskOptions),
+    [focusTaskOptions, focusType]
+  );
+  const focusViewModel = useMemo(
+    () =>
+      buildFocusViewModel({
+        focusType,
+        focusTask,
+        focusTaskOptions,
+        focusRemainingSeconds,
+        focusSessions: state.focusSessions,
+        todayKey
+      }),
+    [focusRemainingSeconds, focusTask, focusTaskOptions, focusType, state.focusSessions, todayKey]
+  );
+
+  const applyFocusLocalPatch = (patch?: FocusLocalPatch | null) => {
+    if (!patch) return;
+    if (patch.type !== undefined) setFocusType(patch.type);
+    if (patch.task !== undefined) setFocusTask(patch.task);
+    if (patch.status !== undefined) setFocusStatus(patch.status);
+    if (patch.durationMinutes !== undefined) setFocusDurationMinutes(patch.durationMinutes);
+    if (patch.remainingSeconds !== undefined) setFocusRemainingSeconds(patch.remainingSeconds);
+    if (patch.startedAt !== undefined) setFocusStartedAt(patch.startedAt);
+    if (patch.endsAt !== undefined) setFocusEndsAt(patch.endsAt);
+    if (patch.completion !== undefined) setFocusCompletion(patch.completion);
+    if (patch.taskModalOpen !== undefined) setFocusTaskModalOpen(patch.taskModalOpen);
+    if (patch.completionPending !== undefined) focusCompletionPendingRef.current = patch.completionPending;
+  };
+
+  const applyNoteLocalPatch = (patch?: NoteLocalPatch | null) => {
+    if (!patch) return;
+    if (patch.draftTitle !== undefined) setNoteDraftTitle(patch.draftTitle);
+    if (patch.draftContent !== undefined) setNoteDraftContent(patch.draftContent);
+    if (patch.draftType !== undefined) setNoteDraftType(patch.draftType);
+    if (patch.noteFilter !== undefined) setNoteFilter(patch.noteFilter);
+    if (patch.selectedNoteId !== undefined) setSelectedNoteId(patch.selectedNoteId);
+    if (patch.focusContent) {
+      setTimeout(() => {
+        noteContentRef.current?.focus();
+      }, 0);
     }
+  };
 
-    const sessionsToday = (state.focusSessions ?? []).filter((session) => formatDateKey(new Date(session.timestamp)) === todayKey).length;
-    const streakCount = sessionsToday + 1;
-    const streakBonusPct = streakCount >= 4 ? 30 : streakCount === 3 ? 20 : streakCount === 2 ? 10 : 0;
-    const typeMultiplier = focusType === "work" ? 1.2 : focusType === "study" ? 1 : 0.8;
-    const taskMultiplier = focusTask ? 1.2 : 1;
-    const streakMultiplier = 1 + streakBonusPct / 100;
-    const breakBonus = focusType === "life" && !focusTask ? 2 : 0;
-    const xpEarned = Math.round(10 * typeMultiplier * taskMultiplier * streakMultiplier) + breakBonus;
+  const applyTodoComposerPatch = (patch?: TodoComposerPatch | null) => {
+    if (!patch) return;
+    if (patch.input !== undefined) setMiscTodoInput(patch.input);
+    if (patch.category !== undefined) setMiscTodoCategory(patch.category);
+  };
 
-    return {
-      xpEarned,
-      streakCount,
-      streakBonusPct,
-      breakBonus,
-      typeLabel: focusType === "work" ? "Work" : focusType === "study" ? "Study" : "Life"
-    };
-  }, [focusTask, focusType, state.focusSessions, todayKey]);
+  const applySyncLocalPatch = (patch?: SyncLocalPatch | null) => {
+    if (!patch) return;
+    if (patch.syncCodeInput !== undefined) setSyncCodeInput(patch.syncCodeInput);
+    if (patch.backupCount !== undefined) setBackupCount(patch.backupCount);
+  };
 
-  const applyTrackedLogAtDate = (current, task, value, dateKey) => {
-    const normalized =
-      task.type === "boolean" ? Boolean(value) : typeof value === "number" ? value : Number(value || 0);
-    const previousXP = current.logs?.[dateKey]?.[task.id]?.xp ?? 0;
-    const xpBase =
-      task.type === "ratingReverse"
-        ? Math.round((6 - normalized) * task.xpPerUnit)
-        : task.type === "boolean"
-          ? normalized
-            ? task.xpPerUnit
-            : 0
-          : Math.round(normalized * task.xpPerUnit);
-    const dayWithoutCurrent = getTodayXP(current.logs, dateKey) - previousXP;
-    const nextDayXP = dayWithoutCurrent + xpBase;
-    return {
+  const saveSafetyBackupSnapshot = (snapshot: LifeOSState) => {
+    const backups = writeBackupSnapshot(snapshot);
+    applySyncLocalPatch(buildBackupCountPatch(backups.length));
+  };
+
+  const applyNavLocalPatch = (patch?: NavLocalPatch | null) => {
+    if (!patch) return;
+    if (patch.openMenu !== undefined) setOpenNavMenu(patch.openMenu);
+    if (patch.roomsMenuPosition !== undefined) setRoomsMenuPosition(patch.roomsMenuPosition);
+  };
+
+  const applyLifeQuickActionLocalPatch = (patch?: LifeQuickActionLocalPatch | null) => {
+    if (!patch) return;
+    if (patch.activeLabel !== undefined) setLifeQuickAction(patch.activeLabel);
+  };
+
+  const applyExecutionLocalPatch = (patch?: ExecutionLocalPatch | null) => {
+    if (!patch) return;
+    if (patch.nowMs !== undefined) setExecutionNow(patch.nowMs);
+  };
+
+  const applyWorkComposerPatch = (patch?: WorkComposerPatch | null) => {
+    if (!patch) return;
+    if (patch.modalProjectId !== undefined) setWorkActionModalProjectId(patch.modalProjectId);
+    if (patch.draft !== undefined) setWorkActionDraft(patch.draft);
+  };
+
+  const applyOfficePresencePatch = (patch?: OfficePresencePatch | null) => {
+    if (!patch) return;
+    setOfficePresence((current) => ({
       ...current,
-      profile: {
-        ...current.profile,
-        totalXP: current.profile.totalXP - previousXP + xpBase,
-        pbXP: Math.max(current.profile.pbXP, nextDayXP)
-      },
-      logs: {
-        ...current.logs,
-        [dateKey]: {
-          ...(current.logs?.[dateKey] ?? {}),
-          [task.id]: {
-            value: normalized,
-            xp: xpBase,
-            ts: Date.now()
-          }
-        }
-      }
-    };
+      ...patch
+    }));
   };
 
-  const applyTrackedLog = (current, task, value) => applyTrackedLogAtDate(current, task, value, todayKey);
-
-  const logTask = (task, value) => {
-    commitState((current) => applyTrackedLog(current, task, value));
+  const applyStudyPresencePatch = (patch?: StudyPresencePatch | null) => {
+    if (!patch) return;
+    setStudyPresence((current) => ({
+      ...current,
+      ...patch
+    }));
   };
 
-  const logTaskAtDate = (task, value, dateKey) => {
+  const logTask = (task: TrackedTaskDefinition, value: LogValue) => {
+    commitState((current) => applyTrackedLogAtDate(current, task, value, todayKey));
+  };
+
+  const logTaskAtDate = (task: TrackedTaskDefinition, value: LogValue, dateKey: string) => {
     commitState((current) => applyTrackedLogAtDate(current, task, value, dateKey));
   };
 
-  const logLifeTaskAtDate = (task, value, dateKey = todayKey, options = {}) => {
-    commitState((current) => {
-      const targetDateKey = dateKey || todayKey;
-      const shouldAccumulate = Boolean(options?.accumulate) && task.type !== "boolean";
-      const previousValue = Number(getLogValue(current.logs, targetDateKey, task.id) ?? 0);
-      const nextValue = shouldAccumulate ? previousValue + Number(value || 0) : value;
-      return applyTrackedLogAtDate(current, task, nextValue, targetDateKey);
-    });
+  const logLifeTaskAtDate = (
+    task: TrackedTaskDefinition,
+    value: LogValue,
+    dateKey = todayKey,
+    options: { accumulate?: boolean } = {}
+  ) => {
+    commitState((current) => applyLifeTaskLogAtDate(current, task, value, dateKey || todayKey, options));
   };
 
-  const toggleTodo = (projectId, todoId) => {
-    const task = { id: `${projectId}:${todoId}`, type: "boolean", xpPerUnit: 10 };
-    const currentValue = Boolean(getLogValue(state.logs, todayKey, task.id));
-    logTask(task, !currentValue);
+  const toggleTodo = (projectId: string, todoId: string) => {
+    commitState((current) => toggleWorkTodoLog(current, projectId, todoId, todayKey));
   };
 
-  const moveWorkActionToToday = (projectId, action, source = "backlog") => {
-    commitState((current) => ({
-      ...current,
-      workProjects: current.workProjects.map((project) =>
-        project.id === projectId
-          ? {
-              ...project,
-              todayActions:
-                (project.todayActions ?? []).length >= 5
-                  ? project.todayActions ?? []
-                  : [...(project.todayActions ?? []), action],
-              backlog: source === "backlog" ? (project.backlog ?? []).filter((item) => item.id !== action.id) : project.backlog ?? [],
-              nextDayCandidates:
-                source === "candidate"
-                  ? (project.nextDayCandidates ?? []).filter((item) => item.id !== action.id)
-                  : project.nextDayCandidates ?? []
-            }
-          : project
-      )
-    }));
+  const moveWorkActionToToday = (projectId: string, action: WorkAction, source: WorkActionSource = "backlog") => {
+    commitState((current) => moveWorkActionToTodayState(current, projectId, action, source));
   };
 
-  const addWorkActionFromDraft = (projectId) => {
-    const label = workActionDraft.trim();
-    if (!label) return;
+  const addWorkActionFromDraft = (projectId: string) => {
+    const nextSubmission = prepareWorkComposerSubmission(workActionDraft, Date.now());
+    if (!nextSubmission) return;
 
     moveWorkActionToToday(
       projectId,
-      {
-        id: `work-action-${Date.now()}`,
-        label
-      },
+      nextSubmission.action,
       "new"
     );
-    setWorkActionDraft("");
-    setWorkActionModalProjectId("");
+    applyWorkComposerPatch(nextSubmission.patch);
   };
 
-  const renameTodayAction = (projectId, actionId, label) => {
-    commitState((current) => ({
-      ...current,
-      workProjects: current.workProjects.map((project) =>
-        project.id === projectId
-          ? {
-              ...project,
-              todayActions: (project.todayActions ?? []).map((action) =>
-                action.id === actionId ? { ...action, label } : action
-              )
-            }
-          : project
-      )
-    }));
+  const renameTodayAction = (projectId: string, actionId: string, label: string) => {
+    commitState((current) => renameTodayActionState(current, projectId, actionId, label));
   };
 
-  const deleteTodayAction = (projectId, actionId) => {
-    commitState((current) => ({
-      ...current,
-      workProjects: current.workProjects.map((project) =>
-        project.id === projectId
-          ? {
-              ...project,
-              todayActions: (project.todayActions ?? []).filter((action) => action.id !== actionId)
-            }
-          : project
-      ),
-      logs: {
-        ...current.logs,
-        [todayKey]: Object.fromEntries(
-          Object.entries(current.logs?.[todayKey] ?? {}).filter(([taskId]) => taskId !== `${projectId}:${actionId}`)
-        )
-      }
-    }));
+  const deleteTodayAction = (projectId: string, actionId: string) => {
+    commitState((current) => deleteTodayActionState(current, projectId, actionId, todayKey));
   };
 
-  const renameWorkProject = (projectId, name) => {
-    commitState((current) => ({
-      ...current,
-      workProjects: current.workProjects.map((project) =>
-        project.id === projectId
-          ? {
-              ...project,
-              name
-            }
-          : project
-      )
-    }));
+  const renameWorkProject = (projectId: string, name: string) => {
+    commitState((current) => renameWorkProjectState(current, projectId, name));
   };
 
   const addMiscTodo = () => {
-    const label = miscTodoInput.trim();
-    if (!label) return;
+    const nextTodo = prepareMiscTodoInput(miscTodoInput, miscTodoCategory);
+    if (!nextTodo) return;
 
-    commitState((current) => ({
-      ...current,
-      miscTodos: [
-        {
-          id: `misc-${Date.now()}`,
-          label,
-          category: miscTodoCategory,
-          done: false,
-          createdAt: Date.now(),
-          completedAt: null,
-          completedDayKey: null
-        },
-        ...(current.miscTodos ?? [])
-      ]
-    }));
-
-    setMiscTodoInput("");
+    commitState((current) => addMiscTodoState(current, nextTodo.label, nextTodo.category));
+    applyTodoComposerPatch(buildTodoComposerResetPatch());
   };
 
-  const updateMiscTodo = (todoId, updates) => {
-    commitState((current) => ({
-      ...current,
-      miscTodos: (current.miscTodos ?? []).map((item) =>
-        item.id === todoId ? { ...item, ...updates } : item
-      )
-    }));
+  const updateMiscTodo = (todoId: string, updates: Partial<MiscTodoItem>) => {
+    commitState((current) => updateMiscTodoState(current, todoId, updates));
   };
 
-  const toggleMiscTodo = (todoId) => {
-    const currentTodo = miscTodoItems.find((item) => item.id === todoId);
-    if (!currentTodo) return;
+  const toggleMiscTodo = (todoId: string) => {
+    commitState((current) => toggleMiscTodoState(current, todoId, todayKey));
+  };
 
-    if (currentTodo.category === "daily") {
-      const doneToday = isMiscTodoDone(currentTodo, todayKey);
-      updateMiscTodo(todoId, {
-        done: !doneToday,
-        completedAt: doneToday ? null : Date.now(),
-        completedDayKey: doneToday ? null : todayKey
-      });
-      return;
-    }
+  const deleteMiscTodo = (todoId: string) => {
+    commitState((current) => deleteMiscTodoState(current, todoId));
+  };
 
-    updateMiscTodo(todoId, {
-      done: !currentTodo.done,
-      completedAt: currentTodo.done ? null : Date.now()
+  const saveNote = (overrides: Partial<Pick<NoteItem, "title" | "content" | "type">> = {}) => {
+    const nextNote = prepareNoteSave({
+      draft: {
+        title: noteDraftTitle,
+        content: noteDraftContent,
+        type: noteDraftType
+      },
+      overrides,
+      paletteSize: NOTE_CARD_COLORS.length,
+      createdAt: new Date().toISOString()
     });
-  };
+    if (!nextNote) return;
 
-  const deleteMiscTodo = (todoId) => {
-    commitState((current) => ({
-      ...current,
-      miscTodos: (current.miscTodos ?? []).filter((item) => item.id !== todoId)
-    }));
-  };
-
-  const saveNote = (overrides = {}) => {
-    const title = (overrides.title ?? noteDraftTitle).trim();
-    const content = (overrides.content ?? noteDraftContent).trim();
-    const type = overrides.type ?? noteDraftType;
-    if (!title && !content) return;
-
-    const now = new Date().toISOString();
-    commitState((current) => {
-      const nextCursor = ((Number(current.noteCursor ?? 0) % NOTE_CARD_COLORS.length) + 1) % NOTE_CARD_COLORS.length;
-      return {
-        ...current,
-        noteCursor: nextCursor,
-        noteItems: [
-          {
-            id: `note-${Date.now()}`,
-            title,
-            content,
-            type,
-            pinned: false,
-            archived: false,
-            createdAt: now,
-            updatedAt: now,
-            colorIndex: Number(current.noteCursor ?? 0) % NOTE_CARD_COLORS.length
-          },
-          ...(current.noteItems ?? [])
-        ]
-      };
-    });
-
-    setNoteDraftTitle("");
-    setNoteDraftContent("");
-    setSelectedNoteId("");
-    setNoteFilter("All");
+    commitState((current) => addNote(current, nextNote.input));
+    applyNoteLocalPatch(nextNote.patch);
   };
 
   const focusNoteComposer = (nextType = "Draft") => {
-    setNoteDraftType(nextType);
-    setTimeout(() => {
-      noteContentRef.current?.focus();
-    }, 0);
+    applyNoteLocalPatch(buildNoteDraftTypePatch(nextType, { focusContent: true }));
   };
 
-  const updateNoteItem = (noteId, updater) => {
-    commitState((current) => ({
-      ...current,
-      noteItems: (current.noteItems ?? []).map((note) =>
-        note.id === noteId
-          ? {
-              ...note,
-              ...(typeof updater === "function" ? updater(note) : updater),
-              updatedAt: new Date().toISOString()
-            }
-          : note
-      )
-    }));
+  const updateNoteItem = (noteId: string, updater: Partial<NoteItem> | ((note: NoteItem) => Partial<NoteItem>)) => {
+    commitState((current) => updateNoteItemState(current, noteId, updater, new Date().toISOString()));
   };
 
-  const toggleNotePin = (noteId) => {
+  const toggleNotePin = (noteId: string) => {
     updateNoteItem(noteId, (note) => ({ pinned: !note.pinned }));
   };
 
-  const toggleNoteArchive = (noteId) => {
+  const toggleNoteArchive = (noteId: string) => {
     updateNoteItem(noteId, (note) => ({ archived: !note.archived, pinned: note.archived ? note.pinned : false }));
-    if (selectedNoteId === noteId) setSelectedNoteId("");
+    applyNoteLocalPatch(buildNoteArchivePatch(selectedNoteId, noteId));
   };
 
-  const noteToActionLabel = (note) => {
-    const title = note?.title?.trim();
-    const content = note?.content?.trim();
-    return title || content || "Untitled note";
-  };
+  const moveNoteToTodo = (category: MiscTodoCategory) => {
+    if (!selectedNoteConversion) return;
 
-  const moveNoteToTodo = (category) => {
-    if (!selectedNote) return;
-    const label = noteToActionLabel(selectedNote);
-    commitState((current) => ({
-      ...current,
-      miscTodos: [
-        {
-          id: `misc-${Date.now()}`,
-          label,
-          category,
-          done: false,
-          createdAt: Date.now(),
-          completedAt: null,
-          completedDayKey: null
-        },
-        ...(current.miscTodos ?? [])
-      ],
-      noteItems: (current.noteItems ?? []).map((note) =>
-        note.id === selectedNote.id
-          ? {
-              ...note,
-              archived: true,
-              pinned: false,
-              updatedAt: new Date().toISOString()
-            }
-          : note
-      )
-    }));
-    setSelectedNoteId("");
+    commitState((current) =>
+      moveNoteToTodoState(current, selectedNoteConversion.noteId, selectedNoteConversion.label, category, new Date().toISOString())
+    );
+    applyNoteLocalPatch(buildSelectedNoteConsumedPatch());
   };
 
   const convertNoteToProject = () => {
-    if (!selectedNote) return;
-    const label = noteToActionLabel(selectedNote);
-    commitState((current) => ({
-      ...current,
-      workProjects: (current.workProjects ?? []).map((project) =>
-        project.id === "optional"
-          ? {
-              ...project,
-              backlog: [{ id: `note-backlog-${Date.now()}`, label }, ...(project.backlog ?? [])]
-            }
-          : project
-      ),
-      noteItems: (current.noteItems ?? []).map((note) =>
-        note.id === selectedNote.id
-          ? {
-              ...note,
-              archived: true,
-              pinned: false,
-              updatedAt: new Date().toISOString()
-            }
-          : note
-      )
-    }));
-    setSelectedNoteId("");
+    if (!selectedNoteConversion) return;
+
+    commitState((current) =>
+      convertNoteToProjectState(current, selectedNoteConversion.noteId, selectedNoteConversion.label, new Date().toISOString())
+    );
+    applyNoteLocalPatch(buildSelectedNoteConsumedPatch());
   };
 
   const convertNoteToDailyAction = () => {
-    if (!selectedNote) return;
-    const label = noteToActionLabel(selectedNote);
-    commitState((current) => ({
-      ...current,
-      workProjects: (current.workProjects ?? []).map((project) =>
-        project.id === "optional"
-          ? {
-              ...project,
-              todayActions:
-                (project.todayActions ?? []).length >= 5
-                  ? project.todayActions ?? []
-                  : [...(project.todayActions ?? []), { id: `note-action-${Date.now()}`, label }],
-              backlog:
-                (project.todayActions ?? []).length >= 5
-                  ? [{ id: `note-backlog-${Date.now()}`, label }, ...(project.backlog ?? [])]
-                  : project.backlog ?? []
-            }
-          : project
-      ),
-      noteItems: (current.noteItems ?? []).map((note) =>
-        note.id === selectedNote.id
-          ? {
-              ...note,
-              archived: true,
-              pinned: false,
-              updatedAt: new Date().toISOString()
-            }
-          : note
-      )
-    }));
-    setSelectedNoteId("");
+    if (!selectedNoteConversion) return;
+
+    commitState((current) =>
+      convertNoteToDailyActionState(current, selectedNoteConversion.noteId, selectedNoteConversion.label, new Date().toISOString())
+    );
+    applyNoteLocalPatch(buildSelectedNoteConsumedPatch());
   };
 
-  const setFocusTypeState = (nextType) => {
-    if (!FOCUS_DURATION_OPTIONS[nextType]) return;
-    const nextDuration = FOCUS_DURATION_OPTIONS[nextType][0];
-    setFocusType(nextType);
-    setFocusTask(null);
-    setFocusStatus("idle");
-    setFocusDurationMinutes(nextDuration);
-    setFocusRemainingSeconds(nextDuration * 60);
-    setFocusStartedAt(null);
+  const clearFocusSessionState = ({ keepCompletion = false }: { keepCompletion?: boolean } = {}) => {
+    applyFocusLocalPatch(buildFocusResetPatch(focusDurationMinutes, { keepCompletion }));
+  };
+
+  const setFocusTypeState = (nextType: FocusType) => {
+    applyFocusLocalPatch(buildFocusTypeSelectionPatch(nextType, FOCUS_DURATION_OPTIONS));
   };
 
   const startFocusSession = () => {
-    if (!focusType) return;
-    setFocusStatus("running");
-    setFocusStartedAt(Date.now());
+    applyFocusLocalPatch(
+      buildFocusStartPatch({
+        focusType,
+        focusStatus,
+        focusRemainingSeconds,
+        focusDurationMinutes,
+        nowMs: Date.now()
+      })
+    );
   };
 
   const pauseFocusSession = () => {
-    setFocusStatus("paused");
-  };
-
-  const resumeFocusSession = () => {
-    setFocusStatus("running");
+    applyFocusLocalPatch(
+      buildFocusPausePatch({
+        focusStatus,
+        focusEndsAt,
+        focusRemainingSeconds,
+        nowMs: Date.now()
+      })
+    );
   };
 
   const stopFocusSession = () => {
-    setFocusStatus("idle");
-    setFocusRemainingSeconds(focusDurationMinutes * 60);
-    setFocusStartedAt(null);
+    clearFocusSessionState();
   };
 
   const recordFocusSession = () => {
-    if (!focusType) return;
+    if (!focusType) return null;
 
+    let sessionResult = null;
     commitState((current) => {
-      const dateKey = todayKey;
-      const focusLogId = `focus-session:${Date.now()}`;
-      const sessionsToday = (current.focusSessions ?? []).filter((session) => formatDateKey(new Date(session.timestamp)) === dateKey).length;
-      const streakCount = sessionsToday + 1;
-      const streakBonusPct = streakCount >= 4 ? 30 : streakCount === 3 ? 20 : streakCount === 2 ? 10 : 0;
-      const typeMultiplier = focusType === "work" ? 1.2 : focusType === "study" ? 1 : 0.8;
-      const taskMultiplier = focusTask ? 1.2 : 1;
-      const streakMultiplier = 1 + streakBonusPct / 100;
-      const breakBonus = focusType === "life" && !focusTask ? 2 : 0;
-      const xpEarned = Math.round(10 * typeMultiplier * taskMultiplier * streakMultiplier) + breakBonus;
-      const dayWithoutCurrent = getTodayXP(current.logs, dateKey);
-      const nextDayXP = dayWithoutCurrent + xpEarned;
-      const linkedTaskId = focusTask?.logTaskId ?? "";
-      const linkedTaskRecord = linkedTaskId ? current.logs?.[dateKey]?.[linkedTaskId] ?? null : null;
-
-      return {
-        ...current,
-        profile: {
-          ...current.profile,
-          totalXP: Number(current.profile.totalXP ?? 0) + xpEarned,
-          pbXP: Math.max(current.profile.pbXP, nextDayXP)
-        },
-        logs: {
-          ...current.logs,
-          [dateKey]: {
-            ...(current.logs?.[dateKey] ?? {}),
-            ...(linkedTaskId
-              ? {
-                  [linkedTaskId]: {
-                    ...(linkedTaskRecord ?? {}),
-                    value: linkedTaskRecord?.value ?? 0,
-                    xp: linkedTaskRecord?.xp ?? 0,
-                    ts: linkedTaskRecord?.ts ?? Date.now(),
-                    focusXp: Number(linkedTaskRecord?.focusXp ?? 0) + xpEarned
-                  }
-                }
-              : {}),
-            [focusLogId]: {
-              value: xpEarned,
-              xp: xpEarned,
-              ts: Date.now(),
-              type: "focus-session"
-            }
-          }
-        },
-        focusSessions: [
-          {
-            id: `focus-${Date.now()}`,
-            type: focusType,
-            duration: focusDurationMinutes,
-            taskId: focusTask?.taskId ?? "",
-            taskLabel: focusTask?.label ?? "",
-            sourceType: focusTask?.sourceType ?? "",
-            projectId: focusTask?.projectId ?? "",
-            xpEarned,
-            streakBonusPct,
-            breakBonus,
-            timestamp: new Date().toISOString()
-          },
-          ...(current.focusSessions ?? [])
-        ].slice(0, 100)
-      };
+      const timestamp = new Date().toISOString();
+      const mutation = recordFocusSessionState(current, {
+        focusType,
+        focusTask,
+        focusDurationMinutes,
+        todayKey,
+        timestamp,
+        focusLogId: `focus-session:${Date.now()}`,
+        focusSessionId: `focus-${Date.now()}`
+      });
+      if (!mutation) return current;
+      sessionResult = mutation.result;
+      return mutation.state;
     });
+
+    return sessionResult;
   };
 
-  const finishFocusSession = () => {
-    recordFocusSession();
-    setFocusStatus("idle");
-    setFocusRemainingSeconds(focusDurationMinutes * 60);
-    setFocusStartedAt(null);
+  const completeFocusSession = () => {
+    const sessionResult = recordFocusSession();
+    if (!sessionResult) return;
+    applyFocusLocalPatch(buildFocusCompletionPatch(sessionResult));
   };
 
-  const startNextFocusSession = () => {
-    recordFocusSession();
-    setFocusStatus("running");
-    setFocusRemainingSeconds(focusDurationMinutes * 60);
-    setFocusStartedAt(Date.now());
-  };
-
-  const launchWorkFocus = (project, action) => {
-    commitState((current) => ({
-      ...current,
-      focusPrefill: {
-        type: "work",
-        taskId: `work:${project.id}:${action.id}`,
-        label: action.label,
-        meta: project.name,
-        sourceType: "work-todo",
-        projectId: project.id,
-        logTaskId: `${project.id}:${action.id}`
-      }
-    }));
+  const launchWorkFocus = (project: WorkProject, action: WorkAction) => {
+    clearFocusSessionState();
+    commitState((current) => setWorkFocusPrefill(current, project, action));
     router.push("/focus");
   };
 
-  const updateProfile = (key, value) => {
-    commitState((current) => ({
-      ...current,
-      profile: {
-        ...current.profile,
-        [key]: value
-      }
-    }));
+  const workProjectActions = buildWorkProjectActionControllers({
+    renameProject: renameWorkProject,
+    renameTodayAction,
+    deleteTodayAction,
+    launchFocus: launchWorkFocus,
+    toggleTodo
+  });
+
+  const workComposerControls = buildWorkComposerControllers({
+    open: (projectId: string) => applyWorkComposerPatch(buildWorkComposerModalPatch(projectId)),
+    close: () => applyWorkComposerPatch(buildWorkComposerClosePatch()),
+    updateDraft: (value: string) => applyWorkComposerPatch(buildWorkComposerDraftPatch(value)),
+    moveActionToToday: moveWorkActionToToday,
+    addDraftAction: addWorkActionFromDraft
+  });
+
+  const workPageControllers: WorkPageControllers = buildWorkPageControllers({
+    projectActions: workProjectActions,
+    composerControls: workComposerControls
+  });
+
+  const updateProfile = <Key extends EditableProfileField>(key: Key, value: LifeOSState["profile"][Key]) => {
+    commitState((current) => updateProfileField(current, key, value));
   };
 
-  const enableAnonymousSync = async (requestedCode) => {
-    const code = (requestedCode || generateSyncCode()).trim().toUpperCase();
-    const nextState = touchState({
-      ...state,
-      sync: {
-        ...state.sync,
-        syncCode: code,
-        userId: null,
-        mode: "anonymous",
-        status: "connecting",
-        error: ""
-      }
-    });
+  const updateProfileFromInput = (key: EditableProfileField, rawValue: string) => {
+    const nextField = prepareProfileFieldUpdate(key, rawValue);
+    updateProfile(nextField.key, nextField.value);
+  };
 
-    setState(nextState);
-    setSyncCodeInput(code);
+  const sendLoginLink = async () => {
+    const email = authEmailInput.trim();
+    if (!email) return;
 
+    setAuthStatus("checking");
     try {
-      const remoteState = await fetchSyncState(code);
-      if (remoteState) {
-        const preferred = choosePreferredSyncState(nextState, remoteState);
-        if (preferred.sync.updatedAt === nextState.sync.updatedAt) {
-          const pushedState = await pushSyncState(code, createSyncPayload(nextState));
-          setState({
-            ...nextState,
-            sync: {
-              ...nextState.sync,
-              status: "synced",
-              lastSyncedAt: pushedState?.sync?.updatedAt ?? new Date().toISOString(),
-              error: ""
-            }
-          });
-        } else {
-          setState(
-            migrateState({
-              ...preferred,
-              sync: {
-                ...preferred.sync,
-                syncCode: code,
-                mode: "anonymous",
-                status: "synced",
-                error: ""
-              }
-            })
-          );
-        }
-      } else {
-        const pushedState = await pushSyncState(code, createSyncPayload(nextState));
-        setState((current) => ({
-          ...current,
-          sync: {
-            ...current.sync,
-            status: "synced",
-            lastSyncedAt: pushedState?.sync?.updatedAt ?? new Date().toISOString(),
-            error: ""
-          }
-        }));
-      }
+      const response = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ email })
+      });
+      if (!response.ok) throw new Error("Unable to send login link.");
+      setAuthStatus("signed-out");
     } catch {
+      setAuthStatus("error");
+    }
+  };
+
+  const signOut = async () => {
+    try {
+      await fetch("/api/auth/logout", {
+        method: "POST"
+      });
+    } finally {
+      setAuthUser(null);
+      setAuthStatus("signed-out");
+      setMoneyLogSyncStatus("idle");
+      moneyPullUserRef.current = "";
       setState((current) => ({
         ...current,
         sync: {
           ...current.sync,
-          status: "error",
-          error: "Unable to connect sync code."
+          userId: null
         }
       }));
     }
   };
 
+  const enableAnonymousSync = async (requestedCode = "") => {
+    const start = prepareAnonymousSyncStart(state, requestedCode, generateSyncCode());
+    setState(start.nextState);
+    applySyncLocalPatch(start.patch);
+
+    try {
+      const remoteState = await fetchSyncState(start.code);
+      if (remoteState) {
+        const resolution = resolveAnonymousSyncRemoteState(start.nextState, remoteState, start.code);
+        if (resolution.shouldPush) {
+          const pushedState = await pushSyncState(start.code, createSyncPayload(resolution.nextState));
+          setState(buildSyncSuccessState(resolution.nextState, pushedState?.sync?.lastSyncedAt ?? new Date().toISOString()));
+        } else {
+          setState(resolution.nextState);
+        }
+      } else {
+        const pushedState = await pushSyncState(start.code, createSyncPayload(start.nextState));
+        setState((current) => buildSyncSuccessState(current, pushedState?.sync?.lastSyncedAt ?? new Date().toISOString()));
+      }
+    } catch {
+      setState((current) => markSyncError(current, "Unable to connect sync code."));
+    }
+  };
+
   const saveBackup = () => {
     const backups = writeBackupSnapshot(state);
-    setBackupCount(backups.length);
-    setState((current) => ({
-      ...current,
-      sync: {
-        ...current.sync,
-        lastBackupAt: new Date().toISOString(),
-        error: ""
-      }
-    }));
+    const result = buildBackupSaveResult(state, backups.length, new Date().toISOString());
+    applySyncLocalPatch(result.patch);
+    setState(result.nextState);
   };
 
   const exportBackup = () => {
@@ -1629,379 +1399,99 @@ export function LifeOSApp({ view = "dashboard" }) {
     try {
       const remoteState = await fetchSyncState(state.sync.syncCode);
       if (!remoteState) return;
-      const preferred = choosePreferredSyncState(state, remoteState);
-      setState(
-        migrateState({
-          ...preferred,
-          sync: {
-            ...preferred.sync,
-            syncCode: state.sync.syncCode,
-            mode: "anonymous",
-            status: "synced",
-            lastSyncedAt: new Date().toISOString(),
-            error: ""
-          }
-        })
-      );
+      saveSafetyBackupSnapshot(state);
+      setState(resolveManualPullState(state, remoteState, remoteState.sync?.lastSyncedAt ?? new Date().toISOString()));
     } catch {
-      setState((current) => ({
-        ...current,
-        sync: {
-          ...current.sync,
-          status: "error",
-          error: "Manual pull failed."
-        }
-      }));
+      setState((current) => markSyncError(current, "Manual pull failed."));
     }
   };
 
   const pushNow = async () => {
     if (!state.sync.syncCode) return;
     try {
-      const remoteState = await pushSyncState(state.sync.syncCode, createSyncPayload(state));
-      setState((current) => ({
-        ...current,
-        sync: {
-          ...current.sync,
-          status: "synced",
-          lastSyncedAt: remoteState?.sync?.updatedAt ?? new Date().toISOString(),
-          error: ""
-        }
-      }));
+      const remoteSnapshot = await fetchSyncState(state.sync.syncCode);
+      const outboundState = resolveOutboundSyncState(state, remoteSnapshot);
+      const remoteState = await pushSyncState(state.sync.syncCode, createSyncPayload(outboundState));
+      setState((current) =>
+        buildSyncSuccessState(
+          resolveOutboundSyncState(current, remoteState, state.sync.syncCode),
+          remoteState?.sync?.lastSyncedAt ?? new Date().toISOString()
+        )
+      );
     } catch {
-      setState((current) => ({
-        ...current,
-        sync: {
-          ...current.sync,
-          status: "error",
-          error: "Manual push failed."
-        }
-      }));
+      setState((current) => markSyncError(current, "Manual push failed."));
     }
   };
 
-  const triggerLifeQuickAction = (label, dateKey = todayKey) => {
-    setLifeQuickAction(label);
-    const quickActionId = `life-quick:${label.toLowerCase().replace(/\s+/g, "-")}`;
+  const triggerLifeQuickAction = (label: string, dateKey = todayKey) => {
     setState((current) => {
-      const next = touchState(
-        applyTrackedLogAtDate(
-          current,
-          {
-            id: quickActionId,
-            label,
-            type: "boolean",
-            xpPerUnit: 0
-          },
-          true,
-          dateKey
-        )
-      );
-
-      try {
-        window.localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
-      } catch {}
-
-      return next;
+      const result = applyLifeQuickActionWithPersistence(current, label, dateKey);
+      applyLifeQuickActionLocalPatch(result.patch);
+      return result.nextState;
     });
   };
 
-  const heroCards = useMemo(
-    () => [
-      {
-        label: "Work Projects",
-        value: state.workProjects.length,
-        icon: BriefcaseBusiness,
-        color: MODULE_COLORS.work
-      },
-      {
-        label: "Study Tasks Done",
-        value: `${studyDoneCount}/${studyTasks.length}`,
-        icon: GraduationCap,
-        color: MODULE_COLORS.study
-      },
-      {
-        label: "Life Pillars Done",
-        value: `${lifeDoneCount}/7`,
-        icon: HeartPulse,
-        color: MODULE_COLORS.life
-      },
-      {
-        label: "Money Logs",
-        value: moneyTasks.filter((task) => Number(getLogValue(state.logs, todayKey, task.id) ?? 0) > 0).length,
-        icon: CircleDollarSign,
-        color: MODULE_COLORS.money
-      }
-    ],
-    [lifeDoneCount, state.logs, state.workProjects.length, studyDoneCount, todayKey]
+  const dashboardTasks = useMemo(
+    () => buildDashboardTasks(state, todayKey, studyTasks, lifeGroups),
+    [state, todayKey]
   );
 
-  const dashboardTasks = useMemo(() => {
-    const workTasks = state.workProjects.flatMap((project) =>
-      project.todayActions
-        .filter((action) => !Boolean(getLogValue(state.logs, todayKey, `${project.id}:${action.id}`)))
-        .map((action) => ({
-          id: `work:${project.id}:${action.id}`,
-          sourceType: "work-todo",
-          sourceId: action.id,
-          projectId: project.id,
-          label: action.label || "Untitled task",
-          category: "Work",
-          context: project.name,
-          xpReward: 10,
-          attributeKey: "wealth",
-          attributeDelta: project.id === "side-business" ? 3 : 2
-        }))
-    );
+  const mainTask = useMemo(
+    () => getMainDashboardTask(dashboardTasks, state.execution.mainTaskId),
+    [dashboardTasks, state.execution.mainTaskId]
+  );
 
-    const studyExecutionTasks = studyTasks
-      .filter((task) => Number(getLogValue(state.logs, todayKey, task.id) ?? 0) <= 0)
-      .map((task) => ({
-        id: `study:${task.id}`,
-        sourceType: "tracked-task",
-        sourceId: task.id,
-        projectId: "",
-        label: task.label,
-        category: "Study",
-        context: "Learning block",
-        xpReward: Math.round((task.presets?.[0] ?? 1) * task.xpPerUnit),
-        completionValue: task.presets?.[0] ?? 1,
-        task,
-        attributeKey: "mind",
-        attributeDelta: 2
-      }));
+  const activeExecutionTask = useMemo(
+    () => getActiveExecutionTask(dashboardTasks, state.execution),
+    [dashboardTasks, state.execution]
+  );
 
-    const actionableLifeTasks = lifeGroups
-      .flatMap((group) => group.items)
-      .filter((task) => !["sleep-quality", "stress-level", "risky-substances"].includes(task.id))
-      .filter((task) => Number(getLogValue(state.logs, todayKey, task.id) ?? 0) <= 0)
-      .map((task) => ({
-        id: `life:${task.id}`,
-        sourceType: "tracked-task",
-        sourceId: task.id,
-        projectId: "",
-        label: task.label,
-        category: "Life",
-        context: task.id === "social-connection" ? "Connection" : "Daily upkeep",
-        xpReward: Math.round((task.presets?.[0] ?? 1) * task.xpPerUnit),
-        completionValue: task.presets?.[0] ?? 1,
-        task,
-        attributeKey: task.id === "social-connection" ? "social" : task.id === "meditation" ? "mind" : "body",
-        attributeDelta: task.id === "social-connection" ? 2 : 1
-      }));
+  const formattedExecutionTime = useMemo(
+    () => formatExecutionElapsedTime(state.execution, executionNow),
+    [executionNow, state.execution]
+  );
 
-    return [...workTasks, ...studyExecutionTasks, ...actionableLifeTasks];
-  }, [state.logs, state.workProjects, todayKey]);
-
-  const mainTask =
-    dashboardTasks.find((task) => task.id === state.execution.mainTaskId) ??
-    dashboardTasks[0] ??
-    null;
-
-  const activeExecutionTask =
-    dashboardTasks.find((task) => task.id === state.execution.currentTaskId) ??
-    (state.execution.currentTaskId
-      ? {
-          id: state.execution.currentTaskId,
-          label: state.execution.currentTaskLabel,
-          category: state.execution.currentCategory,
-          context: "",
-          xpReward: state.execution.xpReward,
-          attributeKey: state.execution.attributeKey,
-          attributeDelta: state.execution.attributeDelta,
-          sourceType: state.execution.sourceType,
-          sourceId: state.execution.sourceId,
-          projectId: state.execution.projectId
-        }
-      : null);
-
-  const executionElapsedMs =
-    state.execution.elapsedMs +
-    (state.execution.status === "active" && state.execution.startTime ? Math.max(0, executionNow - new Date(state.execution.startTime).getTime()) : 0);
-
-  const executionMinutes = Math.floor(executionElapsedMs / 60000);
-  const executionSeconds = Math.floor((executionElapsedMs % 60000) / 1000);
-  const formattedExecutionTime = `${String(executionMinutes).padStart(2, "0")}:${String(executionSeconds).padStart(2, "0")}`;
-
-  const pageMeta = {
-    dashboard: {
-      title: "Dashboard",
-      description: "A compact operating view for your timeline, targets, streaks, and momentum."
-    },
-    focus: {
-      title: "Focus",
-      description: "Choose a lane, optionally bind a task, and move straight into a calm execution session."
-    },
-    work: {
-      title: "Work",
-      description: "Project-based execution. Keep today clear, but retain the long game."
-    },
-    todo: {
-      title: "Todo",
-      description: "Capture loose tasks, tag them to Work, Study, or Life, and clear them without cluttering your fixed systems."
-    },
-    study: {
-      title: "Study",
-      description: "Log focused learning with presets, notes, and streak visibility."
-    },
-    life: {
-      title: "Life",
-      description: "Seven daily pillars that keep energy, clarity, and resilience on track."
-    },
-    money: {
-      title: "Money",
-      description: "Record income, expenses, and savings without leaving the operating system."
-    },
-    notes: {
-      title: "Notes",
-      description: "Capture ideas, drafts, and temporary thoughts quickly, then move them into action when needed."
-    },
-    history: {
-      title: "History",
-      description: "Review today’s full record first, then scan the previous six days of logged execution."
-    },
-    settings: {
-      title: "Settings",
-      description: "Adjust your profile, timeline assumptions, and annual target without cluttering the dashboard."
-    },
-    "study-room": {
-      title: "Study Room",
-      description: "A calmer floorplan for picking a seat, settling in, and starting focused study."
-    },
-    "office-room": {
-      title: "Office",
-      description: "A focused room mockup for deep work, project momentum, and daily execution."
-    }
-  }[view];
+  const pageMeta = PAGE_META[view as keyof typeof PAGE_META] ?? PAGE_META.dashboard;
 
   const activePath = pathname === "/" ? "/dashboard" : pathname;
   const activeOfficeZone = OFFICE_ZONES.find((zone) => zone.id === officePresence.zoneId) ?? OFFICE_ZONES[0];
   const activeStudyZone = STUDY_ROOM_ZONES.find((zone) => zone.id === studyPresence.zoneId) ?? STUDY_ROOM_ZONES[0];
 
-  const moveToSeat = (zoneId, seat) => {
-    setOfficePresence((current) => ({
-      ...current,
-      zoneId,
-      seatId: seat.id,
-      x: seat.x,
-      y: seat.y
-    }));
+  const moveToSeat = (zoneId: string, seat: { id: string; x: number; y: number }) => {
+    applyOfficePresencePatch(buildOfficeSeatPatch(zoneId, seat));
   };
 
-  const setOfficeStatus = (status) => {
-    setOfficePresence((current) => ({
-      ...current,
-      status
-    }));
+  const setOfficeStatus = (status: string) => {
+    applyOfficePresencePatch(buildOfficeStatusPatch(status));
   };
 
-  const moveToStudySeat = (zoneId, seat) => {
-    setStudyPresence((current) => ({
-      ...current,
-      zoneId,
-      seatId: seat.id
-    }));
+  const moveToStudySeat = (zoneId: string, seat: { id: string }) => {
+    applyStudyPresencePatch(buildStudySeatPatch(zoneId, seat));
   };
 
-  const setStudyMode = (mode) => {
-    setStudyPresence((current) => ({
-      ...current,
-      mode
-    }));
+  const setStudyMode = (mode: string) => {
+    applyStudyPresencePatch(buildStudyModePatch(mode));
   };
 
-  const startExecution = (task) => {
-    commitState((current) => ({
-      ...current,
-      execution: {
-        ...current.execution,
-        status: "active",
-        currentTaskId: task.id,
-        currentTaskLabel: task.label,
-        currentCategory: task.category,
-        sourceType: task.sourceType,
-        sourceId: task.sourceId,
-        projectId: task.projectId ?? "",
-        startTime: new Date().toISOString(),
-        elapsedMs: current.execution.currentTaskId === task.id ? current.execution.elapsedMs : 0,
-        xpReward: task.xpReward ?? 0,
-        attributeKey: task.attributeKey ?? "",
-        attributeDelta: task.attributeDelta ?? 0,
-        mainTaskId: current.execution.mainTaskId || task.id
-      }
-    }));
+  const startExecution = (task: DashboardTask) => {
+    commitState((current) => startExecutionState(current, task, new Date().toISOString()));
   };
 
   const toggleExecutionPause = () => {
-    if (!state.execution.currentTaskId) return;
-    if (state.execution.status === "active") {
-      const nextElapsed =
-        state.execution.elapsedMs +
-        (state.execution.startTime ? Math.max(0, Date.now() - new Date(state.execution.startTime).getTime()) : 0);
-      commitState((current) => ({
-        ...current,
-        execution: {
-          ...current.execution,
-          status: "paused",
-          startTime: null,
-          elapsedMs: nextElapsed
-        }
-      }));
-      return;
-    }
-
-    commitState((current) => ({
-      ...current,
-      execution: {
-        ...current.execution,
-        status: "active",
-        startTime: new Date().toISOString()
-      }
-    }));
+    commitState((current) => toggleExecutionPauseState(current, Date.now()));
   };
 
   const completeExecution = () => {
     if (!activeExecutionTask) return;
 
-    commitState((current) => {
-      let next = current;
+    const sourceTask =
+      activeExecutionTask.sourceType === "tracked-task"
+        ? activeExecutionTask.category === "Study"
+          ? studyTasks.find((task) => task.id === activeExecutionTask.sourceId)
+          : lifeGroups.flatMap((group) => group.items).find((task) => task.id === activeExecutionTask.sourceId)
+        : null;
 
-      if (activeExecutionTask.sourceType === "work-todo") {
-        next = applyTrackedLog(
-          next,
-          {
-            id: `${activeExecutionTask.projectId}:${activeExecutionTask.sourceId}`,
-            type: "boolean",
-            xpPerUnit: activeExecutionTask.xpReward || 10
-          },
-          true
-        );
-      }
-
-      if (activeExecutionTask.sourceType === "tracked-task") {
-        const sourceTask =
-          activeExecutionTask.category === "Study"
-            ? studyTasks.find((task) => task.id === activeExecutionTask.sourceId)
-            : lifeGroups.flatMap((group) => group.items).find((task) => task.id === activeExecutionTask.sourceId);
-
-        if (sourceTask) {
-          next = applyTrackedLog(next, sourceTask, activeExecutionTask.completionValue ?? sourceTask.presets?.[0] ?? true);
-        }
-      }
-
-      return {
-        ...next,
-        attributes: {
-          ...next.attributes,
-          [activeExecutionTask.attributeKey || "mind"]:
-            Number(next.attributes?.[activeExecutionTask.attributeKey || "mind"] ?? 0) + Number(activeExecutionTask.attributeDelta ?? 0)
-        },
-        execution: {
-          ...DEFAULT_STATE.execution,
-          mainTaskId: current.execution.mainTaskId
-        }
-      };
-    });
+    commitState((current) => completeExecutionState(current, { activeTask: activeExecutionTask, sourceTask, todayKey }));
   };
 
   return (
@@ -2018,7 +1508,7 @@ export function LifeOSApp({ view = "dashboard" }) {
         </div>
         <div className="hero-inline-stats">
           <div className="hero-stat hero-stat-compact">
-            <strong>LV {level.level}</strong>
+            <strong>LV {dashboardOverview.level.level}</strong>
           </div>
           <div className="hero-stat hero-stat-compact">
             <strong>{state.profile.name || "User"}</strong>
@@ -2035,42 +1525,18 @@ export function LifeOSApp({ view = "dashboard" }) {
 
           if (item.children) {
             return (
-              <div
+              <RoomsNavGroup
                 key={item.href}
-                className={`nav-group ${isActive ? "is-active" : ""}`}
-                style={
-                  openNavMenu === "rooms"
-                    ? {
-                        "--nav-dropdown-top": `${roomsMenuPosition.top}px`,
-                        "--nav-dropdown-left": `${roomsMenuPosition.left}px`
-                      }
-                    : undefined
-                }
-              >
-                <button
-                  ref={roomsTriggerRef}
-                  type="button"
-                  className={`nav-link nav-summary ${isActive ? "is-active" : ""}`}
-                  onClick={() => setOpenNavMenu((current) => (current === "rooms" ? "" : "rooms"))}
-                >
-                  <span>{item.label}</span>
-                  <ChevronDown size={14} />
-                </button>
-                {openNavMenu === "rooms" ? (
-                  <div ref={roomsDropdownRef} className="nav-dropdown">
-                    {item.children.map((child) => (
-                      <Link
-                        key={child.href}
-                        href={child.href}
-                        className={`nav-dropdown-link ${activePath === child.href ? "is-active" : ""}`}
-                        onClick={() => setOpenNavMenu("")}
-                      >
-                        {child.label}
-                      </Link>
-                    ))}
-                  </div>
-                ) : null}
-              </div>
+                item={item}
+                isActive={isActive}
+                isOpen={openNavMenu === "rooms"}
+                roomsMenuPosition={roomsMenuPosition}
+                activePath={activePath}
+                roomsTriggerRef={roomsTriggerRef}
+                roomsDropdownRef={roomsDropdownRef}
+                onToggle={() => applyNavLocalPatch(buildRoomsMenuTogglePatch(openNavMenu))}
+                onClose={() => applyNavLocalPatch(buildRoomsMenuClosePatch())}
+              />
             );
           }
 
@@ -2165,15 +1631,15 @@ export function LifeOSApp({ view = "dashboard" }) {
             <aside className="execution-layout-secondary dashboard-support-rail">
               <Card title="Life Timeline" icon={Timer} className="card-timeline dashboard-rail-card">
                 <div className="timeline-track">
-                  <span style={{ width: `${lifeUsedRatio * 100}%` }} />
+                  <span style={{ width: `${dashboardOverview.lifeUsedRatio * 100}%` }} />
                 </div>
                 <CompactStatGrid
                   className="compact-stat-grid-keep-mobile"
                   columns={3}
                   items={[
-                    { label: "Life Used", value: `${Math.round(lifeUsedRatio * 100)}%` },
-                    { label: "Days Left", value: formatNumber(daysLeft) },
-                    { label: "To Retirement", value: `${yearsToRetirement} yrs` }
+                    { label: "Life Used", value: `${Math.round(dashboardOverview.lifeUsedRatio * 100)}%` },
+                    { label: "Days Left", value: formatNumber(dashboardOverview.daysLeft) },
+                    { label: "To Retirement", value: `${dashboardOverview.yearsToRetirement} yrs` }
                   ]}
                 />
               </Card>
@@ -2187,22 +1653,22 @@ export function LifeOSApp({ view = "dashboard" }) {
                   </strong>
                 </div>
                 <div className="timeline-track">
-                  <span style={{ width: `${income.progress * 100}%` }} />
+                  <span style={{ width: `${dashboardOverview.income.progress * 100}%` }} />
                 </div>
                 <CompactStatGrid
                   className="compact-stat-grid-keep-mobile"
                   columns={3}
                   items={[
-                    { label: "Daily Target", value: `${state.profile.currency}${formatNumber(income.dailyTarget)}` },
-                    { label: "Monthly Target", value: `${state.profile.currency}${formatNumber(income.monthlyTarget)}` },
-                    { label: "Should Be At", value: `${state.profile.currency}${formatNumber(income.shouldHaveMade)}` }
+                    { label: "Daily Target", value: `${state.profile.currency}${formatNumber(dashboardOverview.income.dailyTarget)}` },
+                    { label: "Monthly Target", value: `${state.profile.currency}${formatNumber(dashboardOverview.income.monthlyTarget)}` },
+                    { label: "Should Be At", value: `${state.profile.currency}${formatNumber(dashboardOverview.income.shouldHaveMade)}` }
                   ]}
                 />
               </Card>
 
               <Card title="Streak" icon={Flame} className="card-streaks dashboard-rail-card">
                 <div className="streak-widget">
-                  {coreStreaks.map((item) => (
+                  {dashboardOverview.coreStreaks.map((item) => (
                     <StreakMini key={item.label} label={item.label} history={item.history} streak={item.streak} />
                   ))}
                 </div>
@@ -2216,41 +1682,92 @@ export function LifeOSApp({ view = "dashboard" }) {
             <section className="focus-page-shell">
               <div className="focus-page-core">
                 <div className="focus-type-selector">
-                  {["work", "study", "life"].map((type) => (
+                  {(["work", "study", "life"] as const).map((type) => (
                     <button
                       key={type}
                       className={`focus-type-chip ${focusType === type ? "is-active" : ""}`}
                       onClick={() => setFocusTypeState(type)}
-                      disabled={focusStatus !== "idle"}
+                      disabled={focusSessionLocked}
                     >
                       {type === "work" ? "Work" : type === "study" ? "Study" : "Life"}
                     </button>
                   ))}
                 </div>
 
+                <div className="focus-setup-summary">
+                  <p className="muted">
+                    Choose a lane first. Task binding is optional, but binding a task adds XP and makes work handoff cleaner.
+                  </p>
+                  <div className="money-summary-grid is-compact-four">
+                    <div className="money-summary-item">
+                      <span>Base</span>
+                      <strong>{FOCUS_XP_V1.baseXP} XP</strong>
+                    </div>
+                    <div className="money-summary-item">
+                      <span>Type</span>
+                      <strong>{focusType ? `x${focusViewModel.rewardPreview.typeMultiplier.toFixed(1)}` : "Pick one"}</strong>
+                    </div>
+                    <div className="money-summary-item">
+                      <span>Binding</span>
+                      <strong>{focusTask ? `+${focusViewModel.rewardPreview.taskBindingBonusPct}%` : "+0%"}</strong>
+                    </div>
+                    <div className="money-summary-item">
+                      <span>Streak</span>
+                      <strong>{focusType ? `+${focusViewModel.rewardPreview.streakBonusPct}%` : "+0%"}</strong>
+                    </div>
+                  </div>
+                </div>
+
                 <div className="focus-task-selector">
                   <div className="focus-task-copy">
-                    <span className="eyebrow">Task</span>
-                    <strong>{focusTask ? focusTask.label : "No task selected"}</strong>
+                    <span className="eyebrow">Task Binding</span>
+                    <strong>{focusTask ? focusTask.label : "No task bound"}</strong>
                     <p className="muted">
-                      {focusTask ? focusTask.meta : focusType ? "Optional. Start with a task or skip it." : "Select a type first."}
+                      {focusTask
+                        ? `${focusTask.meta} · Bound for this session`
+                        : focusType
+                          ? focusViewModel.availableTaskCount
+                            ? `${focusViewModel.availableTaskCount} available. Optional, but binding adds +${focusViewModel.rewardPreview.taskBindingBonusPct}% XP.`
+                            : "Optional. No available tasks right now, so you can start without binding."
+                          : "Select Work, Study, or Life first."}
                     </p>
                   </div>
                   <div className="focus-task-actions">
                     <button
                       className="ghost-button"
                       onClick={() => setFocusTaskModalOpen(true)}
-                      disabled={!focusType || focusStatus !== "idle"}
+                      disabled={!focusType || focusSessionLocked}
                     >
-                      {focusTask ? "Change" : "Select Task"}
+                      {focusTask ? "Change Binding" : "Bind Task"}
                     </button>
                     <button
                       className="ghost-button"
                       onClick={() => setFocusTask(null)}
-                      disabled={!focusTask || focusStatus !== "idle"}
+                      disabled={!focusTask || focusSessionLocked}
                     >
-                      Skip
+                      Clear Binding
                     </button>
+                  </div>
+                </div>
+
+                <div className="focus-loop-stats">
+                  <div className="money-summary-grid is-compact-four">
+                    <div className="money-summary-item">
+                      <span>Projected</span>
+                      <strong>{focusType ? `${focusViewModel.rewardPreview.xpEarned} XP` : "0 XP"}</strong>
+                    </div>
+                    <div className="money-summary-item">
+                      <span>Focus Streak</span>
+                      <strong>{focusType ? `${focusViewModel.rewardPreview.streakCount} day${focusViewModel.rewardPreview.streakCount === 1 ? "" : "s"}` : `${focusViewModel.dayStreak} day${focusViewModel.dayStreak === 1 ? "" : "s"}`}</strong>
+                    </div>
+                    <div className="money-summary-item">
+                      <span>Today</span>
+                      <strong>{focusViewModel.sessionsTodayCount} session{focusViewModel.sessionsTodayCount === 1 ? "" : "s"}</strong>
+                    </div>
+                    <div className="money-summary-item">
+                      <span>Flow</span>
+                      <strong>{focusTask?.sourceType === "work-todo" ? "Close action" : "Focus XP"}</strong>
+                    </div>
                   </div>
                 </div>
 
@@ -2261,19 +1778,15 @@ export function LifeOSApp({ view = "dashboard" }) {
                         <button
                           key={duration}
                           className={`focus-duration-chip ${focusDurationMinutes === duration ? "is-active" : ""}`}
-                          onClick={() => {
-                            setFocusDurationMinutes(duration);
-                            setFocusRemainingSeconds(duration * 60);
-                            setFocusStatus("idle");
-                          }}
-                          disabled={focusStatus !== "idle"}
+                          onClick={() => applyFocusLocalPatch(buildFocusDurationSelectionPatch(duration))}
+                          disabled={focusSessionLocked}
                         >
                           {duration} min
                         </button>
                       ))}
                     </div>
                   ) : null}
-                  <div className="focus-timer-display">{formattedFocusTime}</div>
+                  <div className="focus-timer-display">{focusViewModel.formattedTime}</div>
                   <p className="muted focus-status-text">
                     {focusStatus === "idle"
                       ? "Ready to start"
@@ -2281,61 +1794,35 @@ export function LifeOSApp({ view = "dashboard" }) {
                         ? "In session"
                         : focusStatus === "paused"
                           ? "Paused"
-                        : "Session complete"}
+                          : "Session complete"}
                   </p>
-                  {focusStatus === "completed" ? (
+                  {focusCompletion ? (
                     <div className="focus-completion-feedback">
-                      <strong>+{focusRewardPreview.xpEarned} XP</strong>
-                      <span>{focusRewardPreview.typeLabel} Focus Completed</span>
-                      {focusRewardPreview.streakBonusPct > 0 ? <small>Streak +{focusRewardPreview.streakBonusPct}%</small> : null}
-                      {focusRewardPreview.breakBonus > 0 ? <small>Break +{focusRewardPreview.breakBonus} XP</small> : null}
+                      <strong>+{focusCompletion.xpEarned} XP</strong>
+                      <span>
+                        {focusCompletion.typeLabel} focus complete{focusCompletion.taskLabel ? ` · ${focusCompletion.taskLabel}` : ""}
+                      </span>
+                      <small>
+                        Base {focusCompletion.baseXP} · Type x{focusCompletion.typeMultiplier.toFixed(1)} · Binding +
+                        {focusCompletion.taskBindingBonusPct}% · Streak +{focusCompletion.streakBonusPct}%
+                      </small>
+                      {focusCompletion.closesBoundAction ? <small>Bound work action marked done.</small> : null}
                     </div>
                   ) : null}
                 </div>
 
                 <div className="focus-controls">
-                  {focusStatus === "idle" ? (
-                    <button className="ghost-button focus-primary-button" onClick={startFocusSession} disabled={!focusType}>
-                      <Play size={16} />
-                      Start
-                    </button>
-                  ) : null}
-
-                  {focusStatus === "running" ? (
-                    <>
-                      <button className="ghost-button" onClick={pauseFocusSession}>
-                        <Pause size={16} />
-                        Pause
-                      </button>
-                      <button className="ghost-button" onClick={stopFocusSession}>
-                        Stop
-                      </button>
-                    </>
-                  ) : null}
-
-                  {focusStatus === "paused" ? (
-                    <>
-                      <button className="ghost-button" onClick={resumeFocusSession}>
-                        <Play size={16} />
-                        Resume
-                      </button>
-                      <button className="ghost-button" onClick={stopFocusSession}>
-                        Stop
-                      </button>
-                    </>
-                  ) : null}
-
-                  {focusStatus === "completed" ? (
-                    <>
-                      <button className="ghost-button focus-primary-button" onClick={finishFocusSession}>
-                        Done
-                      </button>
-                      <button className="ghost-button" onClick={startNextFocusSession}>
-                        <Plus size={16} />
-                        Start Next Session
-                      </button>
-                    </>
-                  ) : null}
+                  <button className="ghost-button focus-primary-button" onClick={startFocusSession} disabled={!focusType || focusStatus === "running"}>
+                    <Play size={16} />
+                    Start
+                  </button>
+                  <button className="ghost-button" onClick={pauseFocusSession} disabled={focusStatus !== "running"}>
+                    <Pause size={16} />
+                    Pause
+                  </button>
+                  <button className="ghost-button" onClick={stopFocusSession} disabled={focusStatus === "idle" && !focusCompletion}>
+                    Stop
+                  </button>
                 </div>
               </div>
 
@@ -2353,8 +1840,8 @@ export function LifeOSApp({ view = "dashboard" }) {
                     </div>
 
                     <div className="focus-task-modal-list">
-                      {(focusType ? focusTaskOptions[focusType] ?? [] : []).length ? (
-                        (focusTaskOptions[focusType] ?? []).map((item) => (
+                      {activeFocusTaskOptions.length ? (
+                        activeFocusTaskOptions.map((item) => (
                           <button
                             key={item.id}
                             className={`focus-task-option ${focusTask?.id === item.id ? "is-active" : ""}`}
@@ -2387,185 +1874,54 @@ export function LifeOSApp({ view = "dashboard" }) {
 
           {view !== "focus" ? <section className="modules-grid modules-grid-single">
             {view === "notes" ? (
-              <section className="life-page-layout">
-                <div className="life-page-primary">
-                  <ModuleCard title="Notes" color="#8892a0" icon={FileText}>
-                    <div className="notes-stack">
-                      <section className="note-composer">
-                        <div className="note-composer-head">
-                          <div>
-                            <p className="eyebrow">Quick Add</p>
-                            <strong>Notes</strong>
-                          </div>
-                          <span className="note-type-pill">{noteDraftType}</span>
-                        </div>
-
-                        <input
-                          className="note-title-input"
-                          value={noteDraftTitle}
-                          placeholder="Optional title"
-                          onChange={(event) => setNoteDraftTitle(event.target.value)}
-                        />
-                        <textarea
-                          ref={noteContentRef}
-                          className="note-content-input"
-                          value={noteDraftContent}
-                          placeholder="Capture a thought, draft, or temporary note"
-                          onChange={(event) => setNoteDraftContent(event.target.value)}
-                        />
-                        <div className="note-composer-actions">
-                          <span className="muted">Type · {noteDraftType}</span>
-                          <button className="ghost-button" onClick={() => saveNote()} disabled={!noteDraftTitle.trim() && !noteDraftContent.trim()}>
-                            <Save size={16} />
-                            Save
-                          </button>
-                        </div>
-                      </section>
-
-                      <div className="notes-grid">
-                        {filteredNoteItems.length ? (
-                          filteredNoteItems.map((note) => (
-                            <article
-                              key={note.id}
-                              className={`note-card ${selectedNoteId === note.id ? "is-selected" : ""}`}
-                              style={{
-                                "--note-bg": NOTE_CARD_COLORS[note.colorIndex % NOTE_CARD_COLORS.length],
-                                "--note-text": NOTE_TEXT_COLOR,
-                                "--note-subtext": NOTE_SUBTEXT_COLOR
-                              }}
-                              onClick={() => setSelectedNoteId(note.id)}
-                            >
-                              <div className="note-card-head">
-                                <span className="note-type-badge">{note.type}</span>
-                                <div className="note-card-actions">
-                                  <button
-                                    className={`note-card-action-button ${note.pinned ? "is-active" : ""}`}
-                                    aria-label="Pin note"
-                                    onClick={(event) => {
-                                      event.stopPropagation();
-                                      toggleNotePin(note.id);
-                                    }}
-                                  >
-                                    <Pin size={13} strokeWidth={1.9} />
-                                  </button>
-                                  <button
-                                    className="note-card-action-button"
-                                    aria-label={note.archived ? "Restore note" : "Archive note"}
-                                    onClick={(event) => {
-                                      event.stopPropagation();
-                                      toggleNoteArchive(note.id);
-                                    }}
-                                  >
-                                    <Archive size={13} strokeWidth={1.9} />
-                                  </button>
-                                </div>
-                              </div>
-                              {note.title ? <h3>{note.title}</h3> : null}
-                              <p className="note-card-preview">{note.content || "Untitled note"}</p>
-                              <div className="note-card-meta">
-                                <span>Created {formatNoteDate(note.createdAt)}</span>
-                                <span>Updated {formatNoteDate(note.updatedAt)}</span>
-                              </div>
-                            </article>
-                          ))
-                        ) : (
-                          <div className="note-empty-card">
-                            <strong>No notes yet</strong>
-                            <p className="muted">Capture quick ideas here before moving them into Work, Study, or Life.</p>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </ModuleCard>
-                </div>
-
-                <aside className="life-page-secondary">
-                  <div className="money-sidebar-stack notes-sidebar-stack">
-                    <Card title="Quick Capture" icon={Plus} className="notes-sidebar-card">
-                      <div className="notes-sidebar-actions is-inline-row">
-                        <button className="ghost-button notes-sidebar-button" onClick={() => focusNoteComposer("Draft")}>
-                          New Note
-                        </button>
-                        <button className="ghost-button notes-sidebar-button" onClick={() => focusNoteComposer("Idea")}>
-                          Quick Idea
-                        </button>
-                        <button className="ghost-button notes-sidebar-button" onClick={() => focusNoteComposer("Temporary")}>
-                          Temporary Note
-                        </button>
-                      </div>
-                    </Card>
-
-                    <Card title="Filters" icon={Command} className="notes-sidebar-card">
-                      <div className="notes-sidebar-actions is-inline-row">
-                        {NOTE_FILTERS.map((filterLabel) => (
-                          <button
-                            key={filterLabel}
-                            className={`ghost-button notes-sidebar-button ${noteFilter === filterLabel ? "is-active" : ""}`}
-                            onClick={() => setNoteFilter(filterLabel)}
-                          >
-                            <span>{filterLabel}</span>
-                            <strong>
-                              {filterLabel === "All"
-                                ? noteCounts.all
-                                : filterLabel === "Pinned"
-                                  ? noteCounts.pinned
-                                  : filterLabel === "Recent"
-                                    ? noteCounts.recent
-                                    : noteCounts.archived}
-                            </strong>
-                          </button>
-                        ))}
-                      </div>
-                    </Card>
-
-                    <Card title="Note Types" icon={FileText} className="notes-sidebar-card">
-                      <div className="notes-sidebar-actions is-inline-row">
-                        {NOTE_TYPES.map((type) => (
-                          <button
-                            key={type}
-                            className={`ghost-button notes-sidebar-button ${noteDraftType === type ? "is-active" : ""}`}
-                            onClick={() => setNoteDraftType(type)}
-                          >
-                            {type}
-                          </button>
-                        ))}
-                      </div>
-                    </Card>
-
-                    <Card title="Convert / Move" icon={RefreshCw} className="notes-sidebar-card">
-                      <div className="notes-sidebar-actions">
-                        <button className="ghost-button notes-sidebar-button" disabled={!selectedNote} onClick={() => moveNoteToTodo("work")}>
-                          Move to Work
-                        </button>
-                        <button className="ghost-button notes-sidebar-button" disabled={!selectedNote} onClick={() => moveNoteToTodo("study")}>
-                          Move to Study
-                        </button>
-                        <button className="ghost-button notes-sidebar-button" disabled={!selectedNote} onClick={() => moveNoteToTodo("life")}>
-                          Move to Life
-                        </button>
-                        <button className="ghost-button notes-sidebar-button" disabled={!selectedNote} onClick={convertNoteToProject}>
-                          Turn into Project
-                        </button>
-                        <button className="ghost-button notes-sidebar-button" disabled={!selectedNote} onClick={convertNoteToDailyAction}>
-                          Turn into Daily Action
-                        </button>
-                      </div>
-                      <p className="muted notes-sidebar-helper">
-                        {selectedNote ? `Selected: ${noteToActionLabel(selectedNote)}` : "Select a note first to convert or move it."}
-                      </p>
-                    </Card>
-                  </div>
-                </aside>
-              </section>
+              <NotesPageSection
+                Card={Card}
+                ModuleCard={ModuleCard}
+                utilityColor={UTILITY_MODULE_COLOR}
+                noteDraftType={noteDraftType}
+                noteDraftTitle={noteDraftTitle}
+                noteDraftContent={noteDraftContent}
+                noteContentRef={noteContentRef}
+                canSaveNote={Boolean(noteDraftTitle.trim() || noteDraftContent.trim())}
+                filteredNoteItems={filteredNoteItems}
+                selectedNoteId={selectedNoteId}
+                noteCardColors={NOTE_CARD_COLORS}
+                noteTextColor={NOTE_TEXT_COLOR}
+                noteSubtextColor={NOTE_SUBTEXT_COLOR}
+                noteFilter={noteFilter}
+                noteFilters={NOTE_FILTERS}
+                noteCounts={noteCounts}
+                noteTypes={NOTE_TYPES}
+                hasSelectedNote={Boolean(selectedNote)}
+                selectedNoteConversion={selectedNoteConversion}
+                formatNoteDate={formatNoteDate}
+                onDraftTitleChange={(value) => applyNoteLocalPatch(buildNoteDraftPatch({ title: value }))}
+                onDraftContentChange={(value) => applyNoteLocalPatch(buildNoteDraftPatch({ content: value }))}
+                onSaveNote={() => saveNote()}
+                onSelectNote={(noteId) => applyNoteLocalPatch(buildNoteSelectionPatch(noteId))}
+                onToggleNotePin={toggleNotePin}
+                onToggleNoteArchive={toggleNoteArchive}
+                onQuickCapture={focusNoteComposer}
+                onFilterSelect={(filterLabel) => applyNoteLocalPatch(buildNoteFilterPatch(filterLabel))}
+                onTypeSelect={(type) => applyNoteLocalPatch(buildNoteDraftTypePatch(type))}
+                onMoveNoteToTodo={moveNoteToTodo}
+                onConvertNoteToProject={convertNoteToProject}
+                onConvertNoteToDailyAction={convertNoteToDailyAction}
+              />
             ) : null}
 
             {view === "todo" ? (
               <section className="life-page-layout">
                 <div className="life-page-primary">
-                  <ModuleCard title="Todo" color="#8892a0" icon={ListTodo}>
+                  <ModuleCard title="Todo" color={UTILITY_MODULE_COLOR} icon={ListTodo}>
                     <div className="misc-todo-stack">
-                      <div className="misc-todo-composer">
-                        <select value={miscTodoCategory} onChange={(event) => setMiscTodoCategory(event.target.value)}>
+                    <div className="misc-todo-composer">
+                        <select
+                          value={miscTodoCategory}
+                          onChange={(event: ChangeEvent<HTMLSelectElement>) =>
+                            applyTodoComposerPatch(buildTodoComposerCategoryPatch(event.currentTarget.value as MiscTodoCategory))
+                          }
+                        >
                           <option value="work">Work</option>
                           <option value="study">Study</option>
                           <option value="life">Life</option>
@@ -2575,8 +1931,10 @@ export function LifeOSApp({ view = "dashboard" }) {
                           className="misc-todo-input"
                           value={miscTodoInput}
                           placeholder="Add a small loose task"
-                          onChange={(event) => setMiscTodoInput(event.target.value)}
-                          onKeyDown={(event) => {
+                          onChange={(event: ChangeEvent<HTMLInputElement>) =>
+                            applyTodoComposerPatch(buildTodoComposerInputPatch(event.currentTarget.value))
+                          }
+                          onKeyDown={(event: ReactKeyboardEvent<HTMLInputElement>) => {
                             if (event.key === "Enter") addMiscTodo();
                           }}
                         />
@@ -2602,7 +1960,9 @@ export function LifeOSApp({ view = "dashboard" }) {
                                   <input
                                     className="misc-todo-card-input"
                                     value={item.label}
-                                    onChange={(event) => updateMiscTodo(item.id, { label: event.target.value })}
+                                    onChange={(event: ChangeEvent<HTMLInputElement>) =>
+                                      updateMiscTodo(item.id, { label: event.currentTarget.value })
+                                    }
                                   />
                                   <button className={`ghost-button ${isDone ? "is-active" : ""}`} onClick={() => toggleMiscTodo(item.id)}>
                                     {isDone ? "Done" : "Mark"}
@@ -2666,211 +2026,14 @@ export function LifeOSApp({ view = "dashboard" }) {
             ) : null}
 
             {view === "work" ? (
-              <section className="life-page-layout">
-                <div className="life-page-primary">
-                  <ModuleCard title="Work" color={MODULE_COLORS.work} icon={BriefcaseBusiness}>
-                    <div className="project-list project-list-split">
-                      {state.workProjects.map((project) => (
-                        <div key={project.id} className="project-column">
-                          <div className="project-heading">
-                            <strong>{WORK_PROJECT_SLOT_LABELS[project.id] ?? project.name}</strong>
-                            <button
-                              className="ghost-button"
-                              onClick={() => setWorkActionModalProjectId(project.id)}
-                              disabled={(project.todayActions ?? []).length >= 5}
-                            >
-                              <Plus size={16} />
-                              Add
-                            </button>
-                          </div>
-                          <div className="project-card">
-                            <div className="project-subhead">
-                              <span>Today</span>
-                              <input
-                                className="project-name-input"
-                                value={project.name}
-                                onChange={(event) => renameWorkProject(project.id, event.target.value)}
-                                aria-label={`${project.name} project name`}
-                              />
-                              <small>{(project.todayActions ?? []).length} / 5</small>
-                            </div>
-
-                            <div className="work-action-list">
-                              {(project.todayActions ?? []).length ? (
-                                (project.todayActions ?? []).map((action) => {
-                                  const done = Boolean(getLogValue(state.logs, todayKey, `${project.id}:${action.id}`));
-                                  return (
-                                    <article key={action.id} className={`work-action-card ${done ? "is-done" : ""}`}>
-                                      <div className="work-action-copy">
-                                        <div className="work-action-main">
-                                          <input
-                                            className="work-action-input"
-                                            value={action.label}
-                                            onChange={(event) => renameTodayAction(project.id, action.id, event.target.value)}
-                                          />
-                                          <button
-                                            className="icon-button"
-                                            aria-label="Delete action"
-                                            onClick={() => deleteTodayAction(project.id, action.id)}
-                                          >
-                                            <Trash2 size={16} />
-                                          </button>
-                                        </div>
-                                      </div>
-                                      <div className="work-action-controls">
-                                        <button className="ghost-button" onClick={() => launchWorkFocus(project, action)}>
-                                          <Play size={16} />
-                                          Start Focus
-                                        </button>
-                                        <label className="work-action-check">
-                                          <input
-                                            type="checkbox"
-                                            checked={done}
-                                            onChange={() => toggleTodo(project.id, action.id)}
-                                          />
-                                          <span>Complete</span>
-                                        </label>
-                                      </div>
-                                    </article>
-                                  );
-                                })
-                              ) : (
-                                <div className="misc-todo-empty">
-                                  <p className="muted">Pick up to 5 actions for today. Keep each one clear and finishable.</p>
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </ModuleCard>
-                </div>
-
-                <aside className="life-page-secondary">
-                  <div className="money-sidebar-stack">
-                    <Card title="Today" icon={BriefcaseBusiness} className="life-quick-card">
-                      <div className="money-summary-grid">
-                        <div className="money-summary-item">
-                          <span>Total Actions</span>
-                          <strong>{formatNumber(workSidebarSummary.total)}</strong>
-                        </div>
-                        <div className="money-summary-item">
-                          <span>Open</span>
-                          <strong>{formatNumber(workSidebarSummary.open)}</strong>
-                        </div>
-                        <div className="money-summary-item">
-                          <span>Done</span>
-                          <strong>{formatNumber(workSidebarSummary.done)}</strong>
-                        </div>
-                      </div>
-                    </Card>
-
-                    <Card title="Projects" icon={Command} className="life-quick-card">
-                      <div className="money-summary-grid">
-                        {workSidebarSummary.projects.map((project) => (
-                          <div key={project.id} className="money-summary-item">
-                            <span>{project.label}</span>
-                            <strong>
-                              {formatNumber(project.total)} today · {formatNumber(project.backlog)} backlog
-                            </strong>
-                          </div>
-                        ))}
-                      </div>
-                    </Card>
-                  </div>
-                </aside>
-
-                {workActionModalProjectId ? (
-                  <div className="focus-task-modal-backdrop" onClick={() => setWorkActionModalProjectId("")}>
-                    <div className="focus-task-modal" onClick={(event) => event.stopPropagation()}>
-                      <div className="focus-task-modal-head">
-                        <div>
-                          <p className="eyebrow">Today Actions</p>
-                          <h3>
-                            {state.workProjects.find((project) => project.id === workActionModalProjectId)?.name ?? "Project"}
-                          </h3>
-                        </div>
-                        <button className="ghost-button" onClick={() => setWorkActionModalProjectId("")}>
-                          Close
-                        </button>
-                      </div>
-
-                      {(() => {
-                        const activeProject = state.workProjects.find((project) => project.id === workActionModalProjectId);
-                        if (!activeProject) return null;
-
-                        return (
-                          <div className="work-action-modal-stack">
-                            {(activeProject.nextDayCandidates ?? []).length ? (
-                              <div className="work-action-modal-section">
-                                <span className="eyebrow">Next Day Candidates</span>
-                                <div className="focus-task-modal-list">
-                                  {(activeProject.nextDayCandidates ?? []).map((action) => (
-                                    <button
-                                      key={action.id}
-                                      className="focus-task-option"
-                                      onClick={() => {
-                                        moveWorkActionToToday(activeProject.id, action, "candidate");
-                                        setWorkActionModalProjectId("");
-                                      }}
-                                    >
-                                      <strong>{action.label}</strong>
-                                      <span>Carry over</span>
-                                    </button>
-                                  ))}
-                                </div>
-                              </div>
-                            ) : null}
-
-                            <div className="work-action-modal-section">
-                              <span className="eyebrow">Backlog</span>
-                              <div className="focus-task-modal-list">
-                                {(activeProject.backlog ?? []).length ? (
-                                  (activeProject.backlog ?? []).map((action) => (
-                                    <button
-                                      key={action.id}
-                                      className="focus-task-option"
-                                      onClick={() => {
-                                        moveWorkActionToToday(activeProject.id, action, "backlog");
-                                        setWorkActionModalProjectId("");
-                                      }}
-                                    >
-                                      <strong>{action.label}</strong>
-                                      <span>Move into Today</span>
-                                    </button>
-                                  ))
-                                ) : (
-                                  <p className="muted">Backlog is empty right now.</p>
-                                )}
-                              </div>
-                            </div>
-
-                            <div className="work-action-modal-section">
-                              <span className="eyebrow">Create New</span>
-                              <div className="misc-todo-composer">
-                                <input
-                                  className="misc-todo-input"
-                                  value={workActionDraft}
-                                  placeholder="Create a new action for today"
-                                  onChange={(event) => setWorkActionDraft(event.target.value)}
-                                  onKeyDown={(event) => {
-                                    if (event.key === "Enter") addWorkActionFromDraft(activeProject.id);
-                                  }}
-                                />
-                                <button className="ghost-button" onClick={() => addWorkActionFromDraft(activeProject.id)}>
-                                  <Plus size={16} />
-                                  Add
-                                </button>
-                              </div>
-                            </div>
-                          </div>
-                        );
-                      })()}
-                    </div>
-                  </div>
-                ) : null}
-              </section>
+              <WorkPageSection
+                Card={Card}
+                ModuleCard={ModuleCard}
+                workModuleColor={MODULE_COLORS.work}
+                workPageViewModel={workPageViewModel}
+                workPageControllers={workPageControllers}
+                formatNumber={formatNumber}
+              />
             ) : null}
 
             {view === "study" ? (
@@ -3032,7 +2195,7 @@ export function LifeOSApp({ view = "dashboard" }) {
             ) : null}
 
             {view === "history" ? (
-              <ModuleCard title="History" color="#8892a0" icon={History}>
+              <ModuleCard title="History" color={UTILITY_MODULE_COLOR} icon={History}>
                 <section className="history-page-layout">
                   <div className="history-page-primary">
                     <div className="history-content-grid">
@@ -3128,113 +2291,42 @@ export function LifeOSApp({ view = "dashboard" }) {
             ) : null}
 
             {view === "settings" ? (
-              <ModuleCard title="Settings" color="#8892a0" icon={Timer}>
+              <ModuleCard title="Settings" color={UTILITY_MODULE_COLOR} icon={Timer}>
                 <div className="settings-stack">
-                  <div className="settings-group">
-                    <div className="group-title">Sync</div>
-                    <div className="controls-grid">
-                      <label>
-                        Sync Code
-                        <input value={syncCodeInput} onChange={(event) => setSyncCodeInput(event.target.value.toUpperCase())} />
-                      </label>
-                      <label>
-                        Status
-                        <input value={state.sync.mode === "anonymous" ? state.sync.status : "local only"} readOnly />
-                      </label>
-                    </div>
-                    <div className="preset-row">
-                      <button className="ghost-button" onClick={() => enableAnonymousSync()}>
-                        <Link2 size={16} />
-                        Create Sync Code
-                      </button>
-                      <button className="ghost-button" onClick={() => enableAnonymousSync(syncCodeInput)}>
-                        <RefreshCw size={16} />
-                        Connect Code
-                      </button>
-                      <button className="ghost-button" onClick={pushNow} disabled={!state.sync.syncCode}>
-                        <RefreshCw size={16} />
-                        Push Now
-                      </button>
-                      <button className="ghost-button" onClick={pullNow} disabled={!state.sync.syncCode}>
-                        <Download size={16} />
-                        Pull Now
-                      </button>
-                      <button className="ghost-button" onClick={saveBackup}>
-                        <Save size={16} />
-                        Save Backup
-                      </button>
-                      <button className="ghost-button" onClick={exportBackup}>
-                        <Download size={16} />
-                        Export JSON
-                      </button>
-                    </div>
-                    <p className="muted">
-                      Persistent sync now expects a Supabase backend. Backups and manual recovery are kept as safety tools.
-                    </p>
-                    {state.sync.syncCode ? (
-                      <p className="muted">
-                        Active code: <strong>{state.sync.syncCode}</strong>
-                        {state.sync.lastSyncedAt ? ` · Last sync ${new Date(state.sync.lastSyncedAt).toLocaleTimeString()}` : ""}
-                      </p>
-                    ) : null}
-                    <p className="muted">
-                      Local backups: {backupCount}
-                      {state.sync.lastBackupAt ? ` · Last backup ${new Date(state.sync.lastBackupAt).toLocaleTimeString()}` : ""}
-                    </p>
-                    {state.sync.error ? <p className="muted">{state.sync.error}</p> : null}
-                  </div>
+                  <SettingsSyncSection
+                    syncCodeInput={syncCodeInput}
+                    syncState={state.sync}
+                    backupCount={backupCount}
+                    authUser={authUser}
+                    authStatus={authStatus}
+                    authEmailInput={authEmailInput}
+                    onSyncCodeChange={(value) => applySyncLocalPatch(buildSyncCodeInputPatch(value))}
+                    onAuthEmailChange={setAuthEmailInput}
+                    onSendLoginLink={sendLoginLink}
+                    onSignOut={signOut}
+                    onCreateSyncCode={() => enableAnonymousSync()}
+                    onConnectCode={() => enableAnonymousSync(syncCodeInput)}
+                    onPushNow={pushNow}
+                    onPullNow={pullNow}
+                    onSaveBackup={saveBackup}
+                    onExportBackup={exportBackup}
+                  />
 
-                  <div className="settings-group">
-                    <div className="group-title">Profile</div>
-                    <div className="controls-grid">
-                      <label>
-                        Name
-                        <input value={state.profile.name || ""} onChange={(event) => updateProfile("name", event.target.value)} />
-                      </label>
-                      <label>
-                        Currency
-                        <select value={state.profile.currency} onChange={(event) => updateProfile("currency", event.target.value)}>
-                          {CURRENCIES.map((currency) => (
-                            <option key={currency} value={currency}>
-                              {currency}
-                            </option>
-                          ))}
-                        </select>
-                      </label>
-                    </div>
-                  </div>
+                  <SettingsProfileSection
+                    profile={state.profile}
+                    currencies={CURRENCIES}
+                    onProfileInput={updateProfileFromInput}
+                  />
 
-                  <div className="settings-group">
-                    <div className="group-title">Timeline</div>
-                    <div className="controls-grid">
-                      <label>
-                        Age
-                        <input type="number" value={state.profile.age} onChange={(event) => updateProfile("age", Number(event.target.value || 0))} />
-                      </label>
-                      <label>
-                        Retirement Age
-                        <input
-                          type="number"
-                          value={state.profile.retirementAge}
-                          onChange={(event) => updateProfile("retirementAge", Number(event.target.value || 0))}
-                        />
-                      </label>
-                    </div>
-                  </div>
+                  <SettingsTimelineSection
+                    profile={state.profile}
+                    onProfileInput={updateProfileFromInput}
+                  />
 
-                  <div className="settings-group">
-                    <div className="group-title">Targets</div>
-                    <div className="controls-grid">
-                      <label>
-                        Year Goal
-                        <input
-                          type="number"
-                          value={state.profile.yearGoal}
-                          onChange={(event) => updateProfile("yearGoal", Number(event.target.value || 0))}
-                        />
-                      </label>
-                    </div>
-                  </div>
+                  <SettingsTargetsSection
+                    profile={state.profile}
+                    onProfileInput={updateProfileFromInput}
+                  />
                 </div>
               </ModuleCard>
             ) : null}
@@ -3259,7 +2351,7 @@ export function LifeOSApp({ view = "dashboard" }) {
                         <div
                           ref={officeMapRef}
                           className="office-map-surface"
-                          style={{ "--map-width": `${OFFICE_MAP.width}px`, "--map-height": `${OFFICE_MAP.height}px` }}
+                          style={{ "--map-width": `${OFFICE_MAP.width}px`, "--map-height": `${OFFICE_MAP.height}px` } as OfficeMapSurfaceStyle}
                         >
                           <div className="office-floor office-floor-main" />
                           <div className="office-floor office-floor-lounge" />
@@ -3398,7 +2490,12 @@ export function LifeOSApp({ view = "dashboard" }) {
                         <div className="study-map-hint">Drag to browse the floorplan on mobile.</div>
                         <div
                           className="study-map-surface"
-                          style={{ "--study-map-width": `${STUDY_ROOM_MAP.width}px`, "--study-map-height": `${STUDY_ROOM_MAP.height}px` }}
+                          style={
+                            {
+                              "--study-map-width": `${STUDY_ROOM_MAP.width}px`,
+                              "--study-map-height": `${STUDY_ROOM_MAP.height}px`
+                            } as StudyMapSurfaceStyle
+                          }
                         >
                           <div className="study-hallway study-hallway-main" />
                           <div className="study-hallway study-hallway-inner" />
@@ -3482,7 +2579,7 @@ export function LifeOSApp({ view = "dashboard" }) {
   );
 }
 
-function Card({ title, icon: Icon, children, className = "" }) {
+function Card({ title, icon: Icon, children, className = "" }: CardShellProps) {
   return (
     <article className={`panel-card ${className}`}>
       <div className="panel-head">
@@ -3496,9 +2593,9 @@ function Card({ title, icon: Icon, children, className = "" }) {
   );
 }
 
-function ModuleCard({ title, color, icon: Icon, children }) {
+function ModuleCard({ title, color, icon: Icon, children }: ModuleCardShellProps) {
   return (
-    <section className="module-card" style={{ "--module-color": color }}>
+    <section className="module-card" style={{ "--module-color": color } as ModuleCardStyle}>
       <div className="module-title">
         <div>
           <Icon size={18} />
@@ -3510,7 +2607,7 @@ function ModuleCard({ title, color, icon: Icon, children }) {
   );
 }
 
-function OfficeZoneDecor({ zone }) {
+function OfficeZoneDecor({ zone }: { zone: OfficeZone }) {
   if (zone.id === "open-desks") {
     return (
       <>
@@ -3567,7 +2664,7 @@ function OfficeZoneDecor({ zone }) {
         <div className="office-furniture wall-screen" style={{ left: zone.width / 2 - 28, top: 14 }} />
         <div className="office-furniture speaker" style={{ left: zone.width / 2 - 70, top: 18 }} />
         <div className="office-furniture speaker" style={{ left: zone.width / 2 + 50, top: 18 }} />
-        {zone.seats.map((seat) => (
+        {zone.seats.map((seat: { id: string; x: number; y: number }) => (
           <div
             key={`${seat.id}-chair`}
             className="office-furniture pixel-chair"
@@ -3594,7 +2691,7 @@ function OfficeZoneDecor({ zone }) {
   return null;
 }
 
-function StudyZoneDecor({ zone }) {
+function StudyZoneDecor({ zone }: { zone: StudyRoomZone }) {
   if (zone.id === "quiet-zone" || zone.id === "focus-zone") {
     return (
       <>
@@ -3644,7 +2741,31 @@ function StudyZoneDecor({ zone }) {
   return null;
 }
 
-function TaskList({ tasks, logs, todayKey, notes, onLog, currency, showStreaks = false }) {
+type OfficeZone = (typeof OFFICE_ZONES)[number];
+type StudyRoomZone = (typeof STUDY_ROOM_ZONES)[number];
+type CssVariableStyle<Key extends string> = CSSProperties & Record<Key, string | number>;
+type OfficeMapSurfaceStyle = CssVariableStyle<"--map-width" | "--map-height">;
+type StudyMapSurfaceStyle = CssVariableStyle<"--study-map-width" | "--study-map-height">;
+type ModuleCardStyle = CssVariableStyle<"--module-color">;
+type CompactStatGridStyle = CssVariableStyle<"--compact-columns">;
+
+function TaskList({
+  tasks,
+  logs,
+  todayKey,
+  notes,
+  onLog,
+  currency,
+  showStreaks = false
+}: {
+  tasks: TrackedTaskDefinition[];
+  logs: LifeOSLogs;
+  todayKey: string;
+  notes?: NotesByTaskId;
+  onLog: (task: TrackedTaskDefinition, value: LogValue) => void;
+  currency: string;
+  showStreaks?: boolean;
+}) {
   return (
     <div className="task-list">
       {tasks.map((task) => {
@@ -3698,18 +2819,38 @@ function TaskList({ tasks, logs, todayKey, notes, onLog, currency, showStreaks =
   );
 }
 
-function LifeTaskGrid({ tasks, logs, todayKey, onLog, currency, showStreaks = false, defaultInputs = LIFE_DEFAULT_INPUTS, showMonthTotals = false }) {
-  const [customValues, setCustomValues] = useState({});
-  const [selectedDates, setSelectedDates] = useState({});
+function LifeTaskGrid({
+  tasks,
+  logs,
+  todayKey,
+  onLog,
+  currency,
+  showStreaks = false,
+  defaultInputs = LIFE_DEFAULT_INPUTS,
+  showMonthTotals = false
+}: {
+  tasks: TrackedTaskDefinition[];
+  logs: LifeOSLogs;
+  todayKey: string;
+  onLog: (task: TrackedTaskDefinition, value: LogValue, dateKey: string, options?: { accumulate?: boolean }) => void;
+  currency?: string;
+  showStreaks?: boolean;
+  defaultInputs?: TaskDefaultInputMap;
+  showMonthTotals?: boolean;
+}) {
+  const [customValues, setCustomValues] = useState<TaskDraftInputMap>({});
+  const [selectedDates, setSelectedDates] = useState<TaskDraftInputMap>({});
   const [openCalendarTaskId, setOpenCalendarTaskId] = useState("");
-  const [calendarMonths, setCalendarMonths] = useState({});
+  const [calendarMonths, setCalendarMonths] = useState<Record<string, Date>>({});
 
   return (
     <div className="life-task-grid">
       {tasks.map((task) => {
         const selectedDateKey = selectedDates[task.id] ?? todayKey;
         const value = getLogValue(logs, selectedDateKey, task.id);
+        const isStressLevel = task.id === "stress-level";
         const isRating = task.type === "rating" || task.type === "ratingReverse";
+        const isStandardRating = isRating && !isStressLevel;
         const allowsNegative = Boolean(task.allowNegative);
         const allowsZero = Boolean(task.allowZero);
         const shouldShowStreak = showStreaks || task.id === "exercise" || task.id === "meditation";
@@ -3721,10 +2862,12 @@ function LifeTaskGrid({ tasks, logs, todayKey, onLog, currency, showStreaks = fa
         const calendarMonth = calendarMonths[task.id] ?? parseDateKey(selectedDateKey);
         const calendarDays = buildTaskCalendarDays(logs, task, calendarMonth);
         const monthTotal = showMonthTotals ? getTaskMonthTotal(logs, task.id, selectedDateKey) : 0;
-        const handleTaskLog = (nextValue, options = {}) => onLog(task, nextValue, selectedDateKey, options);
+        const selectedStressState = isStressLevel ? getStressLevelOption(value) : undefined;
+        const handleTaskLog = (nextValue: LogValue, options: { accumulate?: boolean } = {}) =>
+          onLog(task, nextValue, selectedDateKey, options);
 
         return (
-          <article key={task.id} className="life-task-card">
+          <article key={task.id} className={`life-task-card ${isStressLevel ? "is-stress" : ""}`}>
             <div className="life-task-head">
               <div className="life-task-head-copy">
                 <strong>{task.label}</strong>
@@ -3812,7 +2955,28 @@ function LifeTaskGrid({ tasks, logs, todayKey, onLog, currency, showStreaks = fa
               </div>
             ) : null}
 
-            {defaultInput && usesSimpleLog ? (
+            {isStressLevel ? (
+              <div className="stress-state-panel">
+                <div className={`stress-state-result ${selectedStressState ? `is-${selectedStressState.tone}` : "is-empty"}`}>
+                  <span className="stress-state-kicker">Current State</span>
+                  <strong>{selectedStressState?.label ?? "Not logged"}</strong>
+                  <p>{selectedStressState?.description ?? "Choose the state that best matches how you feel right now."}</p>
+                </div>
+
+                <div className="stress-state-selector" role="group" aria-label="Stress level state">
+                  {STRESS_LEVEL_OPTIONS.map((option) => (
+                    <button
+                      key={option.value}
+                      className={`stress-state-segment is-${option.tone} ${selectedStressState?.value === option.value ? "is-active" : ""}`}
+                      onClick={() => handleTaskLog(option.value)}
+                      aria-pressed={selectedStressState?.value === option.value}
+                    >
+                      <span className="stress-state-segment-label">{option.label}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ) : defaultInput && usesSimpleLog ? (
               <div className="life-task-input-stack is-simple">
                 <button className="chip life-task-default-chip life-task-default-display" onClick={() => handleTaskLog(defaultInput, { accumulate: true })}>
                   {defaultInput}
@@ -3825,13 +2989,13 @@ function LifeTaskGrid({ tasks, logs, todayKey, onLog, currency, showStreaks = fa
                   min={allowsNegative || allowsZero ? undefined : "0"}
                   placeholder="Custom"
                   value={customValue}
-                  onChange={(event) =>
+                  onChange={(event: ChangeEvent<HTMLInputElement>) =>
                     setCustomValues((current) => ({
                       ...current,
-                      [task.id]: event.target.value
+                      [task.id]: event.currentTarget.value
                     }))
                   }
-                  onKeyDown={(event) => {
+                  onKeyDown={(event: ReactKeyboardEvent<HTMLInputElement>) => {
                     if (event.key !== "Enter") return;
                     if (customValue === "") return;
                     const nextValue = Number(customValue);
@@ -3870,8 +3034,8 @@ function LifeTaskGrid({ tasks, logs, todayKey, onLog, currency, showStreaks = fa
                 <select
                   className="life-task-select"
                   value=""
-                  onChange={(event) => {
-                    const rawValue = event.target.value;
+                  onChange={(event: ChangeEvent<HTMLSelectElement>) => {
+                    const rawValue = event.currentTarget.value;
                     if (rawValue === "") return;
                     const nextValue = Number(rawValue);
                     const canLog = allowsNegative ? (allowsZero ? !Number.isNaN(nextValue) : nextValue !== 0) : allowsZero ? nextValue >= 0 : nextValue > 0;
@@ -3894,13 +3058,13 @@ function LifeTaskGrid({ tasks, logs, todayKey, onLog, currency, showStreaks = fa
                     min={allowsNegative || allowsZero ? undefined : "0"}
                     placeholder={task.unit}
                     value={customValue}
-                    onChange={(event) =>
+                    onChange={(event: ChangeEvent<HTMLInputElement>) =>
                       setCustomValues((current) => ({
                         ...current,
-                        [task.id]: event.target.value
+                        [task.id]: event.currentTarget.value
                       }))
                     }
-                    onKeyDown={(event) => {
+                    onKeyDown={(event: ReactKeyboardEvent<HTMLInputElement>) => {
                       if (event.key !== "Enter") return;
                       if (customValue === "") return;
                       const nextValue = Number(customValue);
@@ -3932,7 +3096,7 @@ function LifeTaskGrid({ tasks, logs, todayKey, onLog, currency, showStreaks = fa
                 </div>
               </div>
             ) : task.type !== "boolean" ? (
-              <div className={`life-task-actions ${isRating ? "is-rating" : ""}`}>
+              <div className={`life-task-actions ${isStandardRating ? "is-rating" : ""}`}>
                 {task.presets?.map((preset) => (
                   <button key={preset} className="chip" onClick={() => handleTaskLog(preset)}>
                     {currency && task.unit === "$" ? currency : ""}
@@ -3943,7 +3107,7 @@ function LifeTaskGrid({ tasks, logs, todayKey, onLog, currency, showStreaks = fa
               </div>
             ) : null}
 
-            {isRating ? (
+            {isStandardRating ? (
               <div className="life-task-actions is-rating">
                 {[1, 2, 3, 4, 5].map((rating) => (
                   <button key={rating} className={`chip ${value === rating ? "is-active" : ""}`} onClick={() => handleTaskLog(rating)}>
@@ -3982,32 +3146,41 @@ function LifeTaskGrid({ tasks, logs, todayKey, onLog, currency, showStreaks = fa
   );
 }
 
-function parseDateKey(dateKey) {
+type TaskCalendarCell =
+  | {
+      key: string;
+      day: number;
+      hasValue: boolean;
+      displayValue: string;
+    }
+  | null;
+
+function parseDateKey(dateKey: string) {
   const [year, month, day] = String(dateKey || formatDateKey(new Date()))
     .split("-")
     .map((value) => Number(value));
   return new Date(year, Math.max(0, (month || 1) - 1), day || 1);
 }
 
-function shiftMonth(date, delta) {
+function shiftMonth(date: Date, delta: number) {
   return new Date(date.getFullYear(), date.getMonth() + delta, 1);
 }
 
-function formatMonthLabel(date) {
+function formatMonthLabel(date: Date) {
   return new Intl.DateTimeFormat("en-US", {
     month: "long",
     year: "numeric"
   }).format(date);
 }
 
-function formatShortDate(date) {
+function formatShortDate(date: Date) {
   return new Intl.DateTimeFormat("en-US", {
     month: "short",
     day: "numeric"
   }).format(date);
 }
 
-function formatNoteDate(timestamp) {
+function formatNoteDate(timestamp?: string | null) {
   const date = timestamp ? new Date(timestamp) : new Date();
   return new Intl.DateTimeFormat("en-US", {
     month: "short",
@@ -4015,13 +3188,13 @@ function formatNoteDate(timestamp) {
   }).format(date);
 }
 
-function buildTaskCalendarDays(logs, task, monthDate) {
+function buildTaskCalendarDays(logs: LifeOSLogs, task: TrackedTaskDefinition, monthDate: Date): TaskCalendarCell[] {
   const year = monthDate.getFullYear();
   const month = monthDate.getMonth();
   const firstDay = new Date(year, month, 1);
   const daysInMonth = new Date(year, month + 1, 0).getDate();
   const leadingEmptyCount = firstDay.getDay();
-  const cells = Array.from({ length: leadingEmptyCount }).fill(null);
+  const cells: TaskCalendarCell[] = Array.from({ length: leadingEmptyCount }, () => null);
 
   for (let day = 1; day <= daysInMonth; day += 1) {
     const date = new Date(year, month, day);
@@ -4029,7 +3202,9 @@ function buildTaskCalendarDays(logs, task, monthDate) {
     const rawValue = logs?.[key]?.[task.id]?.value;
     const hasValue = typeof rawValue === "boolean" ? rawValue : Number(rawValue) > 0 || Number(rawValue) < 0;
     const displayValue =
-      typeof rawValue === "boolean"
+      task.id === "stress-level"
+        ? formatStressLevelShortValue(rawValue)
+        : typeof rawValue === "boolean"
         ? rawValue
           ? "1"
           : ""
@@ -4046,7 +3221,7 @@ function buildTaskCalendarDays(logs, task, monthDate) {
   return cells;
 }
 
-function getTaskMonthTotal(logs, taskId, dateKey) {
+function getTaskMonthTotal(logs: LifeOSLogs, taskId: string, dateKey: string) {
   const monthDate = parseDateKey(dateKey);
   const year = monthDate.getFullYear();
   const month = monthDate.getMonth();
@@ -4061,7 +3236,7 @@ function getTaskMonthTotal(logs, taskId, dateKey) {
   return total;
 }
 
-function getSleepScoreHistory(logs, taskId, days = 14) {
+function getSleepScoreHistory(logs: LifeOSLogs, taskId: string, days = 14) {
   return Array.from({ length: days }).map((_, index) => {
     const date = new Date();
     date.setDate(date.getDate() - (days - index - 1));
@@ -4082,9 +3257,13 @@ function getSleepScoreHistory(logs, taskId, days = 14) {
   });
 }
 
-function formatTaskValue(task, value, currency) {
+function formatTaskValue(task: TrackedTaskDefinition, value: LogValue | undefined, currency = "$") {
   if (task.type === "boolean") {
     return value ? "Clean" : "Pending";
+  }
+
+  if (task.id === "stress-level") {
+    return formatStressLevelValue(value);
   }
 
   if (task.unit === "$" && Number(value || 0) !== 0) {
@@ -4099,14 +3278,14 @@ function formatTaskValue(task, value, currency) {
   return `0${task.unit !== "$" ? `${separator}${task.unit}` : ""}`;
 }
 
-function formatCurrencyValue(value, currency) {
+function formatCurrencyValue(value: number | string | boolean | undefined, currency = "$") {
   const numericValue = Number(value || 0);
   const absValue = formatNumber(Math.abs(numericValue));
   if (numericValue < 0) return `-${currency}${absValue}`;
   return `${currency}${absValue}`;
 }
 
-function TimelineMetric({ label, value }) {
+function TimelineMetric({ label, value }: { label: string; value: ReactNode }) {
   return (
     <div className="timeline-metric">
       <span>{label}</span>
@@ -4115,9 +3294,17 @@ function TimelineMetric({ label, value }) {
   );
 }
 
-function CompactStatGrid({ items, columns = 3, className = "" }) {
+function CompactStatGrid({
+  items,
+  columns = 3,
+  className = ""
+}: {
+  items: { label: string; value: ReactNode }[];
+  columns?: number;
+  className?: string;
+}) {
   return (
-    <div className={`compact-stat-grid ${className}`.trim()} style={{ "--compact-columns": columns }}>
+    <div className={`compact-stat-grid ${className}`.trim()} style={{ "--compact-columns": columns } as CompactStatGridStyle}>
       {items.map((item) => (
         <div key={item.label} className="compact-stat-card">
           <span>{item.label}</span>
@@ -4128,7 +3315,7 @@ function CompactStatGrid({ items, columns = 3, className = "" }) {
   );
 }
 
-function StreakMini({ label, history, streak }) {
+function StreakMini({ label, history, streak }: { label: string; history: TaskHistoryEntry[]; streak: number }) {
   return (
     <div className="streak-mini streak-inline">
       <span className="capitalize streak-name">{label}</span>

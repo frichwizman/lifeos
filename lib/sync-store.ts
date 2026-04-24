@@ -1,28 +1,21 @@
-import { createClient } from "@supabase/supabase-js";
+import { getSupabaseAdminClient } from "@/lib/supabase-admin";
+import type { SyncPayload, SyncSessionRow, SyncSnapshot } from "@/lib/lifeos-types";
 
 function getSupabaseAdmin() {
-  const url = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-
-  if (!url || !serviceRoleKey) {
-    throw new Error("Persistent sync is not configured. Add SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY.");
-  }
-
-  return createClient(url, serviceRoleKey, {
-    auth: {
-      persistSession: false,
-      autoRefreshToken: false
-    }
-  });
+  return getSupabaseAdminClient("Persistent sync is not configured. Add SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY.");
 }
 
-export async function getSyncSnapshot(syncCode) {
+function parseStoredState(state: SyncSessionRow["state"]): SyncPayload {
+  return (typeof state === "string" ? JSON.parse(state) : state) as SyncPayload;
+}
+
+export async function getSyncSnapshot(syncCode: string): Promise<SyncSnapshot | null> {
   const supabase = getSupabaseAdmin();
   const { data, error } = await supabase
     .from("sync_sessions")
     .select("sync_code, user_id, state, updated_at")
     .eq("sync_code", syncCode)
-    .maybeSingle();
+    .maybeSingle<SyncSessionRow>();
 
   if (error) {
     throw error;
@@ -32,15 +25,13 @@ export async function getSyncSnapshot(syncCode) {
     return null;
   }
 
-  const state = typeof data.state === "string" ? JSON.parse(data.state) : data.state;
-
   return {
-    state,
+    state: parseStoredState(data.state),
     savedAt: data.updated_at
   };
 }
 
-export async function saveSyncSnapshot(syncCode, state) {
+export async function saveSyncSnapshot(syncCode: string, state: SyncPayload): Promise<SyncSnapshot> {
   const supabase = getSupabaseAdmin();
   const payload = {
     sync_code: syncCode,
@@ -53,14 +44,14 @@ export async function saveSyncSnapshot(syncCode, state) {
     .from("sync_sessions")
     .upsert(payload, { onConflict: "sync_code" })
     .select("sync_code, user_id, state, updated_at")
-    .single();
+    .single<SyncSessionRow>();
 
   if (error) {
     throw error;
   }
 
   return {
-    state: data.state,
+    state: parseStoredState(data.state),
     savedAt: data.updated_at
   };
 }
