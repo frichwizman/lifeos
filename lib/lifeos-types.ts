@@ -189,6 +189,9 @@ export interface TrackedTaskDefinition {
   compactUnit?: boolean;
   allowZero?: boolean;
   allowNegative?: boolean;
+  decimalPlaces?: number;
+  inputStep?: number;
+  inputMode?: "default" | "customOnly";
 }
 
 export interface LifeGroup {

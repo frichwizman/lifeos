@@ -37,6 +37,7 @@ import {
   Music4,
   Save,
   RefreshCw,
+  Scale,
   Package,
   ShieldCheck,
   ShoppingBasket,
@@ -238,7 +239,7 @@ const pillarIcons = {
   "sleep-quality": MoonStar,
   "water-intake": Droplets,
   "stress-level": Sparkle,
-  "social-connection": Users,
+  weight: Scale,
   "risky-substances": ShieldCheck,
   meditation: HeartPulse
 };
@@ -2851,6 +2852,7 @@ function LifeTaskGrid({
         const isStressLevel = task.id === "stress-level";
         const isRating = task.type === "rating" || task.type === "ratingReverse";
         const isStandardRating = isRating && !isStressLevel;
+        const isCustomOnly = task.inputMode === "customOnly";
         const allowsNegative = Boolean(task.allowNegative);
         const allowsZero = Boolean(task.allowZero);
         const shouldShowStreak = showStreaks || task.id === "exercise" || task.id === "meditation";
@@ -2859,12 +2861,17 @@ function LifeTaskGrid({
         const defaultInput = defaultInputs[task.id];
         const dropdownPresets = (task.presets ?? []).filter((preset) => preset !== defaultInput);
         const customValue = customValues[task.id] ?? "";
+        const inputStep = task.inputStep ?? (typeof task.decimalPlaces === "number" ? 1 / 10 ** task.decimalPlaces : 1);
+        const inputMode = inputStep < 1 ? "decimal" : "numeric";
         const calendarMonth = calendarMonths[task.id] ?? parseDateKey(selectedDateKey);
         const calendarDays = buildTaskCalendarDays(logs, task, calendarMonth);
         const monthTotal = showMonthTotals ? getTaskMonthTotal(logs, task.id, selectedDateKey) : 0;
         const selectedStressState = isStressLevel ? getStressLevelOption(value) : undefined;
         const handleTaskLog = (nextValue: LogValue, options: { accumulate?: boolean } = {}) =>
           onLog(task, nextValue, selectedDateKey, options);
+        const parseCustomValue = () => normalizeTaskNumber(task, Number(customValue));
+        const canLogValue = (nextValue: number) =>
+          allowsNegative ? (allowsZero ? !Number.isNaN(nextValue) : nextValue !== 0) : allowsZero ? nextValue >= 0 : nextValue > 0;
 
         return (
           <article key={task.id} className={`life-task-card ${isStressLevel ? "is-stress" : ""}`}>
@@ -2984,8 +2991,9 @@ function LifeTaskGrid({
                 </button>
                 <input
                   className="life-task-input"
-                  inputMode="numeric"
+                  inputMode={inputMode}
                   type="number"
+                  step={inputStep}
                   min={allowsNegative || allowsZero ? undefined : "0"}
                   placeholder="Custom"
                   value={customValue}
@@ -2998,9 +3006,8 @@ function LifeTaskGrid({
                   onKeyDown={(event: ReactKeyboardEvent<HTMLInputElement>) => {
                     if (event.key !== "Enter") return;
                     if (customValue === "") return;
-                    const nextValue = Number(customValue);
-                    const canLog = allowsNegative ? (allowsZero ? !Number.isNaN(nextValue) : nextValue !== 0) : allowsZero ? nextValue >= 0 : nextValue > 0;
-                    if (!canLog) return;
+                    const nextValue = parseCustomValue();
+                    if (!canLogValue(nextValue)) return;
                     handleTaskLog(nextValue, { accumulate: true });
                     setCustomValues((current) => ({
                       ...current,
@@ -3012,10 +3019,53 @@ function LifeTaskGrid({
                   className="ghost-button life-task-custom-button"
                   onClick={() => {
                     if (customValue === "") return;
-                    const nextValue = Number(customValue);
-                    const canLog = allowsNegative ? (allowsZero ? !Number.isNaN(nextValue) : nextValue !== 0) : allowsZero ? nextValue >= 0 : nextValue > 0;
-                    if (!canLog) return;
+                    const nextValue = parseCustomValue();
+                    if (!canLogValue(nextValue)) return;
                     handleTaskLog(nextValue, { accumulate: true });
+                    setCustomValues((current) => ({
+                      ...current,
+                      [task.id]: ""
+                    }));
+                  }}
+                >
+                  Log
+                </button>
+              </div>
+            ) : isCustomOnly ? (
+              <div className="life-task-input-stack is-custom-only">
+                <input
+                  className="life-task-input"
+                  inputMode={inputMode}
+                  type="number"
+                  step={inputStep}
+                  min={allowsNegative || allowsZero ? undefined : "0"}
+                  placeholder={task.unit}
+                  value={customValue}
+                  onChange={(event: ChangeEvent<HTMLInputElement>) =>
+                    setCustomValues((current) => ({
+                      ...current,
+                      [task.id]: event.currentTarget.value
+                    }))
+                  }
+                  onKeyDown={(event: ReactKeyboardEvent<HTMLInputElement>) => {
+                    if (event.key !== "Enter") return;
+                    if (customValue === "") return;
+                    const nextValue = parseCustomValue();
+                    if (!canLogValue(nextValue)) return;
+                    handleTaskLog(nextValue);
+                    setCustomValues((current) => ({
+                      ...current,
+                      [task.id]: ""
+                    }));
+                  }}
+                />
+                <button
+                  className="ghost-button life-task-custom-button"
+                  onClick={() => {
+                    if (customValue === "") return;
+                    const nextValue = parseCustomValue();
+                    if (!canLogValue(nextValue)) return;
+                    handleTaskLog(nextValue);
                     setCustomValues((current) => ({
                       ...current,
                       [task.id]: ""
@@ -3053,8 +3103,9 @@ function LifeTaskGrid({
                 <div className="life-task-custom-row">
                   <input
                     className="life-task-input"
-                    inputMode="numeric"
+                    inputMode={inputMode}
                     type="number"
+                    step={inputStep}
                     min={allowsNegative || allowsZero ? undefined : "0"}
                     placeholder={task.unit}
                     value={customValue}
@@ -3067,9 +3118,8 @@ function LifeTaskGrid({
                     onKeyDown={(event: ReactKeyboardEvent<HTMLInputElement>) => {
                       if (event.key !== "Enter") return;
                       if (customValue === "") return;
-                      const nextValue = Number(customValue);
-                      const canLog = allowsNegative ? (allowsZero ? !Number.isNaN(nextValue) : nextValue !== 0) : allowsZero ? nextValue >= 0 : nextValue > 0;
-                      if (!canLog) return;
+                      const nextValue = parseCustomValue();
+                      if (!canLogValue(nextValue)) return;
                       handleTaskLog(nextValue);
                       setCustomValues((current) => ({
                         ...current,
@@ -3081,9 +3131,8 @@ function LifeTaskGrid({
                     className="ghost-button life-task-custom-button"
                     onClick={() => {
                       if (customValue === "") return;
-                      const nextValue = Number(customValue);
-                      const canLog = allowsNegative ? (allowsZero ? !Number.isNaN(nextValue) : nextValue !== 0) : allowsZero ? nextValue >= 0 : nextValue > 0;
-                      if (!canLog) return;
+                      const nextValue = parseCustomValue();
+                      if (!canLogValue(nextValue)) return;
                       handleTaskLog(nextValue);
                       setCustomValues((current) => ({
                         ...current,
@@ -3208,7 +3257,7 @@ function buildTaskCalendarDays(logs: LifeOSLogs, task: TrackedTaskDefinition, mo
         ? rawValue
           ? "1"
           : ""
-        : rawValue ?? "";
+        : formatTaskNumber(task, rawValue);
 
     cells.push({
       key,
@@ -3271,11 +3320,27 @@ function formatTaskValue(task: TrackedTaskDefinition, value: LogValue | undefine
   }
 
   const separator = task.compactUnit ? "" : " ";
-  if (value) {
-    return `${currency && task.unit === "$" ? currency : ""}${value}${task.unit !== "$" ? `${separator}${task.unit}` : ""}`;
+  const formattedValue = formatTaskNumber(task, value);
+  if (formattedValue !== "0" || value === 0) {
+    return `${currency && task.unit === "$" ? currency : ""}${formattedValue}${task.unit !== "$" ? `${separator}${task.unit}` : ""}`;
   }
 
   return `0${task.unit !== "$" ? `${separator}${task.unit}` : ""}`;
+}
+
+function normalizeTaskNumber(task: TrackedTaskDefinition, value: number) {
+  if (!Number.isFinite(value)) return Number.NaN;
+  if (typeof task.decimalPlaces !== "number") return value;
+  return Number(value.toFixed(task.decimalPlaces));
+}
+
+function formatTaskNumber(task: TrackedTaskDefinition, value: LogValue | undefined) {
+  const numericValue = Number(value ?? 0);
+  if (!Number.isFinite(numericValue)) return "0";
+  if (typeof task.decimalPlaces === "number") {
+    return numericValue.toFixed(task.decimalPlaces);
+  }
+  return String(numericValue);
 }
 
 function formatCurrencyValue(value: number | string | boolean | undefined, currency = "$") {

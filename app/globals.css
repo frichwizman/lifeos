@@ -1724,6 +1724,10 @@ textarea::placeholder {
   grid-template-columns: auto minmax(0, 1fr) auto;
 }
 
+.life-task-input-stack.is-custom-only {
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
 .life-task-default-chip {
   justify-content: center;
   white-space: nowrap;

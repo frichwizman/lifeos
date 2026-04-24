@@ -103,7 +103,7 @@ export const LIFE_PILLARS: LifePillar[] = [
   { id: "sleep-quality", pillar: "Sleep", short: "Sleep", color: "#58b4d1" },
   { id: "water-intake", pillar: "Nutrition", short: "Fuel", color: "#f4845f" },
   { id: "stress-level", pillar: "Stress Management", short: "Calm", color: "#9d82d8" },
-  { id: "social-connection", pillar: "Social Connection", short: "Social", color: "#e8b84b" },
+  { id: "weight", pillar: "Weight", short: "Weight", color: "#e8b84b" },
   { id: "risky-substances", pillar: "Avoiding Risky Substances", short: "Clean", color: "#b388ff" },
   { id: "meditation", pillar: "Mindfulness", short: "Mind", color: "#7ee8a2" }
 ];
@@ -280,12 +280,14 @@ export const lifeGroups: LifeGroup[] = [
     title: "Connection",
     items: [
       {
-        id: "social-connection",
-        label: "Social Connection",
-        unit: "hr",
+        id: "weight",
+        label: "Weight",
+        unit: "kg",
         type: "number",
-        xpPerUnit: 8,
-        presets: [0.5, 1, 1.5, 2]
+        xpPerUnit: 0.1,
+        decimalPlaces: 1,
+        inputStep: 0.1,
+        inputMode: "customOnly"
       },
       {
         id: "risky-substances",

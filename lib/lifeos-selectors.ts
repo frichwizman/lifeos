@@ -56,7 +56,7 @@ export function buildLifePageTasks(lifeTaskMap: Record<string, TrackedTaskDefini
     "sleep-quality",
     "water-intake",
     "stress-level",
-    "social-connection",
+    "weight",
     "risky-substances"
   ]
     .map((taskId) => lifeTaskMap[taskId])
@@ -94,7 +94,7 @@ export function buildFocusTaskOptions(
       sourceType: "tracked-task"
     })),
     life: lifePageTasks
-      .filter((task) => !["stress-level", "risky-substances"].includes(task.id))
+      .filter((task) => !["stress-level", "weight", "risky-substances"].includes(task.id))
       .map<FocusTaskOption>((task) => ({
         id: `life:${task.id}`,
         logTaskId: task.id,
@@ -111,6 +111,9 @@ function formatHistoryValue(task: TrackedTaskDefinition | undefined, rawValue: n
   if (task?.type === "boolean") return rawValue ? "Done" : "Not done";
   if (task?.id === "stress-level") return formatStressLevelValue(rawValue);
   if (task?.unit === "$") return `${currency}${formatNumber(Number(rawValue || 0))}`;
+  if (typeof rawValue === "number" && typeof task?.decimalPlaces === "number") {
+    return `${rawValue.toFixed(task.decimalPlaces)}${task.compactUnit ? "" : " "}${task.unit ?? ""}`.trim();
+  }
   return `${rawValue}${task?.compactUnit ? "" : " "}${task?.unit ?? ""}`.trim();
 }
 
@@ -533,7 +536,7 @@ export function buildDashboardTasks(state: LifeOSState, todayKey: string, studyT
 
   const actionableLifeTasks = lifeGroups
     .flatMap((group) => group.items)
-    .filter((task) => !["sleep-quality", "stress-level", "risky-substances"].includes(task.id))
+    .filter((task) => !["sleep-quality", "stress-level", "weight", "risky-substances"].includes(task.id))
     .filter((task) => Number(getLogValue(state.logs, todayKey, task.id) ?? 0) <= 0)
     .map<DashboardTask>((task) => ({
       id: `life:${task.id}`,
@@ -542,12 +545,12 @@ export function buildDashboardTasks(state: LifeOSState, todayKey: string, studyT
       projectId: "",
       label: task.label,
       category: "Life",
-      context: task.id === "social-connection" ? "Connection" : "Daily upkeep",
+      context: "Daily upkeep",
       xpReward: Math.round((task.presets?.[0] ?? 1) * task.xpPerUnit),
       completionValue: task.presets?.[0] ?? 1,
       task,
-      attributeKey: task.id === "social-connection" ? "social" : task.id === "meditation" ? "mind" : "body",
-      attributeDelta: task.id === "social-connection" ? 2 : 1
+      attributeKey: task.id === "meditation" ? "mind" : "body",
+      attributeDelta: 1
     }));
 
   return [...workTasks, ...studyExecutionTasks, ...actionableLifeTasks];
