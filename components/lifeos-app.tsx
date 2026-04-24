@@ -3002,12 +3002,13 @@ function LifeTaskGrid({
                   min={allowsNegative || allowsZero ? undefined : "0"}
                   placeholder="Custom"
                   value={customValue}
-                  onChange={(event: ChangeEvent<HTMLInputElement>) =>
+                  onChange={(event: ChangeEvent<HTMLInputElement>) => {
+                    const nextDraftValue = event.currentTarget.value;
                     setCustomValues((current) => ({
                       ...current,
-                      [task.id]: event.currentTarget.value
-                    }))
-                  }
+                      [task.id]: nextDraftValue
+                    }));
+                  }}
                   onKeyDown={(event: ReactKeyboardEvent<HTMLInputElement>) => {
                     if (event.key !== "Enter") return;
                     event.preventDefault();
@@ -3048,12 +3049,13 @@ function LifeTaskGrid({
                   min={allowsNegative || allowsZero ? undefined : "0"}
                   placeholder={task.unit}
                   value={customValue}
-                  onChange={(event: ChangeEvent<HTMLInputElement>) =>
+                  onChange={(event: ChangeEvent<HTMLInputElement>) => {
+                    const nextDraftValue = event.currentTarget.value;
                     setCustomValues((current) => ({
                       ...current,
-                      [task.id]: event.currentTarget.value
-                    }))
-                  }
+                      [task.id]: nextDraftValue
+                    }));
+                  }}
                   onKeyDown={(event: ReactKeyboardEvent<HTMLInputElement>) => {
                     if (event.key !== "Enter") return;
                     event.preventDefault();
@@ -3118,18 +3120,19 @@ function LifeTaskGrid({
                     min={allowsNegative || allowsZero ? undefined : "0"}
                     placeholder={task.unit}
                     value={customValue}
-                    onChange={(event: ChangeEvent<HTMLInputElement>) =>
+                    onChange={(event: ChangeEvent<HTMLInputElement>) => {
+                      const nextDraftValue = event.currentTarget.value;
                       setCustomValues((current) => ({
                         ...current,
-                        [task.id]: event.currentTarget.value
-                      }))
-                    }
+                        [task.id]: nextDraftValue
+                      }));
+                    }}
                     onKeyDown={(event: ReactKeyboardEvent<HTMLInputElement>) => {
-                    if (event.key !== "Enter") return;
-                    event.preventDefault();
-                    if (customValue === "") return;
-                    const nextValue = parseCustomValue();
-                    if (!canLogValue(nextValue)) return;
+                      if (event.key !== "Enter") return;
+                      event.preventDefault();
+                      if (customValue === "") return;
+                      const nextValue = parseCustomValue();
+                      if (!canLogValue(nextValue)) return;
                       handleTaskLog(nextValue);
                       setCustomValues((current) => ({
                         ...current,
