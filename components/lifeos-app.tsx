@@ -2883,6 +2883,7 @@ function LifeTaskGrid({
               <div className="life-task-head-actions">
                 <span className="task-value">{formatTaskValue(task, value, currency)}</span>
                 <button
+                  type="button"
                   className="icon-button life-task-calendar-trigger"
                   aria-label={`Open ${task.label} calendar`}
                   onClick={() => {
@@ -2909,6 +2910,7 @@ function LifeTaskGrid({
               <div className="life-task-calendar-popover">
                 <div className="life-task-calendar-head">
                   <button
+                    type="button"
                     className="ghost-button life-task-calendar-nav"
                     onClick={() =>
                       setCalendarMonths((current) => ({
@@ -2921,6 +2923,7 @@ function LifeTaskGrid({
                   </button>
                   <strong>{formatMonthLabel(calendarMonth)}</strong>
                   <button
+                    type="button"
                     className="ghost-button life-task-calendar-nav"
                     onClick={() =>
                       setCalendarMonths((current) => ({
@@ -2941,6 +2944,7 @@ function LifeTaskGrid({
                   {calendarDays.map((day, index) =>
                     day ? (
                       <button
+                        type="button"
                         key={day.key}
                         className={`life-task-calendar-day ${selectedDateKey === day.key ? "is-selected" : ""}`}
                         onClick={() => {
@@ -2973,6 +2977,7 @@ function LifeTaskGrid({
                 <div className="stress-state-selector" role="group" aria-label="Stress level state">
                   {STRESS_LEVEL_OPTIONS.map((option) => (
                     <button
+                      type="button"
                       key={option.value}
                       className={`stress-state-segment is-${option.tone} ${selectedStressState?.value === option.value ? "is-active" : ""}`}
                       onClick={() => handleTaskLog(option.value)}
@@ -2985,7 +2990,7 @@ function LifeTaskGrid({
               </div>
             ) : defaultInput && usesSimpleLog ? (
               <div className="life-task-input-stack is-simple">
-                <button className="chip life-task-default-chip life-task-default-display" onClick={() => handleTaskLog(defaultInput, { accumulate: true })}>
+                <button type="button" className="chip life-task-default-chip life-task-default-display" onClick={() => handleTaskLog(defaultInput, { accumulate: true })}>
                   {defaultInput}
                   {task.unit !== "$" ? task.unit : ""}
                 </button>
@@ -3005,6 +3010,7 @@ function LifeTaskGrid({
                   }
                   onKeyDown={(event: ReactKeyboardEvent<HTMLInputElement>) => {
                     if (event.key !== "Enter") return;
+                    event.preventDefault();
                     if (customValue === "") return;
                     const nextValue = parseCustomValue();
                     if (!canLogValue(nextValue)) return;
@@ -3016,6 +3022,7 @@ function LifeTaskGrid({
                   }}
                 />
                 <button
+                  type="button"
                   className="ghost-button life-task-custom-button"
                   onClick={() => {
                     if (customValue === "") return;
@@ -3049,6 +3056,7 @@ function LifeTaskGrid({
                   }
                   onKeyDown={(event: ReactKeyboardEvent<HTMLInputElement>) => {
                     if (event.key !== "Enter") return;
+                    event.preventDefault();
                     if (customValue === "") return;
                     const nextValue = parseCustomValue();
                     if (!canLogValue(nextValue)) return;
@@ -3060,6 +3068,7 @@ function LifeTaskGrid({
                   }}
                 />
                 <button
+                  type="button"
                   className="ghost-button life-task-custom-button"
                   onClick={() => {
                     if (customValue === "") return;
@@ -3077,7 +3086,7 @@ function LifeTaskGrid({
               </div>
             ) : defaultInput ? (
               <div className="life-task-input-stack">
-                <button className="chip life-task-default-chip" onClick={() => handleTaskLog(defaultInput)}>
+                <button type="button" className="chip life-task-default-chip" onClick={() => handleTaskLog(defaultInput)}>
                   {defaultInput}
                   {task.unit !== "$" ? task.unit : ""}
                 </button>
@@ -3116,10 +3125,11 @@ function LifeTaskGrid({
                       }))
                     }
                     onKeyDown={(event: ReactKeyboardEvent<HTMLInputElement>) => {
-                      if (event.key !== "Enter") return;
-                      if (customValue === "") return;
-                      const nextValue = parseCustomValue();
-                      if (!canLogValue(nextValue)) return;
+                    if (event.key !== "Enter") return;
+                    event.preventDefault();
+                    if (customValue === "") return;
+                    const nextValue = parseCustomValue();
+                    if (!canLogValue(nextValue)) return;
                       handleTaskLog(nextValue);
                       setCustomValues((current) => ({
                         ...current,
@@ -3128,6 +3138,7 @@ function LifeTaskGrid({
                     }}
                   />
                   <button
+                    type="button"
                     className="ghost-button life-task-custom-button"
                     onClick={() => {
                       if (customValue === "") return;
@@ -3147,7 +3158,7 @@ function LifeTaskGrid({
             ) : task.type !== "boolean" ? (
               <div className={`life-task-actions ${isStandardRating ? "is-rating" : ""}`}>
                 {task.presets?.map((preset) => (
-                  <button key={preset} className="chip" onClick={() => handleTaskLog(preset)}>
+                  <button type="button" key={preset} className="chip" onClick={() => handleTaskLog(preset)}>
                     {currency && task.unit === "$" ? currency : ""}
                     {preset}
                     {task.unit !== "$" ? task.unit : ""}
@@ -3159,7 +3170,7 @@ function LifeTaskGrid({
             {isStandardRating ? (
               <div className="life-task-actions is-rating">
                 {[1, 2, 3, 4, 5].map((rating) => (
-                  <button key={rating} className={`chip ${value === rating ? "is-active" : ""}`} onClick={() => handleTaskLog(rating)}>
+                  <button type="button" key={rating} className={`chip ${value === rating ? "is-active" : ""}`} onClick={() => handleTaskLog(rating)}>
                     {rating}★
                   </button>
                 ))}
@@ -3167,7 +3178,7 @@ function LifeTaskGrid({
             ) : null}
 
             {task.type === "boolean" ? (
-              <button className={`boolean-log life-task-boolean ${value ? "is-active" : ""}`} onClick={() => handleTaskLog(!value)}>
+              <button type="button" className={`boolean-log life-task-boolean ${value ? "is-active" : ""}`} onClick={() => handleTaskLog(!value)}>
                 {value ? "✓ Clean" : "Log Clean Day"}
               </button>
             ) : null}
