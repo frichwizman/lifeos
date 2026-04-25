@@ -39,7 +39,6 @@ import {
   RefreshCw,
   Scale,
   Package,
-  ShieldCheck,
   ShoppingBasket,
   Sparkle,
   Plus,
@@ -240,7 +239,7 @@ const pillarIcons = {
   "water-intake": Droplets,
   "stress-level": Sparkle,
   weight: Scale,
-  "risky-substances": ShieldCheck,
+  steps: Footprints,
   meditation: HeartPulse
 };
 
@@ -349,10 +348,11 @@ const LIFE_DEFAULT_INPUTS = {
   exercise: 5,
   "sleep-quality": 75,
   meditation: 5,
-  "water-intake": 250
+  "water-intake": 250,
+  steps: 5000
 };
 
-const SIMPLE_LIFE_LOG_TASK_IDS = new Set(["exercise", "meditation", "sleep-quality", "water-intake"]);
+const SIMPLE_LIFE_LOG_TASK_IDS = new Set(["exercise", "meditation", "sleep-quality", "water-intake", "steps"]);
 
 const STUDY_DEFAULT_INPUTS = {
   "language-skills": 25,

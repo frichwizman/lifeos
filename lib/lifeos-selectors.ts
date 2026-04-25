@@ -57,7 +57,7 @@ export function buildLifePageTasks(lifeTaskMap: Record<string, TrackedTaskDefini
     "water-intake",
     "stress-level",
     "weight",
-    "risky-substances"
+    "steps"
   ]
     .map((taskId) => lifeTaskMap[taskId])
     .filter(Boolean);
@@ -94,7 +94,7 @@ export function buildFocusTaskOptions(
       sourceType: "tracked-task"
     })),
     life: lifePageTasks
-      .filter((task) => !["stress-level", "weight", "risky-substances"].includes(task.id))
+      .filter((task) => !["stress-level", "weight"].includes(task.id))
       .map<FocusTaskOption>((task) => ({
         id: `life:${task.id}`,
         logTaskId: task.id,
@@ -536,7 +536,7 @@ export function buildDashboardTasks(state: LifeOSState, todayKey: string, studyT
 
   const actionableLifeTasks = lifeGroups
     .flatMap((group) => group.items)
-    .filter((task) => !["sleep-quality", "stress-level", "weight", "risky-substances"].includes(task.id))
+    .filter((task) => !["sleep-quality", "stress-level", "weight"].includes(task.id))
     .filter((task) => Number(getLogValue(state.logs, todayKey, task.id) ?? 0) <= 0)
     .map<DashboardTask>((task) => ({
       id: `life:${task.id}`,

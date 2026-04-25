@@ -1727,13 +1727,14 @@ textarea::placeholder {
 
 .life-task-calendar-day {
   display: grid;
-  gap: 4px;
+  gap: 3px;
   align-content: center;
   justify-items: center;
   padding: 6px;
   border: 1px solid var(--border);
   background: var(--surface-2);
   text-align: center;
+  min-width: 0;
 }
 
 .life-task-calendar-day.is-selected {
@@ -1748,16 +1749,20 @@ textarea::placeholder {
 
 .life-task-calendar-date {
   color: var(--text-sub);
-  font-size: 0.66rem;
+  font-size: 0.62rem;
   text-align: center;
 }
 
 .life-task-calendar-value {
   min-height: 1em;
-  font-size: 0.82rem;
+  max-width: 100%;
+  overflow: hidden;
+  font-size: 0.72rem;
   line-height: 1.1;
   font-weight: 600;
   text-align: center;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .life-task-calendar-value.has-value {
@@ -4108,7 +4113,20 @@ textarea::placeholder {
 
   .life-task-calendar-day,
   .life-task-calendar-empty {
-    min-height: 44px;
+    min-height: 42px;
+  }
+
+  .life-task-calendar-day {
+    gap: 2px;
+    padding: 4px;
+  }
+
+  .life-task-calendar-date {
+    font-size: 0.58rem;
+  }
+
+  .life-task-calendar-value {
+    font-size: 0.66rem;
   }
 
   .life-task-grid {

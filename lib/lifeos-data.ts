@@ -104,7 +104,7 @@ export const LIFE_PILLARS: LifePillar[] = [
   { id: "water-intake", pillar: "Nutrition", short: "Fuel", color: "#f4845f" },
   { id: "stress-level", pillar: "Stress Management", short: "Calm", color: "#9d82d8" },
   { id: "weight", pillar: "Weight", short: "Weight", color: "#e8b84b" },
-  { id: "risky-substances", pillar: "Avoiding Risky Substances", short: "Clean", color: "#b388ff" },
+  { id: "steps", pillar: "Daily Steps", short: "Steps", color: "#b388ff" },
   { id: "meditation", pillar: "Mindfulness", short: "Mind", color: "#7ee8a2" }
 ];
 
@@ -290,11 +290,12 @@ export const lifeGroups: LifeGroup[] = [
         inputMode: "customOnly"
       },
       {
-        id: "risky-substances",
-        label: "Risky Substances",
-        unit: "avoid",
-        type: "boolean",
-        xpPerUnit: 15
+        id: "steps",
+        label: "Steps",
+        unit: "",
+        type: "number",
+        xpPerUnit: 0.001,
+        presets: [5000, 8000, 10000, 12000, 15000]
       }
     ]
   }
