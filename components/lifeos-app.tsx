@@ -2866,6 +2866,7 @@ function LifeTaskGrid({
         const calendarMonth = calendarMonths[task.id] ?? parseDateKey(selectedDateKey);
         const calendarDays = buildTaskCalendarDays(logs, task, calendarMonth);
         const monthTotal = showMonthTotals ? getTaskMonthTotal(logs, task.id, selectedDateKey) : 0;
+        const taskValueClassName = `task-value ${task.id === "weight" ? "life-task-weight-value" : ""}`.trim();
         const selectedStressState = isStressLevel ? getStressLevelOption(value) : undefined;
         const handleTaskLog = (nextValue: LogValue, options: { accumulate?: boolean } = {}) =>
           onLog(task, nextValue, selectedDateKey, options);
@@ -2881,7 +2882,7 @@ function LifeTaskGrid({
                 <small className="life-task-date-label">{formatShortDate(parseDateKey(selectedDateKey))}</small>
               </div>
               <div className="life-task-head-actions">
-                <span className="task-value">{formatTaskValue(task, value, currency)}</span>
+                <span className={taskValueClassName}>{formatTaskValue(task, value, currency)}</span>
                 <button
                   type="button"
                   className="icon-button life-task-calendar-trigger"

@@ -1585,10 +1585,23 @@ textarea::placeholder {
   display: inline-flex;
   align-items: center;
   gap: 8px;
+  min-width: 0;
 }
 
 .life-task-head .task-value {
   white-space: nowrap;
+}
+
+.life-task-weight-value {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 8.5ch;
+  padding-inline: 4px;
+  text-align: center;
+  font-size: clamp(0.78rem, 1.7vw, 0.92rem);
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
 }
 
 .life-task-date-label {
