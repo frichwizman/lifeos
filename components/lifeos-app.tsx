@@ -2867,6 +2867,7 @@ function LifeTaskGrid({
         const calendarDays = buildTaskCalendarDays(logs, task, calendarMonth);
         const monthTotal = showMonthTotals ? getTaskMonthTotal(logs, task.id, selectedDateKey) : 0;
         const taskValueClassName = `task-value ${task.id === "weight" ? "life-task-weight-value" : ""}`.trim();
+        const shouldAccumulateSimpleLog = usesSimpleLog && task.id !== "steps";
         const selectedStressState = isStressLevel ? getStressLevelOption(value) : undefined;
         const handleTaskLog = (nextValue: LogValue, options: { accumulate?: boolean } = {}) =>
           onLog(task, nextValue, selectedDateKey, options);
@@ -2994,7 +2995,11 @@ function LifeTaskGrid({
               </div>
             ) : defaultInput && usesSimpleLog ? (
               <div className="life-task-input-stack is-simple">
-                <button type="button" className="chip life-task-default-chip life-task-default-display" onClick={() => handleTaskLog(defaultInput, { accumulate: true })}>
+                <button
+                  type="button"
+                  className="chip life-task-default-chip life-task-default-display"
+                  onClick={() => handleTaskLog(defaultInput, { accumulate: shouldAccumulateSimpleLog })}
+                >
                   {defaultInput}
                   {task.unit !== "$" ? task.unit : ""}
                 </button>
@@ -3019,7 +3024,7 @@ function LifeTaskGrid({
                     if (customValue === "") return;
                     const nextValue = parseCustomValue();
                     if (!canLogValue(nextValue)) return;
-                    handleTaskLog(nextValue, { accumulate: true });
+                    handleTaskLog(nextValue, { accumulate: shouldAccumulateSimpleLog });
                     setCustomValues((current) => ({
                       ...current,
                       [task.id]: ""
@@ -3033,7 +3038,7 @@ function LifeTaskGrid({
                     if (customValue === "") return;
                     const nextValue = parseCustomValue();
                     if (!canLogValue(nextValue)) return;
-                    handleTaskLog(nextValue, { accumulate: true });
+                    handleTaskLog(nextValue, { accumulate: shouldAccumulateSimpleLog });
                     setCustomValues((current) => ({
                       ...current,
                       [task.id]: ""
