@@ -1592,16 +1592,51 @@ textarea::placeholder {
   white-space: nowrap;
 }
 
+.life-task-card.is-weight .life-task-head {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
+}
+
+.life-task-card.is-weight .life-task-head-copy {
+  grid-column: 1 / -1;
+}
+
+.life-task-card.is-weight .life-task-head-actions {
+  grid-column: 1 / -1;
+  position: relative;
+  justify-content: center;
+  width: 100%;
+  padding-right: 40px;
+}
+
+.life-task-card.is-weight .life-task-calendar-trigger {
+  position: absolute;
+  right: 0;
+}
+
 .life-task-weight-value {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-width: 8.5ch;
+  min-width: 9ch;
+  max-width: 100%;
   padding-inline: 4px;
   text-align: center;
-  font-size: clamp(0.78rem, 1.7vw, 0.92rem);
+  font-size: clamp(0.78rem, 1.7vw, 0.95rem);
   line-height: 1.1;
   font-variant-numeric: tabular-nums;
+}
+
+@media (max-width: 760px) {
+  .life-task-card.is-weight .life-task-head-actions {
+    padding-right: 36px;
+  }
+
+  .life-task-weight-value {
+    min-width: 8.25ch;
+    font-size: 0.88rem;
+  }
 }
 
 .life-task-date-label {

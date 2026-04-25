@@ -2875,7 +2875,10 @@ function LifeTaskGrid({
           allowsNegative ? (allowsZero ? !Number.isNaN(nextValue) : nextValue !== 0) : allowsZero ? nextValue >= 0 : nextValue > 0;
 
         return (
-          <article key={task.id} className={`life-task-card ${isStressLevel ? "is-stress" : ""}`}>
+          <article
+            key={task.id}
+            className={`life-task-card ${isStressLevel ? "is-stress" : ""} ${task.id === "weight" ? "is-weight" : ""}`.trim()}
+          >
             <div className="life-task-head">
               <div className="life-task-head-copy">
                 <strong>{task.label}</strong>
