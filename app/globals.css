@@ -1533,6 +1533,15 @@ textarea::placeholder {
   display: grid;
   gap: 16px;
   align-content: start;
+  position: relative;
+}
+
+.life-page-primary {
+  z-index: 2;
+}
+
+.life-page-secondary {
+  z-index: 1;
 }
 
 .life-task-grid {
