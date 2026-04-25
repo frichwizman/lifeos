@@ -3271,6 +3271,8 @@ function buildTaskCalendarDays(logs: LifeOSLogs, task: TrackedTaskDefinition, mo
     const displayValue =
       task.id === "stress-level"
         ? formatStressLevelShortValue(rawValue)
+        : task.id === "steps"
+        ? formatCompactThousands(rawValue)
         : typeof rawValue === "boolean"
         ? rawValue
           ? "1"
@@ -3286,6 +3288,15 @@ function buildTaskCalendarDays(logs: LifeOSLogs, task: TrackedTaskDefinition, mo
   }
 
   return cells;
+}
+
+function formatCompactThousands(value: LogValue | undefined) {
+  const numericValue = Number(value ?? 0);
+  if (!Number.isFinite(numericValue)) return "0";
+  if (Math.abs(numericValue) < 1000) return String(Math.round(numericValue));
+
+  const compactValue = Math.round((numericValue / 1000) * 10) / 10;
+  return `${compactValue.toFixed(1).replace(/\.0$/, "")}k`;
 }
 
 function getTaskMonthTotal(logs: LifeOSLogs, taskId: string, dateKey: string) {
