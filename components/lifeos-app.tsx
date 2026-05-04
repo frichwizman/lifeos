@@ -248,26 +248,28 @@ const allDefaultTrackedTaskIds = [
   ...lifeGroups.flatMap((group) => group.items.map((item) => item.id))
 ];
 
-const navItems = [
-  { href: "/dashboard", label: "Home" },
+const primaryNavItems = [
+  { href: "/dashboard", label: "Dashboard" },
   { href: "/work", label: "Work" },
   { href: "/life", label: "Life" },
   { href: "/study", label: "Study" },
   { href: "/money", label: "Money" },
   { href: "/notes", label: "Notes" },
   { href: "/focus", label: "Focus" },
-  { href: "/todo", label: "Todo" },
-  {
-    href: "/rooms",
-    label: "Rooms",
-    children: [
-      { href: "/rooms/office", label: "Office" },
-      { href: "/rooms/study", label: "Study Room" }
-    ]
-  },
   { href: "/history", label: "History" },
   { href: "/settings", label: "Settings" }
 ];
+
+const secondaryNavItems = [{ href: "/todo", label: "Todo" }];
+
+const spacesNavItem = {
+  href: "/rooms",
+  label: "Rooms",
+  children: [
+    { href: "/rooms/office", label: "Office" },
+    { href: "/rooms/study", label: "Study Room" }
+  ]
+};
 
 const ATTRIBUTE_LABELS = {
   mind: "Mind",
@@ -1496,60 +1498,77 @@ export function LifeOSApp({ view = "dashboard" }: LifeOSAppProps) {
   };
 
   return (
-    <main className="page-shell">
-      <section className="hero-panel">
-        <div className="hero-app">
-          <div className="app-icon">
-            <Command size={18} />
-          </div>
-          <div className="hero-app-copy">
-            <p className="eyebrow">App</p>
-            <h1>LifeOS</h1>
-          </div>
+    <main className="app-shell">
+      <aside className="app-sidebar" aria-label="Global app navigation">
+        <div className="app-sidebar-shell">
+          <section className="hero-panel app-sidebar-hero">
+            <div className="hero-app">
+              <div className="app-icon">
+                <Command size={18} />
+              </div>
+              <div className="hero-app-copy">
+                <p className="eyebrow">Life Operating System</p>
+                <h1>LifeOS</h1>
+              </div>
+            </div>
+            <div className="hero-inline-stats">
+              <div className="hero-stat hero-stat-compact">
+                <strong>LV {dashboardOverview.level.level}</strong>
+              </div>
+              <div className="hero-stat hero-stat-compact">
+                <strong>{state.profile.name || "User"}</strong>
+              </div>
+            </div>
+          </section>
+
+          <nav className="panel-card app-sidebar-nav" aria-label="Primary">
+            <div className="app-nav-section">
+              <p className="eyebrow">Core</p>
+              <div className="app-nav-list">
+                {primaryNavItems.map((item) => (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    className={`nav-link app-nav-link ${activePath === item.href ? "is-active" : ""}`}
+                  >
+                    {item.label}
+                  </Link>
+                ))}
+              </div>
+            </div>
+
+            <div className="app-nav-section">
+              <p className="eyebrow">Secondary</p>
+              <div className="app-nav-list">
+                {secondaryNavItems.map((item) => (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    className={`nav-link app-nav-link ${activePath === item.href ? "is-active" : ""}`}
+                  >
+                    {item.label}
+                  </Link>
+                ))}
+                <RoomsNavGroup
+                  item={spacesNavItem}
+                  isActive={activePath.startsWith("/rooms/")}
+                  isOpen={openNavMenu === "rooms"}
+                  roomsMenuPosition={roomsMenuPosition}
+                  activePath={activePath}
+                  roomsTriggerRef={roomsTriggerRef}
+                  roomsDropdownRef={roomsDropdownRef}
+                  onToggle={() => applyNavLocalPatch(buildRoomsMenuTogglePatch(openNavMenu))}
+                  onClose={() => applyNavLocalPatch(buildRoomsMenuClosePatch())}
+                />
+              </div>
+            </div>
+          </nav>
         </div>
-        <div className="hero-inline-stats">
-          <div className="hero-stat hero-stat-compact">
-            <strong>LV {dashboardOverview.level.level}</strong>
-          </div>
-          <div className="hero-stat hero-stat-compact">
-            <strong>{state.profile.name || "User"}</strong>
-          </div>
-        </div>
-      </section>
+      </aside>
 
-      <nav className="top-nav" aria-label="Primary">
-        {navItems.map((item) => {
-          const isRooms = item.href === "/rooms";
-          const isActive = isRooms
-            ? activePath.startsWith("/rooms/")
-            : activePath === item.href;
-
-          if (item.children) {
-            return (
-              <RoomsNavGroup
-                key={item.href}
-                item={item}
-                isActive={isActive}
-                isOpen={openNavMenu === "rooms"}
-                roomsMenuPosition={roomsMenuPosition}
-                activePath={activePath}
-                roomsTriggerRef={roomsTriggerRef}
-                roomsDropdownRef={roomsDropdownRef}
-                onToggle={() => applyNavLocalPatch(buildRoomsMenuTogglePatch(openNavMenu))}
-                onClose={() => applyNavLocalPatch(buildRoomsMenuClosePatch())}
-              />
-            );
-          }
-
-          return (
-            <Link key={item.href} href={item.href} className={`nav-link ${isActive ? "is-active" : ""}`}>
-              {item.label}
-            </Link>
-          );
-        })}
-      </nav>
-
-      {view !== "dashboard" && view !== "focus" && state.execution.currentTaskId ? (
+      <div className="app-main">
+        <div className="page-shell">
+          {view !== "dashboard" && view !== "focus" && state.execution.currentTaskId ? (
         <section className="execution-active-panel">
           <div className="execution-active-copy">
             <p className="eyebrow">Execution State</p>
@@ -2576,6 +2595,8 @@ export function LifeOSApp({ view = "dashboard" }: LifeOSAppProps) {
           </section> : null}
         </>
       )}
+        </div>
+      </div>
     </main>
   );
 }
